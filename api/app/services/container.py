@@ -16,6 +16,7 @@ from app.collection.service import ComplaintCollectionService
 from app.repositories import RepositoryContainer, get_repositories
 from app.ranking.service import ExecutiveRankingService
 from app.reports.executive.service import ExecutiveReportService
+from app.reports.venture.service import VentureReportService
 from app.scoring.service import OpportunityScoringService
 from app.services.category import CategoryService
 from app.services.complaint import ComplaintService
@@ -36,6 +37,7 @@ class ServiceContainer:
         self.scoring = OpportunityScoringService(repos)
         self.reports = ReportService(repos)
         self.executive_reports = ExecutiveReportService(repos)
+        self.venture_reports = VentureReportService(repos)
         self.executive_ranking = ExecutiveRankingService(repos)
         self.market_research = MarketResearchService(repos)
         self.competitor_intelligence = CompetitorIntelligenceService(repos)

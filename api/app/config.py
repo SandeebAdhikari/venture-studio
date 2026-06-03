@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     # Executive reports
     executive_report_top_n: int = 10
     executive_report_key_complaints_limit: int = 5
+    executive_venture_report_top_n: int = 5
 
     # Market research agent
     research_model: str = "gpt-4o-mini"

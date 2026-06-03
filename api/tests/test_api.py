@@ -1560,3 +1560,91 @@ async def test_generate_executive_ranking_api(
     current = current_response.json()
     assert current["is_current"] is True
     assert len(current["top_opportunities"]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_generate_and_download_venture_report(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: AsyncSession,
+) -> None:
+    from app.repositories import get_repositories
+    from tests.ranking.test_executive_ranking_service import (
+        AgentScoreProfile,
+        _create_opportunity,
+        _seed_agent_outputs,
+    )
+
+    repos = get_repositories(db_session)
+    default_profile = await repos.founder_profiles.get_default()
+    assert default_profile is not None
+
+    category = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.COMPLAINT_CATEGORY.value,
+            Category.code == "workflow",
+        )
+    )
+    domain = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value,
+            Category.code == "saas_b2b",
+        )
+    )
+    persona = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value,
+            Category.code == "ops_admin",
+        )
+    )
+    assert category is not None and domain is not None and persona is not None
+
+    opportunity = await _create_opportunity(
+        db_session,
+        (category.id, domain.id, persona.id),
+        title="Venture Report API Opportunity",
+    )
+    await _seed_agent_outputs(
+        repos,
+        opportunity.id,
+        default_profile.id,
+        AgentScoreProfile(pain=86, founder_fit=90),
+    )
+
+    await client.post(
+        "/api/v1/executive-ranking/generate?top_n=5",
+        headers=auth_headers,
+    )
+
+    generate_response = await client.post(
+        "/api/v1/executive-reports/generate?top_n=5&generate_ranking_if_missing=false",
+        headers=auth_headers,
+    )
+    assert generate_response.status_code == 201
+    body = generate_response.json()
+    assert "Venture Recommendation Report" in body["markdown"]
+    assert body["content"]["generated_count"] >= 1
+    assert "### MVP plan" in body["markdown"]
+
+    report_id = body["report_id"]
+    markdown_response = await client.get(
+        f"/api/v1/executive-reports/{report_id}/markdown",
+        headers=auth_headers,
+    )
+    assert markdown_response.status_code == 200
+    assert "Venture Recommendation Report" in markdown_response.json()["markdown"]
+
+    download_response = await client.get(
+        f"/api/v1/executive-reports/{report_id}/download",
+        headers=auth_headers,
+    )
+    assert download_response.status_code == 200
+    assert download_response.headers["content-disposition"].startswith("attachment;")
+    assert "Venture Recommendation Report" in download_response.text
+
+    latest_response = await client.get(
+        "/api/v1/executive-reports/latest",
+        headers=auth_headers,
+    )
+    assert latest_response.status_code == 200
+    assert latest_response.json()["id"] == report_id
