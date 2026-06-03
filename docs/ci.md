@@ -4,6 +4,17 @@ GitHub Actions run on every push and pull request to `main`. Each workflow fails
 
 Workflow definitions live in [`.github/workflows/`](../.github/workflows/).
 
+## Frontend CI
+
+The `web/` dashboard is validated on every push and pull request to `main` by two workflows. Both must pass before merging.
+
+| Workflow | File | Purpose |
+|----------|------|---------|
+| Web Quality | `web-quality.yml` | TypeScript, ESLint, Vitest unit tests |
+| Web Deployment Check | `web-deployment-check.yml` | `next build`, route verification, Docker image |
+
+See [web-deployment.md](./web-deployment.md) for deployment strategy (Vercel vs container).
+
 ## Pipeline overview
 
 ```mermaid
@@ -11,6 +22,12 @@ flowchart LR
   subgraph quality [quality.yml]
     RuffLint[Ruff lint]
     RuffFmt[Ruff format check]
+  end
+
+  subgraph webQuality [web-quality.yml]
+    TS[typecheck]
+    ESLint[eslint]
+    Vitest[vitest]
   end
 
   subgraph test [test.yml]
@@ -22,22 +39,27 @@ flowchart LR
 
   subgraph deploy [deployment-check.yml]
     Compose[docker compose config]
-    DockerBuild[Docker build]
+    DockerBuild[API Docker build]
     PkgBuild[python -m build]
     ImportCheck[Import smoke tests]
   end
 
-  quality --> test
-  test --> deploy
+  subgraph webDeploy [web-deployment-check.yml]
+    NextBuild[next build]
+    VerifyRoutes[verify-build.mjs]
+    WebDocker[web Docker build]
+  end
 ```
 
-The three workflows run **in parallel** on GitHub Actions. All must pass before merging is safe; none depends on another at the Actions level.
+Backend and frontend workflows run **in parallel** on GitHub Actions. All required checks must pass before merging.
 
 | Workflow | File | Purpose |
 |----------|------|---------|
 | Quality | `quality.yml` | Static analysis with Ruff |
 | Test | `test.yml` | Database migrations and pytest |
-| Deployment Check | `deployment-check.yml` | Docker, packaging, and import validation |
+| Deployment Check | `deployment-check.yml` | API Docker, packaging, and import validation |
+| Web Quality | `web-quality.yml` | Frontend typecheck, lint, unit tests |
+| Web Deployment Check | `web-deployment-check.yml` | Next.js production build and Docker validation |
 
 ## quality.yml
 
@@ -135,6 +157,63 @@ pip install build && python -m build
 PYTHONPATH=. python -c "from app.main import app"
 ```
 
+## Frontend CI
+
+### web-quality.yml
+
+**Triggers:** `push` and `pull_request` to `main`
+
+**Working directory:** `web/`
+
+| Step | Command | Fails when |
+|------|---------|------------|
+| Install | `npm ci` | Lockfile / dependency resolution errors |
+| Typecheck | `npm run typecheck` | TypeScript errors |
+| Lint | `npm run lint` | ESLint errors or warnings |
+| Tests | `npm run test` | Vitest unit test failures |
+
+Run locally:
+
+```bash
+cd web
+npm ci
+npm run typecheck
+npm run lint
+npm run test
+```
+
+### web-deployment-check.yml
+
+**Triggers:** `push` and `pull_request` to `main`
+
+| Job | Steps | Fails when |
+|-----|-------|------------|
+| Next.js build verification | `npm ci` → `npm run build` → `npm run verify-build` | Build errors, missing dashboard/API routes |
+| Web Docker image | `docker build ./web` → container smoke test on `/` | Dockerfile or runtime startup failure |
+
+Build verification ([`web/scripts/verify-build.mjs`](../web/scripts/verify-build.mjs)) asserts:
+
+- All founder dashboard pages are in the route manifest
+- BFF proxy route `/api/v1/[...path]` is present
+- Server bundles exist for dashboard and API route handlers
+
+Run locally:
+
+```bash
+cd web
+npm ci
+npm run build
+npm run verify-build
+docker build -t ai-venture-studio-web:local ./web
+```
+
+Full local gate (matches CI):
+
+```bash
+cd web
+npm run validate
+```
+
 ## Failure policy
 
 | Failure type | Workflow | Result |
@@ -143,6 +222,8 @@ PYTHONPATH=. python -c "from app.main import app"
 | Migration issue | `test.yml` (`migrations` job) | Job failed; merge blocked |
 | Lint / format issue | `quality.yml` | Job failed; merge blocked |
 | Build / import issue | `deployment-check.yml` | Job failed; merge blocked |
+| Frontend type/lint/test issue | `web-quality.yml` | Job failed; merge blocked |
+| Frontend build / Docker issue | `web-deployment-check.yml` | Job failed; merge blocked |
 
 ## Branch protection (recommended)
 
@@ -152,6 +233,9 @@ On GitHub, enable branch protection for `main` and require status checks:
 - **Test / Migration validation**
 - **Test / Pytest**
 - **Deployment Check / Build validation**
+- **Web Quality / Typecheck, lint, and unit tests**
+- **Web Deployment Check / Next.js build verification**
+- **Web Deployment Check / Web Docker image**
 
 ## Adding migrations in CI
 
@@ -160,13 +244,11 @@ On GitHub, enable branch protection for `main` and require status checks:
 3. Push — CI runs `upgrade head` and `alembic check`
 4. If `alembic check` fails, update the migration or ORM models until schema and metadata match
 
-## Frontend CI
-
-The `web/` dashboard is **not** included in CI workflows. Only backend (`api/`) is validated. Add a workflow when frontend lint/build gates are needed.
-
 ## Related docs
 
 - [architecture.md](./architecture.md) — system layout
 - [database.md](./database.md) — schema and migration conventions
 - [deployment.md](./deployment.md) — production deployment
+- [web-deployment.md](./web-deployment.md) — frontend deployment strategy
 - [api/README.md](../api/README.md) — local development and test commands
+- [web/README.md](../web/README.md) — dashboard development and CI commands

@@ -141,10 +141,22 @@ docker run -d --env-file .env ai-venture-studio-api \
 
 ### Dashboard deployment
 
+**Recommended:** Deploy to Vercel (or similar) — see [web-deployment.md](./web-deployment.md).
+
 ```bash
 cd web
 npm run build
 npm start   # or deploy to Vercel
+```
+
+**Alternative:** Docker container using [`web/Dockerfile`](../web/Dockerfile):
+
+```bash
+docker build -t ai-venture-studio-web ./web
+docker run -d -p 3000:3000 \
+  -e API_URL=https://api.example.com \
+  -e API_KEY="$API_KEY" \
+  ai-venture-studio-web
 ```
 
 Set `API_URL` to internal backend URL. Set `API_KEY` in server environment (not `NEXT_PUBLIC_`).
@@ -191,10 +203,12 @@ GitHub Actions on push/PR to `main`:
 | Workflow | Purpose |
 |----------|---------|
 | `quality.yml` | Ruff lint + format |
-| `test.yml` | Migrations + pytest (230 tests) |
-| `deployment-check.yml` | Docker build, packaging, import smoke |
+| `test.yml` | Migrations + pytest |
+| `deployment-check.yml` | API Docker build, packaging, import smoke |
+| `web-quality.yml` | Frontend typecheck, ESLint, Vitest |
+| `web-deployment-check.yml` | Next.js build, route verification, web Docker |
 
-See [ci.md](./ci.md). Frontend build is not in CI.
+See [ci.md](./ci.md) and [web-deployment.md](./web-deployment.md).
 
 ---
 
@@ -211,6 +225,7 @@ See [ci.md](./ci.md). Frontend build is not in CI.
 
 ## Related Documentation
 
+- [web-deployment.md](./web-deployment.md) — frontend deployment strategy
 - [operations.md](./operations.md) — day-to-day runbook
 - [architecture.md](./architecture.md) — system design
 - [ci.md](./ci.md) — GitHub Actions

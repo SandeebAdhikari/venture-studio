@@ -1,0 +1,68 @@
+name: Web Deployment Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  API_KEY: ci-github-actions-api-key
+
+jobs:
+  build-validation:
+    name: Next.js build verification
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify dashboard pages, API routes, and artifacts
+        run: npm run verify-build
+
+  docker-build:
+    name: Web Docker image
+    runs-on: ubuntu-latest
+    needs: build-validation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build web Docker image
+        run: docker build -t ai-venture-studio-web:ci ./web
+
+      - name: Verify container starts
+        run: |
+          docker run -d --name avs-web-ci \
+            -e API_KEY=ci-github-actions-api-key \
+            -e API_URL=http://localhost:8000 \
+            -p 3000:3000 \
+            ai-venture-studio-web:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/ >/dev/null; then
+              echo "Web container responded on /"
+              docker stop avs-web-ci
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Web container failed to respond"
+          docker logs avs-web-ci
+          docker stop avs-web-ci || true
+          exit 1

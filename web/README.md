@@ -54,8 +54,30 @@ See [docs/dashboard.md](../docs/dashboard.md) and [docs/dashboard-architecture.m
 ## Scripts
 
 ```bash
-npm run dev      # development server
-npm run build    # production build
-npm run start    # production server
-npm run lint     # ESLint
+npm run dev          # development server
+npm run build        # production build
+npm run start        # production server
+npm run typecheck    # TypeScript (tsc --noEmit)
+npm run lint         # ESLint (fails on warnings)
+npm run test         # Vitest unit tests
+npm run verify-build # post-build route/artifact checks
+npm run validate     # full CI gate locally
 ```
+
+## CI
+
+GitHub Actions validate every push/PR to `main`:
+
+| Workflow | Checks |
+|----------|--------|
+| `web-quality.yml` | `npm ci`, typecheck, lint, unit tests |
+| `web-deployment-check.yml` | production build, route verification, Docker image |
+
+Run the same gates locally:
+
+```bash
+npm ci
+npm run validate
+```
+
+See [docs/ci.md](../docs/ci.md) and [docs/web-deployment.md](../docs/web-deployment.md).

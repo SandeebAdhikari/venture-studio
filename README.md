@@ -44,7 +44,7 @@ A solo founder reviews the dashboard daily (~30 minutes), approves rankings and 
 - **Dashboard** — Next.js founder dashboard with 7 pages
 - **Approval Workflow** — Founder approve/reject/research for rankings and reports
 - **Budget Controls** — Daily LLM cap with 50/75/90% warnings
-- **CI/CD** — GitHub Actions: Ruff, pytest (230 tests), migration validation, Docker build
+- **CI/CD** — GitHub Actions: Ruff, pytest, migration validation, API Docker build, frontend typecheck/lint/test/build
 
 ---
 
@@ -192,6 +192,14 @@ ruff format --check app tests alembic
 
 See [docs/ci.md](docs/ci.md) for CI workflow details.
 
+Frontend:
+
+```bash
+cd web
+npm ci
+npm run validate
+```
+
 ---
 
 ## Deployment
@@ -255,13 +263,13 @@ agent/
 
 ### Current Status
 
-Core platform is functional: full 14-stage pipeline, 8 research agents, founder dashboard, approval workflow, LLM budget, and backend CI.
+Core platform is functional: full 14-stage pipeline, 8 research agents, founder dashboard, approval workflow, LLM budget, backend CI, and frontend CI (typecheck, lint, build, Docker).
 
 ### Known Gaps
 
 - HN Algolia collector (enum exists, not implemented)
 - Score stage omitted from default scheduler cron
-- No frontend CI or automated E2E tests
+- No automated E2E tests (frontend or backend)
 - No production observability stack (Prometheus, Sentry)
 - Web service not in docker-compose
 
