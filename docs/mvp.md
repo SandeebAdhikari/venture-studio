@@ -14,8 +14,8 @@ This document describes **what is implemented today**, not the original plan. Us
 | RSS feed management | ✅ | `rss_feeds` table + `/api/v1/rss-feeds` |
 | Reddit collection | ✅ | `app/collectors/reddit/` registered at startup |
 | RSS collection | ✅ | `app/collectors/rss/` registered at startup |
-| HN Algolia collection | ❌ | `SourceType.HN_ALGOLIA` enum exists; **no collector registered** |
-| Scheduled collection | ✅ | Scheduler job `collect` @ 02:00 UTC → ARQ `collect` |
+| HN Algolia collection | ✅ | `app/collectors/hn_algolia/` registered in `lifespan.py` and worker context |
+| Scheduled collection | ✅ | Nightly `nightly_pipeline` @ 02:00 UTC → ARQ `run_pipeline` (includes collect stage) |
 | Deduplication | ✅ | `(source_id, external_id)`, URL, content hash |
 | Complaint classification | ✅ | LangGraph `classify_complaint` in `app/agents/classification/` |
 | Opportunity generation | ✅ | `TopicPatternDetector` + LangGraph in `app/agents/opportunity/` |
@@ -47,13 +47,16 @@ All eight LLM agents are implemented with LangGraph graphs, services, REST APIs,
 | Feature | Status | Implementation |
 |---------|--------|----------------|
 | Pipeline orchestrator | ✅ | 14 stages, `PipelineOrchestrator` |
-| ARQ workers | ✅ | 15 registered jobs |
-| APScheduler | ✅ | 6 daily cron slots (see [scheduler.md](./scheduler.md)) |
+| ARQ workers | ✅ | 15 registered jobs (14 stages + `run_pipeline`) |
+| APScheduler | ✅ | Single `nightly_pipeline` cron @ 02:00 UTC (see [scheduler.md](./scheduler.md)) |
+| Observability | ✅ | Prometheus `/metrics`, tracing middleware, expanded readiness |
+| Alerting | ✅ | Logging, webhook, Slack backends (`app/observability/alerting/`) |
+| Deployment bootstrap | ✅ | Auto-migrations + startup validation (`app/deployment/bootstrap.py`) |
 | Dashboard APIs | ✅ | `/api/v1/dashboard/*` |
 | Founder dashboard UI | ✅ | Next.js app in `web/` (7 pages) |
 | Approval workflow | ✅ | Rankings + venture reports |
 | LLM budget | ✅ | Daily cap + warnings + `/api/v1/budget` |
-| CI/CD | ✅ | GitHub Actions: quality, test, deployment-check |
+| CI/CD | ✅ | GitHub Actions: quality, test, deployment-check, web-quality, web-deployment-check |
 
 ---
 
@@ -61,14 +64,13 @@ All eight LLM agents are implemented with LangGraph graphs, services, REST APIs,
 
 | Feature | Notes |
 |---------|-------|
-| HN Algolia collector | Enum only; no `register_hn_collector()` in `lifespan.py` |
 | `pain_point_clusters` table | Replaced by pattern detection at generation time |
 | Dedicated `/signals` REST API | Signals accessed via complaints and collection internals |
-| Multi-user auth / RBAC | Single shared `X-API-Key` |
-| Email/Slack notifications | Not implemented |
-| Prometheus / Sentry / Datadog | JSON logs + health probes only |
-| Web service in docker-compose | API + worker only; web runs separately |
-| Frontend CI | Backend CI only |
+| Multi-user auth / RBAC | Single shared `X-API-Key`; dashboard BFF has no user auth |
+| Additional collectors | Twitter/X and other sources beyond Reddit, RSS, HN Algolia |
+| Web service in default docker-compose | API + worker only; web runs separately or via optional compose profile |
+| Full-stack E2E tests | Backend pytest + frontend Vitest; no BFF ↔ API integration smoke |
+| Sentry / Datadog integrations | Prometheus metrics + structured logs + configurable alerting backends |
 
 ---
 
@@ -80,7 +82,7 @@ Start narrow. Expand after pipeline stability.
 |--------|------|--------|-------|
 | Reddit subreddits | `reddit` | ✅ | Public JSON API; rate-limited via Redis |
 | RSS feeds | `rss` | ✅ | Managed via `/api/v1/rss-feeds` |
-| HN Algolia | `hn_algolia` | ❌ | Not implemented |
+| HN Algolia | `hn_algolia` | ✅ | Algolia search API; see [collection-hn-algolia.md](./collection-hn-algolia.md) |
 
 Example Reddit source config (JSONB on `sources.config`):
 
@@ -114,16 +116,11 @@ See [operations.md](./operations.md) for budget API and monitoring.
 
 ## Default Scheduler (UTC)
 
-| Time | Job | ARQ stage(s) |
-|------|-----|--------------|
-| 02:00 | collect | `collect` |
-| 03:00 | classify | `classify` |
-| 04:00 | generate_opportunities | `generate_opportunities` |
-| 05:00 | research_agents | 8 research agent jobs |
-| 06:00 | executive_ranking | `executive_ranking` |
-| 07:00 | venture_report | `venture_report` |
+| Time | Scheduler job | ARQ job |
+|------|---------------|---------|
+| 02:00 | `nightly_pipeline` | `run_pipeline` (full 14-stage orchestrator) |
 
-**Gap:** The `score` stage is **not** in the default scheduler. It runs as part of `POST /api/v1/pipeline/run` (full orchestrator) and can be triggered via `POST /api/v1/jobs/score`.
+Manual per-stage execution remains available via `POST /api/v1/jobs/{stage}` for debugging. See [scheduler-orchestrator.md](./scheduler-orchestrator.md).
 
 ---
 
@@ -161,7 +158,7 @@ Each generated opportunity populates:
 | Requirement | Target |
 |-------------|--------|
 | Local dev startup | < 2 min via Docker Compose (postgres + redis + api + worker) |
-| Test suite | 230 pytest functions (backend) |
+| Test suite | 250+ pytest functions (backend) + Vitest (frontend) |
 | Migrations | 19 Alembic revisions, single linear chain |
 | Data retention | Signals and audit tables persisted in PostgreSQL |
 
@@ -169,17 +166,18 @@ Each generated opportunity populates:
 
 ## Definition of Done (Current Release)
 
-- [x] Reddit + RSS collectors with deduplication
+- [x] Reddit + RSS + HN Algolia collectors with deduplication
 - [x] Classification pipeline with LangGraph + LLM audit
 - [x] Opportunity generation from complaint patterns
 - [x] Deterministic scoring engine with history
 - [x] Eight research agents + executive ranking
 - [x] Pipeline orchestrator (14 stages)
-- [x] ARQ workers + APScheduler
+- [x] ARQ workers + orchestrated APScheduler
+- [x] Production observability (metrics, tracing, readiness)
+- [x] Production alerting (logging/webhook/Slack)
+- [x] Deployment bootstrap with auto-migrations
 - [x] Founder dashboard (Next.js)
 - [x] Approval workflow + LLM budget
-- [x] GitHub Actions CI (backend)
-- [ ] HN Algolia collector
-- [ ] Score stage in default scheduler
-- [ ] Frontend CI
-- [ ] Production observability stack
+- [x] GitHub Actions CI (backend + frontend)
+- [ ] Full-stack E2E tests
+- [ ] Multi-user dashboard authentication

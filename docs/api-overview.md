@@ -23,7 +23,8 @@ Single shared key configured via `API_KEY` environment variable (minimum 16 char
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Liveness — `{ "status": "ok" }` |
-| GET | `/health/ready` | Readiness — PostgreSQL + Redis connectivity |
+| GET | `/health/ready` | Readiness — PostgreSQL, Redis, worker (when required), scheduler (when enabled), alerting |
+| GET | `/metrics` | Prometheus metrics (no auth; scrape target) |
 
 ---
 
@@ -37,8 +38,7 @@ Single shared key configured via `API_KEY` environment variable (minimum 16 char
 | PATCH | `/api/v1/sources/{id}` | Update source |
 | DELETE | `/api/v1/sources/{id}` | Delete source (local/staging guard) |
 
-**Source types with collectors:** `reddit`, `rss`  
-**Enum only (no collector):** `hn_algolia`
+**Source types with collectors:** `reddit`, `rss`, `hn_algolia`
 
 ### RSS Feeds
 
@@ -183,7 +183,7 @@ Each agent exposes a consistent REST pattern:
 | PATCH | `/api/v1/scheduler/jobs/{job_name}` | Enable/disable job |
 | POST | `/api/v1/scheduler/run/{job_name}` | Manual trigger (202) |
 
-**Scheduler job names:** `collect`, `classify`, `generate_opportunities`, `research_agents`, `executive_ranking`, `venture_report`
+**Scheduler job names:** `nightly_pipeline` (enqueues ARQ `run_pipeline`)
 
 ---
 

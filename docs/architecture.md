@@ -32,7 +32,10 @@ AI Venture Studio is a **monorepo** with a FastAPI backend, ARQ workers, APSched
 │  │ + repos      │  │              │  │ + ranking/scoring eng. │ │
 │  └──────────────┘  └──────────────┘  └────────────────────────┘ │
 │  ┌──────────────┐                                               │
-│  │ Collectors   │  Reddit, RSS (registry pattern)                │
+│  │ Collectors   │  Reddit, RSS, HN Algolia (registry pattern)  │
+│  └──────────────┘                                               │
+│  ┌──────────────┐                                               │
+│  │ Observability│  Metrics, tracing, alerting, readiness       │
 │  └──────────────┘                                               │
 └───────┬─────────────────────┬───────────────────────────────────┘
         │                     │
@@ -203,7 +206,7 @@ ARQ workers process 15 registered jobs. See [workers.md](./workers.md).
 
 Pipeline orchestrator can run synchronously in API/worker or enqueue via `background=true`.
 
-Scheduler enqueues discrete stage jobs on daily cron — **not** a single chained `run_pipeline`. See [scheduler.md](./scheduler.md).
+Scheduler enqueues a single orchestrated `run_pipeline` job nightly (02:00 UTC). Legacy per-stage cron slots were removed. See [scheduler.md](./scheduler.md) and [scheduler-orchestrator.md](./scheduler-orchestrator.md).
 
 ---
 
@@ -219,8 +222,9 @@ Registered at startup in `app/core/lifespan.py` and worker startup in `app/worke
 
 - `reddit` → `RedditCollectorService`
 - `rss` → `RssCollectorService`
+- `hn_algolia` → `HnAlgoliaCollectorService`
 
-Collectors are pure HTTP/parsing — no LLM.
+Collectors are pure HTTP/parsing — no LLM. See [collection-hn-algolia.md](./collection-hn-algolia.md).
 
 ---
 
@@ -242,7 +246,10 @@ Trigger → POST /pipeline/run?background=true → ARQ enqueue run_pipeline
 
 ### Scheduled automation
 ```
-APScheduler cron → scheduler/jobs.py → enqueue_stage() → ARQ → Worker → stage execution
+APScheduler cron (nightly_pipeline @ 02:00 UTC)
+  → scheduler/jobs.py → enqueue run_pipeline
+  → ARQ Worker → PipelineOrchestrator.run_pipeline()
+    → 14 stages via PipelineStageExecutor
 ```
 
 ---
@@ -303,10 +310,10 @@ No multi-user RBAC. Single shared API key for solo-founder deployment.
 | Workers | `api/tests/workers/` | |
 | Agents | `api/tests/{agent}/` | |
 | Collectors | `api/tests/collectors/` | |
-| Dashboard, approval, budget, scheduler | respective dirs | |
-| **Total** | `api/tests/` | **230 tests** |
+| Dashboard, approval, budget, scheduler, observability, deployment | respective dirs | |
+| **Total** | `api/tests/` | **250+ tests** |
 
-No automated tests under `web/`. CI runs backend tests only.
+Frontend unit tests: Vitest in `web/` (see `web-quality.yml`). CI runs backend and frontend workflows.
 
 ---
 
@@ -314,11 +321,11 @@ No automated tests under `web/`. CI runs backend tests only.
 
 | Hook | Location | Use |
 |------|----------|-----|
-| Collector registry | `collection/collectors/registry.py` | Add HN or new sources |
+| Collector registry | `collection/collectors/registry.py` | Add new source types |
 | Pipeline stages | `db/enums.py` PipelineStage | New stages |
 | ARQ jobs | `workers/jobs.py` STAGE_JOB_MAP | Register stage workers |
 | LangGraph agents | `app/agents/` | New research agents |
-| Scheduler jobs | `scheduler/definitions.py` | New cron slots |
+| Scheduler jobs | `scheduler/definitions.py` | Add or adjust cron slots |
 
 ---
 

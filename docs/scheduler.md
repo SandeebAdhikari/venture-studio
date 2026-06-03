@@ -2,9 +2,11 @@
 
 ## Overview
 
-The scheduler runs the Venture Studio pipeline automatically on a daily cron. It does **not** execute heavy work in-process — each scheduled slot **enqueues ARQ background jobs** that workers process asynchronously.
+The scheduler triggers **one orchestrated nightly pipeline run** via ARQ. It does not execute heavy work in-process — the cron slot enqueues a single `run_pipeline` job that the worker executes through `PipelineOrchestrator`.
 
-This keeps the API responsive, reuses existing worker retries/locks/monitoring, and separates *when* work starts from *how* it runs.
+This keeps the API responsive, produces one unified `pipeline_runs` record per night, and reuses orchestrator locking, retries, metrics, and tracing.
+
+See [scheduler-orchestrator.md](./scheduler-orchestrator.md) for the remediation history (previously: fragmented per-stage cron jobs).
 
 ## Architecture
 
@@ -22,39 +24,34 @@ flowchart LR
 
     subgraph Workers
         ARQ[ARQ Worker]
-        EX[PipelineStageExecutor]
+        ORCH[PipelineOrchestrator]
     end
 
-    APS -->|"cron trigger"| SJ
+    APS -->|"cron 02:00 UTC"| SJ
     SJ -->|"scheduler_runs history"| PG
-    SJ -->|"enqueue_stage()"| Redis
+    SJ -->|"enqueue_pipeline(SCHEDULED)"| Redis
     Redis --> ARQ
-    ARQ --> EX
-    ARQ -->|"job:status:{id}"| Redis
+    ARQ --> ORCH
+    ORCH -->|"14 stages"| PG
 ```
 
-### Daily default schedule (UTC)
+### Default schedule (UTC)
 
-| Time | Scheduler job | ARQ jobs enqueued |
-|------|---------------|------------------|
-| 02:00 | `collect` | `collect` |
-| 03:00 | `classify` | `classify` |
-| 04:00 | `generate_opportunities` | `generate_opportunities` |
-| — | *(not scheduled)* | `score` — run via full pipeline or `POST /api/v1/jobs/score` |
-| 05:00 | `research_agents` | `market_research`, `competitor_analysis`, `customer_research`, `revenue_validation`, `product_strategy`, `go_to_market`, `growth_strategy`, `human_proxy` |
-| 06:00 | `executive_ranking` | `executive_ranking` |
-| 07:00 | `venture_report` | `venture_report` |
+| Time | Scheduler job | ARQ job enqueued | Pipeline trigger |
+|------|---------------|------------------|------------------|
+| 02:00 | `nightly_pipeline` | `run_pipeline` | `PipelineTrigger.SCHEDULED` |
 
-Schedules are stored in `scheduler_jobs` and registered with APScheduler on startup. Disabled jobs are omitted from the cron registry.
+Legacy per-stage scheduler jobs (`collect`, `classify`, …) may remain in the database for history but are **disabled** on `ensure_defaults()`. They are not registered with APScheduler.
 
 ## Components
 
 | Module | Role |
 |--------|------|
+| `app/scheduler/definitions.py` | `nightly_pipeline` job definition (`PIPELINE_ARQ_JOB = "run_pipeline"`) |
+| `app/scheduler/jobs.py` | Enqueue orchestrator or (legacy) stage jobs; run history |
 | `app/scheduler/scheduler.py` | APScheduler lifecycle — start, shutdown, sync enable/disable |
-| `app/scheduler/jobs.py` | Job definitions, seed defaults, enqueue + history recording |
 | `app/services/scheduler.py` | API-facing scheduler service |
-| `app/repositories/scheduler_job.py` | Job configuration persistence |
+| `app/repositories/scheduler_job.py` | Job configuration; disables legacy jobs |
 | `app/repositories/scheduler_run.py` | Run history and failure tracking |
 | `app/api/v1/scheduler.py` | REST endpoints |
 
@@ -67,23 +64,27 @@ sequenceDiagram
     participant PG as PostgreSQL
     participant Redis
     participant Worker as ARQ Worker
+    participant Orch as PipelineOrchestrator
 
-    APS->>SJ: run_scheduled_job("collect")
+    APS->>SJ: run_scheduled_job("nightly_pipeline")
     SJ->>PG: INSERT scheduler_runs (running)
-    SJ->>Redis: enqueue_job(collect)
+    SJ->>Redis: enqueue_job(run_pipeline, trigger=scheduled)
     SJ->>PG: UPDATE scheduler_runs (completed, arq_job_ids)
-    Worker->>Redis: dequeue collect
-    Worker->>PG: execute COLLECT stage
+    Worker->>Redis: dequeue run_pipeline
+    Worker->>Orch: run_pipeline()
+    Orch->>PG: pipeline_runs + stage_runs
     Worker->>Redis: job:status completed
 ```
 
 ### Manual trigger
 
-`POST /api/v1/scheduler/run/{job_name}` follows the same path with `trigger=manual`. Returns `202` with the scheduler run id and enqueued ARQ job ids.
+`POST /api/v1/scheduler/run/nightly_pipeline` follows the same enqueue path with `trigger=manual`. Returns `202` with the scheduler run id and ARQ job id.
+
+Legacy job names (`collect`, `classify`, …) return **422** — they are no longer valid scheduler jobs.
 
 ### Idempotency
 
-Each daily enqueue uses idempotency keys like `scheduler:collect:2026-06-03:collect` so duplicate cron firings or overlapping runs skip re-enqueue when a lock is held.
+Scheduled runs set `idempotency_key=scheduler:nightly_pipeline:{YYYY-MM-DD}` on the `run_pipeline` ARQ job to avoid duplicate enqueues the same day.
 
 ## Features
 
@@ -91,8 +92,7 @@ Each daily enqueue uses idempotency keys like `scheduler:collect:2026-06-03:coll
 
 - `PATCH /api/v1/scheduler/jobs/{job_name}` with `{ "enabled": false }`
 - Updates PostgreSQL and removes/pauses the APScheduler job
-- Disabled jobs reject manual triggers with `422`
-- Scheduled cron skips disabled jobs entirely
+- Disabled jobs reject scheduled triggers; manual triggers still allowed unless disabled
 
 ### Job history
 
@@ -100,20 +100,9 @@ Every scheduler invocation creates a row in `scheduler_runs`:
 
 - `trigger` — `scheduled` or `manual`
 - `status` — `pending`, `running`, `completed`, `failed`
-- `arq_job_ids` — linked ARQ jobs for downstream monitoring via `GET /api/v1/jobs/{id}`
+- `arq_job_ids` — linked ARQ jobs (one `run_pipeline` id for nightly)
+- `metadata.execution_mode` — `"orchestrator"` for nightly runs
 - `duration_ms`, `error`, `metadata`
-
-`GET /api/v1/scheduler/jobs` includes `last_run` and `failure_count` per job.
-
-### Failure tracking
-
-Failures are recorded when:
-
-- All ARQ enqueues fail → `status=failed`
-- Some enqueues fail → `status=completed` with `error` describing partial failures
-- Unexpected exceptions → `status=failed` with stack-derived message
-
-ARQ execution failures are tracked separately in Redis (`JobMonitor`) and via domain tables (signals, opportunities, reports, etc.).
 
 ## Configuration
 
@@ -128,42 +117,27 @@ Set `SCHEDULER_ENABLED=false` in tests or when running a scheduler-less API inst
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/scheduler/jobs` | List jobs with schedule, enabled state, last run, failure count |
-| PATCH | `/api/v1/scheduler/jobs/{job_name}` | Enable or disable a job |
-| POST | `/api/v1/scheduler/run/{job_name}` | Manually trigger a job (202) |
+| GET | `/api/v1/scheduler/jobs` | List jobs (expect `nightly_pipeline`) |
+| PATCH | `/api/v1/scheduler/jobs/{job_name}` | Enable or disable |
+| POST | `/api/v1/scheduler/run/{job_name}` | Manually trigger (202) |
 
 All endpoints require `X-API-Key`.
-
-## Database tables
-
-### `scheduler_jobs`
-
-Configured cron slots seeded on first access:
-
-- `job_name`, `display_name`, `description`
-- `schedule_hour`, `schedule_minute`
-- `enabled`
-
-### `scheduler_runs`
-
-Execution audit trail linked by `job_name` FK.
-
-Migration: `017_scheduler.py`
 
 ## Relationship to other systems
 
 | System | Relationship |
 |--------|--------------|
-| **ARQ workers** | Scheduler enqueues; workers execute |
-| **Pipeline orchestrator** | Independent — scheduler uses stage jobs, not `run_pipeline` |
-| **Redis JobMonitor** | Tracks ARQ job lifecycle (7-day TTL) |
-| **`pipeline_runs`** | Only populated by full orchestrator runs, not individual scheduled stages |
+| **ARQ workers** | Scheduler enqueues `run_pipeline`; worker runs `PipelineOrchestrator` |
+| **Pipeline orchestrator** | **Primary** scheduled path — one run, 14 stages, one `pipeline_runs` row |
+| **Manual stage jobs** | `POST /api/v1/jobs/{stage}` still available; not used by cron |
+| **Redis JobMonitor** | Tracks ARQ job lifecycle |
+| **Alerting** | Pipeline failures and scheduler-offline alerts via `app/observability/alerting/` |
 
 ## Running locally
 
 1. Start infrastructure: `docker compose up postgres redis worker`
 2. Start API (scheduler starts automatically unless disabled)
 3. List jobs: `curl -H "X-API-Key: $API_KEY" http://localhost:8000/api/v1/scheduler/jobs`
-4. Manual run: `curl -X POST -H "X-API-Key: $API_KEY" http://localhost:8000/api/v1/scheduler/run/collect`
+4. Manual run: `curl -X POST -H "X-API-Key: $API_KEY" http://localhost:8000/api/v1/scheduler/run/nightly_pipeline`
 
-Ensure at least one ARQ worker is running to process enqueued jobs.
+Ensure at least one ARQ worker is running. Full pipeline runs may exceed default `ARQ_JOB_TIMEOUT_SEC=600` — increase for production nightly runs.

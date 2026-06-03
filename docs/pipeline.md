@@ -40,7 +40,7 @@ Fetch new content from enabled sources and insert deduplicated `signals` with `p
 
 ### Implementation
 - Service: `ComplaintCollectionService` (`app/collection/service.py`)
-- Collectors: Reddit (`app/collectors/reddit/`), RSS (`app/collectors/rss/`)
+- Collectors: Reddit (`app/collectors/reddit/`), RSS (`app/collectors/rss/`), HN Algolia (`app/collectors/hn_algolia/`)
 - Registry: `app/collection/collectors/registry.py`
 
 ### Collectors
@@ -56,8 +56,12 @@ Fetch new content from enabled sources and insert deduplicated `signals` with `p
 - Managed feeds in `rss_feeds` table
 - Rate limit: Redis key `ratelimit:rss:{scope}`
 
-#### Not implemented
-- **HN Algolia** — `SourceType.HN_ALGOLIA` exists in enums but no collector is registered in `lifespan.py`
+#### HN Algolia
+- Algolia search API for Hacker News stories and comments
+- Config: query terms, tags, date range, result limits
+- Rate limit: Redis key `ratelimit:hn_algolia:{scope}`
+- Registered via `register_hn_algolia_collector()` in API lifespan and worker context
+- See [collection-hn-algolia.md](./collection-hn-algolia.md)
 
 ### Output
 - New `signals` rows

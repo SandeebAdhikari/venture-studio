@@ -1,6 +1,6 @@
 # AI Venture Studio
 
-An autonomous opportunity discovery and validation platform for solo founders. AI Venture Studio ingests public signals from Reddit and RSS feeds, classifies complaints, generates ranked business opportunities, runs eight research agents, produces executive rankings, and delivers venture recommendation reports — orchestrated by a 14-stage pipeline with background workers, daily scheduling, and a founder dashboard.
+An autonomous opportunity discovery and validation platform for solo founders. AI Venture Studio ingests public signals from Reddit, RSS feeds, and Hacker News (Algolia search), classifies complaints, generates ranked business opportunities, runs eight research agents, produces executive rankings, and delivers venture recommendation reports — orchestrated by a 14-stage pipeline with background workers, nightly scheduling, production observability, and a founder dashboard.
 
 ---
 
@@ -18,7 +18,7 @@ A solo founder reviews the dashboard daily (~30 minutes), approves rankings and 
 
 ### V1 Features
 
-- **Collection** — Reddit and RSS collectors with deduplication and rate limiting
+- **Collection** — Reddit, RSS, and HN Algolia collectors with deduplication and rate limiting
 - **Classification** — LangGraph agent extracts structured complaints from signals
 - **Opportunity Generation** — Pattern detection + LLM synthesis with evidence linkage
 - **Scoring** — Deterministic 0–100 scoring engine with dimension breakdown and history
@@ -38,36 +38,40 @@ A solo founder reviews the dashboard daily (~30 minutes), approves rankings and 
 
 ### Operational Features
 
-- **Pipeline Orchestrator** — 14-stage sequential execution with retries and audit trail
-- **Workers** — ARQ background jobs on Redis (15 registered jobs)
-- **Scheduler** — APScheduler daily cron slots enqueue stage jobs
+- **Pipeline Orchestrator** — 14-stage sequential execution with retries, audit trail, and unified `pipeline_runs`
+- **Workers** — ARQ background jobs on Redis (15 registered jobs: 14 stages + `run_pipeline`)
+- **Scheduler** — APScheduler nightly cron enqueues one orchestrated `run_pipeline` job (02:00 UTC)
+- **Observability** — Prometheus metrics (`GET /metrics`), request tracing, expanded readiness, alerting (logging/webhook/Slack)
+- **Deployment** — Docker entrypoint runs Alembic migrations and startup validation before Uvicorn
 - **Dashboard** — Next.js founder dashboard with 7 pages
 - **Approval Workflow** — Founder approve/reject/research for rankings and reports
 - **Budget Controls** — Daily LLM cap with 50/75/90% warnings
-- **CI/CD** — GitHub Actions: Ruff, pytest, migration validation, API Docker build, frontend typecheck/lint/test/build
+- **CI/CD** — GitHub Actions: Ruff, pytest, migration validation, API Docker compose-smoke, frontend typecheck/lint/test/build
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌─────────────────────────────┐
-│   Reddit     │     │  RSS Feeds   │     │     Next.js Dashboard       │
-│   Public API │     │              │     │     (web/ — BFF proxy)        │
-└──────┬───────┘     └──────┬───────┘     └──────────────┬──────────────┘
-       │                    │                              │
-       └────────┬───────────┘                              │ REST
-                ▼                                          ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────────┐
+│   Reddit     │  │  RSS Feeds   │  │  HN Algolia  │  │     Next.js Dashboard       │
+│   Public API │  │              │  │   Search     │  │     (web/ — BFF proxy)      │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────────────┬──────────────┘
+       │                 │                 │                         │ REST
+       └─────────────────┴─────────────────┘                         ▼
+                              ▼
        ┌────────────────────────────────────────────────────────────┐
        │                    FastAPI (api/)                          │
-       │  Pipeline Orchestrator · APScheduler · 25 REST routers     │
+       │  Pipeline Orchestrator · APScheduler · Observability       │
        └────────┬───────────────────────────────┬───────────────────┘
-                │ enqueue                      │
-                ▼                              ▼
+                │ enqueue run_pipeline          │
+                ▼                               ▼
        ┌──────────────┐              ┌─────────────────┐
        │    Redis     │◄─────────────│   ARQ Worker    │
-       │  ARQ + locks │              │  15 stage jobs  │
-       └──────────────┘              └────────┬────────┘
+       │  ARQ + locks │              │  orchestrator + │
+       └──────────────┘              │  orchestrator + │
+                                     │  stage handlers │
+                                     └────────┬────────┘
                                               │
                 ┌─────────────────────────────┼─────────────────┐
                 ▼                             ▼                 ▼
@@ -104,7 +108,7 @@ See [docs/architecture.md](docs/architecture.md) for full system design.
 
 ```
 Internet
-  → Collection (Reddit, RSS)
+  → Collection (Reddit, RSS, HN Algolia)
   → Classification (LangGraph)
   → Opportunity Generation (patterns + LangGraph)
   → Scoring (deterministic engine)
@@ -113,7 +117,7 @@ Internet
   → Venture Report (markdown + approval workflow)
 ```
 
-Daily automation runs stages at 02:00–07:00 UTC via APScheduler. Full pipeline also available on demand via `POST /api/v1/pipeline/run`.
+Nightly automation: APScheduler `nightly_pipeline` @ 02:00 UTC enqueues `run_pipeline` → full 14-stage orchestrator run. On-demand: `POST /api/v1/pipeline/run`.
 
 ---
 
@@ -136,7 +140,7 @@ docker compose up -d postgres redis
 cd api
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-alembic upgrade head
+python -m app.deployment.bootstrap --mode api --alembic-cwd .
 ```
 
 ---
@@ -180,7 +184,7 @@ alembic upgrade head
 PYTHONPATH=. pytest tests/ -q
 ```
 
-**230 tests** across collection, classification, opportunity generation, scoring, all agents, pipeline, workers, scheduler, dashboard, approval, and budget.
+**250+ tests** across collection (Reddit, RSS, HN Algolia), classification, opportunity generation, scoring, all agents, pipeline, workers, scheduler, observability, deployment bootstrap, dashboard, approval, and budget.
 
 Lint:
 
@@ -223,19 +227,21 @@ agent/
 │   ├── app/
 │   │   ├── agents/       # LangGraph agents (classification, opportunity, 8 research)
 │   │   ├── api/v1/       # REST routers (25 modules)
-│   │   ├── collectors/   # Reddit, RSS
+│   │   ├── collectors/   # Reddit, RSS, HN Algolia
+│   │   ├── deployment/   # Bootstrap (migrations, startup validation)
+│   │   ├── observability/ # Metrics, tracing, alerting
 │   │   ├── pipeline/     # Orchestrator + executor
 │   │   ├── ranking/      # Executive ranking engine
 │   │   ├── scoring/      # Opportunity scoring engine
 │   │   ├── workers/      # ARQ jobs
 │   │   └── scheduler/    # APScheduler
 │   ├── alembic/          # 19 database migrations
-│   └── tests/            # 230 pytest functions
+│   └── tests/            # 250+ pytest functions
 ├── web/                  # Next.js founder dashboard
-│   └── src/app/(founder)/  # 7 dashboard pages
+│   └── src/app/(founder)/  # 7 dashboard pages (+ Vitest unit tests)
 ├── docs/                 # Documentation
-├── docker-compose.yml    # postgres, redis, api, worker
-└── .github/workflows/    # CI/CD
+├── docker-compose.yml    # postgres, redis, api, worker (web optional — see deployment.md)
+└── .github/workflows/    # quality, test, deployment-check, web-quality, web-deployment-check
 ```
 
 ---
@@ -254,8 +260,12 @@ agent/
 | [docs/api-overview.md](docs/api-overview.md) | REST API reference |
 | [docs/dashboard.md](docs/dashboard.md) | Founder dashboard |
 | [docs/operations.md](docs/operations.md) | Runbook |
-| [docs/deployment.md](docs/deployment.md) | Deployment guide |
+| [docs/deployment.md](docs/deployment.md) | Deployment guide (auto-migrations, bootstrap) |
+| [docs/observability.md](docs/observability.md) | Metrics, tracing, readiness |
+| [docs/observability-alerting.md](docs/observability-alerting.md) | Production alerting |
+| [docs/collection-hn-algolia.md](docs/collection-hn-algolia.md) | HN Algolia collector |
 | [docs/ci.md](docs/ci.md) | GitHub Actions |
+| [docs/documentation-audit.md](docs/documentation-audit.md) | Documentation accuracy audit (remediation #5) |
 
 ---
 
@@ -267,19 +277,19 @@ Core platform is functional: full 14-stage pipeline, 8 research agents, founder 
 
 ### Known Gaps
 
-- HN Algolia collector (enum exists, not implemented)
-- Score stage omitted from default scheduler cron
-- No automated E2E tests (frontend or backend)
-- No production observability stack (Prometheus, Sentry)
-- Web service not in docker-compose
+- No automated E2E tests (frontend or full-stack BFF ↔ API)
+- Web service not in default docker-compose (intentional — see [docs/deployment.md](docs/deployment.md))
+- Dashboard BFF has no user authentication (solo-founder / network-restricted deployment)
+- Multi-replica APScheduler requires external cron or single scheduler-enabled API instance
+- Default ARQ job timeout (600s) may be tight for full nightly pipeline runs
 
 ### Future Phases
 
-- Additional source collectors (HN Algolia, Twitter/X with API compliance)
-- Scheduler HA / external cron for multi-replica API
+- Additional source collectors (Twitter/X with API compliance)
 - OpenAPI codegen for dashboard types
-- Email/Slack notifications for pipeline failures
 - Multi-user auth when moving beyond solo-founder deployment
+- Full-stack CI smoke (web container + live API)
+- Worker Docker healthcheck
 
 ---
 

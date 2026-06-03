@@ -83,7 +83,7 @@ See [docs/api-overview.md](../docs/api-overview.md) for the complete reference.
 | Human Proxy | `/api/v1/human-proxy` | Evaluations, founder profiles |
 | Executive Ranking | `/api/v1/executive-ranking` | Generate, current, history |
 | Pipeline | `/api/v1/pipeline` | Run full pipeline, list runs |
-| Jobs | `/api/v1/jobs` | Enqueue stage jobs, poll status |
+| Jobs | `/api/v1/jobs` | Enqueue pipeline or individual stage jobs, poll status |
 | Scheduler | `/api/v1/scheduler` | Cron jobs, enable/disable, manual run |
 | Dashboard | `/api/v1/dashboard` | Summary, opportunities, pipeline, reports |
 | Approvals | `/api/v1/approvals` | List, approve, reject, research |
@@ -166,7 +166,7 @@ alembic upgrade head
 PYTHONPATH=. pytest tests/ -q
 ```
 
-**230 tests.** CI runs Ruff, pytest, migration validation, and Docker build on every push/PR to `main`.
+**250+ tests.** CI runs Ruff, pytest, migration validation, API Docker compose-smoke, and frontend quality workflows on every push/PR to `main`.
 
 See [docs/ci.md](../docs/ci.md).
 
@@ -191,7 +191,9 @@ alembic downgrade -1
 api/app/
 ├── agents/           # LangGraph agents + deterministic engines
 ├── api/v1/           # REST routers (25 modules)
-├── collectors/       # Reddit, RSS
+├── collectors/       # Reddit, RSS, HN Algolia
+├── deployment/       # Bootstrap (migrations, startup validation)
+├── observability/    # Metrics, tracing, alerting
 ├── collection/       # ComplaintCollectionService
 ├── pipeline/         # Orchestrator, executor
 ├── ranking/          # Executive ranking engine

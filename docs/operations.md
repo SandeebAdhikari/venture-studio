@@ -47,12 +47,12 @@ Valid stage jobs: `collect`, `classify`, `generate_opportunities`, `score`, `mar
 
 ### Scheduled automation
 
-With `SCHEDULER_ENABLED=true` (default), APScheduler runs daily UTC jobs automatically. Ensure at least one ARQ worker is running.
+With `SCHEDULER_ENABLED=true` (default), APScheduler enqueues one orchestrated pipeline nightly at 02:00 UTC. Ensure at least one ARQ worker is running.
 
 Manual scheduler trigger:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/scheduler/run/collect \
+curl -X POST http://localhost:8000/api/v1/scheduler/run/nightly_pipeline \
   -H "X-API-Key: $API_KEY"
 ```
 
@@ -103,21 +103,16 @@ See [workers.md](./workers.md).
 
 ### Default schedule (UTC)
 
-| Time | Job | ARQ stage(s) |
-|------|-----|--------------|
-| 02:00 | collect | collect |
-| 03:00 | classify | classify |
-| 04:00 | generate_opportunities | generate_opportunities |
-| 05:00 | research_agents | 8 research agents |
-| 06:00 | executive_ranking | executive_ranking |
-| 07:00 | venture_report | venture_report |
+| Time | Scheduler job | ARQ job |
+|------|---------------|---------|
+| 02:00 | `nightly_pipeline` | `run_pipeline` (full 14-stage orchestrator) |
 
-**Note:** `score` is not in the default schedule. Run via full pipeline or `POST /jobs/score`.
+Per-stage cron slots were removed. The orchestrator runs all stages including `score`. Manual per-stage execution: `POST /api/v1/jobs/{stage}`.
 
 ### Enable/disable jobs
 
 ```bash
-curl -X PATCH http://localhost:8000/api/v1/scheduler/jobs/collect \
+curl -X PATCH http://localhost:8000/api/v1/scheduler/jobs/nightly_pipeline \
   -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"enabled": false}'
@@ -245,7 +240,7 @@ alembic upgrade head
 PYTHONPATH=. pytest tests/ -q
 ```
 
-230 tests. CI runs with `SCHEDULER_ENABLED=false` and `REQUIRE_FOUNDER_APPROVAL=false`.
+250+ backend tests plus frontend Vitest. CI runs with `SCHEDULER_ENABLED=false` and `REQUIRE_FOUNDER_APPROVAL=false`.
 
 ---
 

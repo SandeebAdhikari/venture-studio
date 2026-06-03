@@ -13,7 +13,7 @@ How the Venture Studio coordinates 14 pipeline stages across the orchestrator, A
 | Constants | `app/pipeline/constants.py` | `PIPELINE_STAGE_ORDER`, lock key |
 | Enqueue | `app/workers/enqueue.py` | API-side ARQ job publishing |
 | Jobs | `app/workers/jobs.py` | ARQ job function definitions |
-| Scheduler | `app/scheduler/` | Daily cron → enqueue stage jobs |
+| Scheduler | `app/scheduler/` | Nightly cron → enqueue `run_pipeline` |
 
 ---
 
@@ -42,7 +42,7 @@ POST /api/v1/jobs/run-pipeline
 
 Poll status: `GET /api/v1/jobs/{job_id}`
 
-### 3. Single stage (manual or scheduled)
+### 3. Single stage (manual only)
 
 ```
 POST /api/v1/jobs/{job_name}
@@ -52,11 +52,18 @@ POST /api/v1/jobs/{job_name}
 
 Valid job names: `collect`, `classify`, `generate_opportunities`, `score`, `market_research`, `competitor_analysis`, `customer_research`, `revenue_validation`, `product_strategy`, `go_to_market`, `growth_strategy`, `human_proxy`, `executive_ranking`, `venture_report`
 
-### 4. Scheduled daily automation
+**Not used by the scheduler.** Cron enqueues mode 2 via `nightly_pipeline` only.
 
-APScheduler fires cron triggers that enqueue ARQ jobs independently (not via orchestrator). See [scheduler.md](./scheduler.md).
+### 4. Scheduled nightly automation
 
-**Important:** Scheduled runs do **not** create a single `pipeline_runs` record spanning all stages. Only mode 1/2 creates unified pipeline run audit trails.
+```
+APScheduler 02:00 UTC → nightly_pipeline
+→ enqueue_pipeline(trigger=SCHEDULED)
+→ ARQ run_pipeline → PipelineOrchestrator.run_pipeline()
+→ One pipeline_runs record, 14 stages in canonical order (including score)
+```
+
+See [scheduler.md](./scheduler.md).
 
 ---
 
@@ -79,7 +86,7 @@ sequenceDiagram
         Exec-->>Orch: StageExecutionResult
         Orch->>PG: UPDATE stage_runs (metrics, status)
         alt stage failed after retries
-            Orch->>Orch: continue or abort based on policy
+            Orch->>Orch: stop or continue based on stop_on_failure
         end
     end
     Orch->>PG: UPDATE pipeline_runs (completed|partial|failed)
@@ -92,6 +99,7 @@ sequenceDiagram
 - Per-stage retries: `PIPELINE_MAX_RETRIES` (default 3)
 - Backoff: `PIPELINE_RETRY_BACKOFF_SEC` (default 0.5s)
 - Failed stage recorded in `pipeline_stage_runs.error_detail`
+- Pipeline failure alerts via `app/observability/alerting/`
 
 ### Locking
 
@@ -106,10 +114,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    API[FastAPI] -->|enqueue| Redis[(Redis ARQ Queue)]
-    Scheduler[APScheduler] -->|enqueue_stage| Redis
+    API[FastAPI] -->|enqueue_pipeline| Redis[(Redis ARQ Queue)]
+    Scheduler[APScheduler nightly_pipeline] -->|enqueue_pipeline| Redis
     Redis --> Worker[ARQ Worker]
-    Worker --> Exec[PipelineStageExecutor]
+    Worker --> Orch[PipelineOrchestrator]
+    Orch --> Exec[PipelineStageExecutor]
     Exec --> Services[Service Layer]
     Services --> PG[(PostgreSQL)]
     Worker -->|job:status| Redis
@@ -118,9 +127,10 @@ flowchart LR
 Worker entrypoint: `arq app.workers.worker.WorkerSettings`
 
 Worker startup (`app/workers/context.py`):
-- Opens async DB session pool
-- Registers Reddit and RSS collectors
-- Initializes `JobMonitor` for Redis status tracking
+
+- Registers Reddit, RSS, and HN Algolia collectors
+- Initializes observability and alerting
+- Refreshes worker heartbeats
 
 15 registered functions in `WorkerSettings.functions` (14 stage jobs + `run_pipeline`).
 
@@ -128,22 +138,13 @@ Worker startup (`app/workers/context.py`):
 
 ## Scheduler Integration
 
-The scheduler **does not** call `PipelineOrchestrator`. It enqueues individual ARQ jobs on a daily UTC schedule:
+The scheduler **calls** the orchestrator indirectly by enqueuing `run_pipeline`:
 
-| UTC | Scheduler job | ARQ jobs |
-|-----|---------------|----------|
-| 02:00 | collect | collect |
-| 03:00 | classify | classify |
-| 04:00 | generate_opportunities | generate_opportunities |
-| 05:00 | research_agents | 8 research agent jobs |
-| 06:00 | executive_ranking | executive_ranking |
-| 07:00 | venture_report | venture_report |
+| UTC | Scheduler job | ARQ job | Result |
+|-----|---------------|---------|--------|
+| 02:00 | `nightly_pipeline` | `run_pipeline` | Full 14-stage `pipeline_runs` record |
 
-**Gap:** `score` is not scheduled. Use full pipeline run or `POST /jobs/score`.
-
-Each scheduler invocation records a `scheduler_runs` row with linked `arq_job_ids`.
-
-Manual trigger: `POST /api/v1/scheduler/run/{job_name}`
+Manual trigger: `POST /api/v1/scheduler/run/nightly_pipeline`
 
 ---
 
@@ -182,6 +183,7 @@ Passed via `PipelineRunRequest.options` or job `options` JSON:
 | `score_limit` | Max opportunities to score |
 | `top_n` | Top N for ranking/report stages |
 | `founder_profile_id` | Human proxy / ranking context |
+| `stop_on_failure` | Abort remaining stages after first failure |
 
 ---
 
@@ -193,7 +195,9 @@ Passed via `PipelineRunRequest.options` or job `options` JSON:
 | `GET /api/v1/pipeline/runs/{id}` | Run detail + stage runs |
 | `GET /api/v1/dashboard/pipeline` | Dashboard-optimized view |
 | `GET /api/v1/jobs/{job_id}` | ARQ job status from Redis |
-| `GET /api/v1/scheduler/jobs` | Cron config + last run + failure count |
+| `GET /api/v1/scheduler/jobs` | Cron config + last run |
+| `GET /metrics` | Prometheus metrics |
+| `GET /api/v1/dashboard/metrics` | JSON observability snapshot |
 
 ---
 
@@ -204,8 +208,8 @@ Passed via `PipelineRunRequest.options` or job `options` JSON:
 | Worker crash mid-pipeline | Lock TTL expires; inspect `pipeline_runs`; re-trigger |
 | Stage partial failure | Run status `partial`; re-run single stage via `/jobs/{name}` |
 | Budget exceeded | Agent stage fails; check `GET /budget`; increase cap or wait for UTC reset |
-| Scheduler enqueue failure | Check `scheduler_runs.error`; manual `POST /scheduler/run/{name}` |
-| All collectors failed | COLLECT stage fails; check `sources.last_error` |
+| Scheduler enqueue failure | Check `scheduler_runs.error`; manual `POST /scheduler/run/nightly_pipeline` |
+| All collectors failed | COLLECT stage fails; check `sources.last_error` and alerting |
 
 ---
 
