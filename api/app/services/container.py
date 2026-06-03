@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.classification.service import ComplaintClassificationService
 from app.agents.competitor_intelligence.service import CompetitorIntelligenceService
 from app.agents.customer_research.service import CustomerResearchService
+from app.agents.go_to_market.service import GoToMarketService
 from app.agents.market_research.service import MarketResearchService
 from app.agents.product_strategy.service import ProductStrategyService
 from app.agents.revenue_validation.service import RevenueValidationService
@@ -37,6 +38,7 @@ class ServiceContainer:
         self.customer_research = CustomerResearchService(repos)
         self.revenue_validation = RevenueValidationService(repos)
         self.product_strategy = ProductStrategyService(repos)
+        self.go_to_market = GoToMarketService(repos)
 
 
 def get_services(session: AsyncSession) -> ServiceContainer:

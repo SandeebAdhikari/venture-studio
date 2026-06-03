@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.db.models.market_brief import MarketBrief
     from app.db.models.opportunity_score import OpportunityScore
     from app.db.models.report import Report
+    from app.db.models.gtm_plan import GTMPlan
     from app.db.models.product_strategy import ProductStrategy
     from app.db.models.revenue_validation import RevenueValidation
 
@@ -79,6 +80,11 @@ class Opportunity(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         back_populates="opportunity",
         cascade="all, delete-orphan",
         order_by="desc(ProductStrategy.created_at)",
+    )
+    gtm_plans: Mapped[list[GTMPlan]] = relationship(
+        back_populates="opportunity",
+        cascade="all, delete-orphan",
+        order_by="desc(GTMPlan.created_at)",
     )
 
     __table_args__ = (

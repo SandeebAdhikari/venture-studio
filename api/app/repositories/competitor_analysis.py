@@ -52,7 +52,7 @@ class CompetitorAnalysisRepository(BaseRepository[CompetitorAnalysis]):
         result = await self.session.execute(
             select(CompetitorAnalysis)
             .where(CompetitorAnalysis.opportunity_id == opportunity_id)
-            .order_by(CompetitorAnalysis.created_at.desc())
+            .order_by(CompetitorAnalysis.version.desc(), CompetitorAnalysis.created_at.desc())
         )
         return list(result.scalars().all())
 

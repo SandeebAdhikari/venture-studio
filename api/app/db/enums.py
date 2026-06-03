@@ -87,3 +87,9 @@ class ProductStrategyStatus(str, enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
+
+
+class GTMPlanStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"

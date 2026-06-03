@@ -8,6 +8,7 @@ from app.db.enums import (
     CategoryKind,
     CompetitorAnalysisStatus,
     CustomerResearchStatus,
+    GTMPlanStatus,
     MarketResearchStatus,
     ProductStrategyStatus,
     ReportStatus,
@@ -79,3 +80,12 @@ class ProductStrategyListFilter(BaseModel):
     status: ProductStrategyStatus | None = None
     is_current: bool | None = None
     min_total_weeks: int | None = Field(default=None, ge=1)
+
+
+class GTMPlanListFilter(BaseModel):
+    opportunity_id: UUID | None = None
+    status: GTMPlanStatus | None = None
+    is_current: bool | None = None
+    min_confidence_score: int | None = Field(default=None, ge=0, le=100)
+    max_estimated_cac_usd: float | None = Field(default=None, ge=0)
+    min_gtm_readiness_score: int | None = Field(default=None, ge=0, le=100)
