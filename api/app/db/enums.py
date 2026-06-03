@@ -99,3 +99,16 @@ class GrowthEvaluationStatus(str, enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
+
+
+class HumanProxyEvaluationStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class FounderRecommendation(str, enum.Enum):
+    PURSUE = "pursue"
+    EXPLORE = "explore"
+    DEFER = "defer"
+    PASS = "pass"

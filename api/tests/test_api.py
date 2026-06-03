@@ -1349,3 +1349,144 @@ async def test_generate_and_retrieve_growth_evaluation(
     assert len(detail["evidence"]) == 3
     assert detail["evaluation_metrics"]["growth_readiness_score"] > 0
     assert detail["seo_potential"]["score"] == 74
+
+
+@pytest.mark.asyncio
+async def test_generate_and_retrieve_human_proxy_evaluation(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: AsyncSession,
+) -> None:
+    from app.agents.human_proxy.mock_client import (
+        MockHumanProxyLLMClient,
+        default_mock_human_proxy_output,
+    )
+    from app.agents.human_proxy.service import HumanProxyService
+    from app.api.deps import get_service_container
+    from app.config import get_settings
+    from app.main import app
+    from app.repositories import get_repositories
+    from app.schemas.complaint import ComplaintCreate
+    from app.schemas.opportunity import OpportunityCreate
+    from app.services.container import ServiceContainer
+
+    quote = "Staff scheduling breaks every week when employees swap shifts without notice."
+
+    category = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.COMPLAINT_CATEGORY.value,
+            Category.code == "workflow",
+        )
+    )
+    domain = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value,
+            Category.code == "saas_b2b",
+        )
+    )
+    persona = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value,
+            Category.code == "ops_admin",
+        )
+    )
+    assert category is not None and domain is not None and persona is not None
+
+    source = Source(
+        name=f"api-human-proxy-source-{uuid4()}",
+        source_type=SourceType.REDDIT.value,
+        config={"subreddit": "SaaS"},
+        enabled=True,
+    )
+    db_session.add(source)
+    await db_session.flush()
+
+    signal = Signal(
+        source_id=source.id,
+        external_id=f"ext-{uuid4()}",
+        url="https://example.com/posts/human-proxy-test",
+        title="Scheduling pain",
+        body=quote,
+        processing_status="classified",
+    )
+    db_session.add(signal)
+    await db_session.flush()
+
+    repos = get_repositories(db_session)
+    complaint = await repos.complaints.create(
+        ComplaintCreate(
+            signal_id=signal.id,
+            category_id=category.id,
+            domain_id=domain.id,
+            persona_id=persona.id,
+            summary="Staff scheduling chaos from last-minute shift changes.",
+            verbatim_quote=quote,
+            severity=4,
+            product_mentions=["ShiftApp"],
+            llm_model="mock-classifier",
+            llm_confidence=0.9,
+        )
+    )
+    opportunity = await repos.opportunities.create(
+        OpportunityCreate(
+            title="Staff Scheduling SaaS",
+            problem_statement="Teams struggle with staff scheduling coordination.",
+            target_user="Ops admins managing hourly teams",
+            frequency_signal="Repeated staff scheduling complaints.",
+            existing_alternatives="ShiftApp mentioned in evidence.",
+            gap="No lightweight staff scheduling workflow.",
+            confidence_score=0.88,
+            llm_model="mock-generator",
+            complaint_ids=[complaint.id],
+        )
+    )
+
+    async def override_services() -> ServiceContainer:
+        container = ServiceContainer(repos)
+        settings = get_settings()
+        container.human_proxy = HumanProxyService(
+            repos,
+            settings,
+            llm_client=MockHumanProxyLLMClient([default_mock_human_proxy_output()]),
+        )
+        return container
+
+    app.dependency_overrides[get_service_container] = override_services
+
+    profiles_response = await client.get(
+        "/api/v1/human-proxy/founder-profiles",
+        headers=auth_headers,
+    )
+    assert profiles_response.status_code == 200
+    profiles = profiles_response.json()
+    assert len(profiles) >= 1
+    assert any(profile["is_default"] for profile in profiles)
+
+    generate_response = await client.post(
+        f"/api/v1/human-proxy/opportunities/{opportunity.id}/generate",
+        headers=auth_headers,
+    )
+    assert generate_response.status_code == 201
+    body = generate_response.json()
+    assert body["status"] == "completed"
+    assert body["draft"]["founder_fit_score"] == 82
+    assert body["draft"]["feasibility_score"] == 76
+    assert body["draft"]["recommendation"] == "pursue"
+
+    evaluation_id = body["human_proxy_evaluation_id"]
+    get_response = await client.get(
+        f"/api/v1/human-proxy/{evaluation_id}",
+        headers=auth_headers,
+    )
+    assert get_response.status_code == 200
+    detail = get_response.json()
+    assert detail["opportunity_id"] == str(opportunity.id)
+    assert len(detail["evidence"]) == 3
+    assert detail["evaluation_metrics"]["ranking_score"] > 0
+
+    history_response = await client.get(
+        f"/api/v1/human-proxy/opportunities/{opportunity.id}/history",
+        headers=auth_headers,
+    )
+    assert history_response.status_code == 200
+    assert len(history_response.json()) == 1

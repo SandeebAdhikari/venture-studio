@@ -19,8 +19,10 @@ if TYPE_CHECKING:
     from app.db.models.market_brief import MarketBrief
     from app.db.models.opportunity_score import OpportunityScore
     from app.db.models.report import Report
+    from app.db.models.founder_profile import FounderProfile
     from app.db.models.growth_evaluation import GrowthEvaluation
     from app.db.models.gtm_plan import GTMPlan
+    from app.db.models.human_proxy_evaluation import HumanProxyEvaluation
     from app.db.models.product_strategy import ProductStrategy
     from app.db.models.revenue_validation import RevenueValidation
 
@@ -91,6 +93,11 @@ class Opportunity(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         back_populates="opportunity",
         cascade="all, delete-orphan",
         order_by="desc(GrowthEvaluation.created_at)",
+    )
+    human_proxy_evaluations: Mapped[list[HumanProxyEvaluation]] = relationship(
+        back_populates="opportunity",
+        cascade="all, delete-orphan",
+        order_by="desc(HumanProxyEvaluation.created_at)",
     )
 
     __table_args__ = (

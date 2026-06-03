@@ -8,8 +8,10 @@ from app.db.enums import (
     CategoryKind,
     CompetitorAnalysisStatus,
     CustomerResearchStatus,
+    FounderRecommendation,
     GTMPlanStatus,
     GrowthEvaluationStatus,
+    HumanProxyEvaluationStatus,
     MarketResearchStatus,
     ProductStrategyStatus,
     ReportStatus,
@@ -100,3 +102,14 @@ class GrowthEvaluationListFilter(BaseModel):
     min_scalability_score: int | None = Field(default=None, ge=0, le=100)
     max_risk_score: int | None = Field(default=None, ge=0, le=100)
     min_growth_readiness_score: int | None = Field(default=None, ge=0, le=100)
+
+
+class HumanProxyEvaluationListFilter(BaseModel):
+    opportunity_id: UUID | None = None
+    founder_profile_id: UUID | None = None
+    status: HumanProxyEvaluationStatus | None = None
+    is_current: bool | None = None
+    min_founder_fit_score: int | None = Field(default=None, ge=0, le=100)
+    min_feasibility_score: int | None = Field(default=None, ge=0, le=100)
+    recommendation: FounderRecommendation | None = None
+    min_ranking_score: int | None = Field(default=None, ge=0, le=100)
