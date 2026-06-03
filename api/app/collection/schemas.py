@@ -59,3 +59,40 @@ class NormalizedComplaint(BaseModel):
     combined_text: str
     content_hash: str
     normalizer_version: str
+
+
+SourceCollectionStatus = Literal["completed", "skipped", "failed"]
+
+
+class SourceCollectionResult(BaseModel):
+    source_id: UUID
+    source_name: str
+    status: SourceCollectionStatus
+    inserted: int = 0
+    duplicates: int = 0
+    skipped: int = 0
+    reason: str | None = None
+    error: str | None = None
+
+
+class SourceCollectionBatchResult(BaseModel):
+    sources_found: int = 0
+    sources_processed: int = 0
+    sources_skipped: int = 0
+    sources_failed: int = 0
+    inserted: int = 0
+    duplicates: int = 0
+    skipped: int = 0
+    items: list[SourceCollectionResult] = Field(default_factory=list)
+
+    def add(self, item: SourceCollectionResult) -> None:
+        self.items.append(item)
+        if item.status == "completed":
+            self.sources_processed += 1
+            self.inserted += item.inserted
+            self.duplicates += item.duplicates
+            self.skipped += item.skipped
+        elif item.status == "skipped":
+            self.sources_skipped += 1
+        elif item.status == "failed":
+            self.sources_failed += 1

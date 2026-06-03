@@ -27,6 +27,7 @@ from app.services.source import SourceService
 
 class ServiceContainer:
     def __init__(self, repos: RepositoryContainer) -> None:
+        self._repos = repos
         self.sources = SourceService(repos)
         self.collection = ComplaintCollectionService(repos)
         self.classification = ComplaintClassificationService(repos)
@@ -47,6 +48,14 @@ class ServiceContainer:
         self.go_to_market = GoToMarketService(repos)
         self.growth_strategy = GrowthStrategyService(repos)
         self.human_proxy = HumanProxyService(repos)
+
+    @property
+    def pipeline(self) -> "PipelineOrchestrator":
+        if not hasattr(self, "_pipeline"):
+            from app.pipeline.orchestrator import PipelineOrchestrator
+
+            self._pipeline = PipelineOrchestrator(self._repos, self)
+        return self._pipeline
 
 
 def get_services(session: AsyncSession) -> ServiceContainer:

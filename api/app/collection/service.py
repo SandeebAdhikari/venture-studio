@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from app.collection.collectors.registry import get_collector
 from app.collection.deduplicator import DuplicateDetector
 from app.collection.filters import CollectionFilter
 from app.collection.normalizer import TextNormalizer
@@ -12,6 +13,8 @@ from app.collection.schemas import (
     CollectionResult,
     RawComplaintBatch,
     RawComplaintInput,
+    SourceCollectionBatchResult,
+    SourceCollectionResult,
 )
 from app.collection.settings import CollectionSettings
 from app.exceptions import NotFoundError, ValidationError
@@ -66,6 +69,77 @@ class ComplaintCollectionService:
             },
         )
         return collection_result
+
+    async def collect_enabled_sources(self) -> SourceCollectionBatchResult:
+        """Run registered collectors for all enabled sources."""
+        sources = await self._repos.sources.list_enabled()
+        batch_result = SourceCollectionBatchResult(sources_found=len(sources))
+
+        for source in sources:
+            collector = get_collector(source.source_type)
+            if collector is None:
+                batch_result.add(
+                    SourceCollectionResult(
+                        source_id=source.id,
+                        source_name=source.name,
+                        status="skipped",
+                        reason="no_collector_registered",
+                    )
+                )
+                continue
+
+            try:
+                items = await collector.fetch(source)
+                if not items:
+                    batch_result.add(
+                        SourceCollectionResult(
+                            source_id=source.id,
+                            source_name=source.name,
+                            status="completed",
+                            reason="no_new_items",
+                        )
+                    )
+                    continue
+
+                result = await self.ingest_batch(
+                    RawComplaintBatch(source_id=source.id, items=items)
+                )
+                batch_result.add(
+                    SourceCollectionResult(
+                        source_id=source.id,
+                        source_name=source.name,
+                        status="completed",
+                        inserted=result.inserted,
+                        duplicates=result.duplicates,
+                        skipped=result.skipped,
+                    )
+                )
+            except Exception as exc:
+                await self._repos.sources.record_collection_error(source.id, str(exc))
+                logger.exception(
+                    "Source collection failed",
+                    extra={"source_id": str(source.id), "source_name": source.name},
+                )
+                batch_result.add(
+                    SourceCollectionResult(
+                        source_id=source.id,
+                        source_name=source.name,
+                        status="failed",
+                        error=str(exc),
+                    )
+                )
+
+        logger.info(
+            "Source collection batch complete",
+            extra={
+                "sources_found": batch_result.sources_found,
+                "sources_processed": batch_result.sources_processed,
+                "sources_skipped": batch_result.sources_skipped,
+                "sources_failed": batch_result.sources_failed,
+                "inserted": batch_result.inserted,
+            },
+        )
+        return batch_result
 
     async def _process_item(
         self,

@@ -118,3 +118,46 @@ class FounderRecommendation(str, enum.Enum):
 class ExecutiveRankingStatus(str, enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class PipelineStage(str, enum.Enum):
+    """Ordered stages in the full Venture Studio pipeline."""
+
+    COLLECT = "collect"
+    CLASSIFY = "classify"
+    GENERATE_OPPORTUNITIES = "generate_opportunities"
+    SCORE_OPPORTUNITIES = "score_opportunities"
+    MARKET_RESEARCH = "market_research"
+    COMPETITOR_ANALYSIS = "competitor_analysis"
+    CUSTOMER_RESEARCH = "customer_research"
+    REVENUE_VALIDATION = "revenue_validation"
+    PRODUCT_STRATEGY = "product_strategy"
+    GO_TO_MARKET = "go_to_market"
+    GROWTH_STRATEGY = "growth_strategy"
+    HUMAN_PROXY = "human_proxy"
+    EXECUTIVE_RANKING = "executive_ranking"
+    VENTURE_REPORT = "venture_report"
+
+
+class PipelineRunStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    PARTIAL = "partial"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class PipelineStageStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    RETRYING = "retrying"
+
+
+class PipelineTrigger(str, enum.Enum):
+    API = "api"
+    MANUAL = "manual"
+    SCHEDULED = "scheduled"

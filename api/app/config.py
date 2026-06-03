@@ -135,6 +135,14 @@ class Settings(BaseSettings):
     # Executive ranking engine
     executive_ranking_top_n: int = 5
 
+    # Pipeline orchestrator
+    pipeline_max_retries: int = 3
+    pipeline_retry_backoff_sec: float = 0.5
+    pipeline_lock_ttl_sec: int = 3600
+    pipeline_classify_max_batches: int = 100
+    pipeline_score_limit: int = 1000
+    pipeline_lock_key: str = "lock:pipeline:run"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

@@ -125,6 +125,14 @@ class SignalRepository(BaseRepository[Signal]):
         )
         return list(result.scalars().all())
 
+    async def count_pending(self) -> int:
+        result = await self.session.scalar(
+            select(func.count())
+            .select_from(Signal)
+            .where(Signal.processing_status == SignalProcessingStatus.PENDING.value)
+        )
+        return int(result or 0)
+
     async def set_processing_status(
         self,
         signal: Signal,

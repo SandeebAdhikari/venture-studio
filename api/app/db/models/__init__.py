@@ -26,6 +26,8 @@ from app.db.models.product_strategy import ProductStrategy
 from app.db.models.product_strategy_evidence import ProductStrategyEvidence
 from app.db.models.revenue_validation import RevenueValidation
 from app.db.models.revenue_validation_evidence import RevenueValidationEvidence
+from app.db.models.pipeline_run import PipelineRun
+from app.db.models.pipeline_stage_run import PipelineStageRun
 from app.db.models.signal import Signal
 from app.db.models.source import Source
 
@@ -49,7 +51,8 @@ __all__ = [
     "LLMCall",
     "MarketBrief",
     "Opportunity",
-    "OpportunityScore",
+    "PipelineRun",
+    "PipelineStageRun",
     "ProductStrategy",
     "ProductStrategyEvidence",
     "Report",

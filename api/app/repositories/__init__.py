@@ -13,6 +13,7 @@ from app.repositories.human_proxy_evaluation import HumanProxyEvaluationReposito
 from app.repositories.gtm_plan import GTMPlanRepository
 from app.repositories.llm_call import LLMCallRepository
 from app.repositories.market_brief import MarketBriefRepository
+from app.repositories.pipeline import PipelineRepository
 from app.repositories.opportunity import OpportunityRepository
 from app.repositories.opportunity_score import OpportunityScoreRepository
 from app.repositories.product_strategy import ProductStrategyRepository
@@ -41,6 +42,7 @@ class RepositoryContainer:
         self.llm_calls = LLMCallRepository(session)
         self.market_briefs = MarketBriefRepository(session)
         self.opportunities = OpportunityRepository(session)
+        self.pipelines = PipelineRepository(session)
         self.opportunity_scores = OpportunityScoreRepository(session)
         self.product_strategies = ProductStrategyRepository(session)
         self.reports = ReportRepository(session)
@@ -63,6 +65,7 @@ __all__ = [
     "GTMPlanRepository",
     "LLMCallRepository",
     "MarketBriefRepository",
+    "PipelineRepository",
     "OpportunityRepository",
     "OpportunityScoreRepository",
     "ProductStrategyRepository",
