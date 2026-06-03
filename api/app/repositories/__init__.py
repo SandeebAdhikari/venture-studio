@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.category import CategoryRepository
 from app.repositories.complaint import ComplaintRepository
 from app.repositories.llm_call import LLMCallRepository
+from app.repositories.market_brief import MarketBriefRepository
 from app.repositories.opportunity import OpportunityRepository
 from app.repositories.opportunity_score import OpportunityScoreRepository
 from app.repositories.report import ReportRepository
@@ -22,6 +23,7 @@ class RepositoryContainer:
         self.categories = CategoryRepository(session)
         self.complaints = ComplaintRepository(session)
         self.llm_calls = LLMCallRepository(session)
+        self.market_briefs = MarketBriefRepository(session)
         self.opportunities = OpportunityRepository(session)
         self.opportunity_scores = OpportunityScoreRepository(session)
         self.reports = ReportRepository(session)
@@ -35,6 +37,7 @@ __all__ = [
     "CategoryRepository",
     "ComplaintRepository",
     "LLMCallRepository",
+    "MarketBriefRepository",
     "OpportunityRepository",
     "OpportunityScoreRepository",
     "ReportRepository",

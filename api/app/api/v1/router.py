@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import verify_api_key
-from app.api.v1 import categories, complaints, health, opportunities, reports, sources
+from app.api.v1 import categories, complaints, health, market_research, opportunities, reports, sources
 
 router = APIRouter()
 
@@ -17,5 +17,6 @@ protected_router.include_router(categories.router)
 protected_router.include_router(complaints.router)
 protected_router.include_router(opportunities.router)
 protected_router.include_router(reports.router)
+protected_router.include_router(market_research.router)
 
 router.include_router(protected_router)

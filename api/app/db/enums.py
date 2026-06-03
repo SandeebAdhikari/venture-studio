@@ -42,3 +42,9 @@ class ReportStatus(str, enum.Enum):
     DRAFT = "draft"
     PUBLISHED = "published"
     ARCHIVED = "archived"
+
+
+class MarketResearchStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"

@@ -83,6 +83,12 @@ class Settings(BaseSettings):
     executive_report_top_n: int = 10
     executive_report_key_complaints_limit: int = 5
 
+    # Market research agent
+    research_model: str = "gpt-4o-mini"
+    research_max_retries: int = 2
+    research_temperature: float = 0.3
+    research_batch_size: int = 20
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
