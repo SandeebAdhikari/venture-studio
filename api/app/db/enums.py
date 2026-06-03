@@ -75,3 +75,9 @@ class CustomerEvidenceType(str, enum.Enum):
     REVIEW = "review"
     FORUM = "forum"
     SOCIAL = "social"
+
+
+class RevenueValidationStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"

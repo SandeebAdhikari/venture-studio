@@ -6,6 +6,7 @@ from app.agents.classification.service import ComplaintClassificationService
 from app.agents.competitor_intelligence.service import CompetitorIntelligenceService
 from app.agents.customer_research.service import CustomerResearchService
 from app.agents.market_research.service import MarketResearchService
+from app.agents.revenue_validation.service import RevenueValidationService
 from app.agents.opportunity.service import OpportunityGeneratorService
 from app.collection.service import ComplaintCollectionService
 from app.repositories import RepositoryContainer, get_repositories
@@ -33,6 +34,7 @@ class ServiceContainer:
         self.market_research = MarketResearchService(repos)
         self.competitor_intelligence = CompetitorIntelligenceService(repos)
         self.customer_research = CustomerResearchService(repos)
+        self.revenue_validation = RevenueValidationService(repos)
 
 
 def get_services(session: AsyncSession) -> ServiceContainer:

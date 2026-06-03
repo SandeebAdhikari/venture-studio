@@ -11,6 +11,7 @@ from app.db.enums import (
     MarketResearchStatus,
     ReportStatus,
     ReportType,
+    RevenueValidationStatus,
     ReviewStatus,
     SourceType,
 )
@@ -63,3 +64,10 @@ class CustomerResearchListFilter(BaseModel):
     is_current: bool | None = None
     min_pain_score: int | None = Field(default=None, ge=0, le=100)
     cares_verdict: str | None = Field(default=None, max_length=20)
+
+
+class RevenueValidationListFilter(BaseModel):
+    opportunity_id: UUID | None = None
+    status: RevenueValidationStatus | None = None
+    is_current: bool | None = None
+    min_willingness_to_pay: int | None = Field(default=None, ge=0, le=100)

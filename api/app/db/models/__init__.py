@@ -13,6 +13,8 @@ from app.db.models.market_brief import MarketBrief
 from app.db.models.opportunity import Opportunity
 from app.db.models.opportunity_score import OpportunityScore
 from app.db.models.report import Report
+from app.db.models.revenue_validation import RevenueValidation
+from app.db.models.revenue_validation_evidence import RevenueValidationEvidence
 from app.db.models.signal import Signal
 from app.db.models.source import Source
 
@@ -29,6 +31,8 @@ __all__ = [
     "Opportunity",
     "OpportunityScore",
     "Report",
+    "RevenueValidation",
+    "RevenueValidationEvidence",
     "Signal",
     "Source",
     "opportunity_complaints",

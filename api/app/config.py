@@ -101,6 +101,12 @@ class Settings(BaseSettings):
     customer_research_temperature: float = 0.2
     customer_research_batch_size: int = 20
 
+    # Revenue validation agent
+    revenue_validation_model: str = "gpt-4o-mini"
+    revenue_validation_max_retries: int = 2
+    revenue_validation_temperature: float = 0.2
+    revenue_validation_batch_size: int = 20
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

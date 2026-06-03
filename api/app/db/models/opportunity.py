@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.db.models.market_brief import MarketBrief
     from app.db.models.opportunity_score import OpportunityScore
     from app.db.models.report import Report
+    from app.db.models.revenue_validation import RevenueValidation
 
 
 class Opportunity(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -67,6 +68,11 @@ class Opportunity(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         back_populates="opportunity",
         cascade="all, delete-orphan",
         order_by="desc(CustomerResearch.created_at)",
+    )
+    revenue_validations: Mapped[list[RevenueValidation]] = relationship(
+        back_populates="opportunity",
+        cascade="all, delete-orphan",
+        order_by="desc(RevenueValidation.created_at)",
     )
 
     __table_args__ = (
