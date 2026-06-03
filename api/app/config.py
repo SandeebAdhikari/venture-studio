@@ -172,6 +172,35 @@ class Settings(BaseSettings):
     worker_heartbeat_ttl_sec: int = 90
     worker_heartbeat_key_prefix: str = "observability:worker:"
 
+    # Alerting
+    alerting_enabled: bool = True
+    alert_providers: str = "logging"
+    alert_webhook_url: str = ""
+    alert_slack_webhook_url: str = ""
+    alert_webhook_timeout_sec: float = 10.0
+    alert_default_cooldown_sec: int = 300
+    alert_worker_offline_cooldown_sec: int = 600
+    alert_scheduler_offline_cooldown_sec: int = 600
+    alert_pipeline_failure_cooldown_sec: int = 300
+    alert_pipeline_stall_cooldown_sec: int = 900
+    alert_queue_backlog_cooldown_sec: int = 600
+    alert_llm_budget_cooldown_sec: int = 3600
+    alert_collector_failure_cooldown_sec: int = 1800
+    alert_cooldown_key_prefix: str = "observability:alert:cooldown:"
+    alert_monitor_enabled: bool = True
+    alert_monitor_interval_sec: int = 60
+    alert_worker_monitor_enabled: bool = True
+    alert_queue_backlog_threshold: int = 10
+    alert_queue_growth_delta: int = 5
+    alert_pipeline_stall_sec: int = 3600
+    alert_collector_failure_threshold: int = 3
+    alert_collector_failure_window_sec: int = 3600
+    alert_collector_failure_key_prefix: str = "observability:alert:collector_failures:"
+
+    @property
+    def alert_provider_names(self) -> list[str]:
+        return [name.strip().lower() for name in self.alert_providers.split(",") if name.strip()]
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

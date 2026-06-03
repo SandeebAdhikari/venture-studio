@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from app.config import Settings
 from app.logging import get_logger
+from app.observability.alerting.status import check_alerting_status
 from app.scheduler.scheduler import get_scheduler
 
 if TYPE_CHECKING:
@@ -104,6 +105,11 @@ def check_scheduler_availability(settings: Settings) -> ReadinessCheckResult:
         return ReadinessCheckResult(name="scheduler", status="error", detail=str(exc))
 
 
+def check_alerting_readiness(settings: Settings) -> ReadinessCheckResult:
+    result = check_alerting_status(settings)
+    return ReadinessCheckResult(name=result.name, status=result.status, detail=result.detail)
+
+
 async def run_readiness_checks(
     *,
     db: AsyncSession,
@@ -115,4 +121,5 @@ async def run_readiness_checks(
         await check_redis(redis),
         await check_worker_availability(redis, settings),
         check_scheduler_availability(settings),
+        check_alerting_readiness(settings),
     ]

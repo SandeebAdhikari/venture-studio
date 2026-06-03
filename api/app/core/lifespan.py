@@ -29,6 +29,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db(settings)
     init_redis(settings)
 
+    from app.db.session import get_session_factory
+    from app.observability.alerting.engine import init_alerting
+    from app.observability.alerting.monitor import start_alert_monitor, stop_alert_monitor
+    from app.redis.client import get_redis_client
+
+    init_alerting(settings, redis=get_redis_client())
+    start_alert_monitor(get_redis_client(), get_session_factory(), settings)
+
     from app.collectors.hn_algolia import register_hn_algolia_collector
     from app.collectors.reddit import register_reddit_collector
     from app.collectors.rss import register_rss_collector
@@ -44,6 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     logger.info("Shutting down application")
+    await stop_alert_monitor()
     from app.scheduler.scheduler import shutdown_scheduler
 
     await shutdown_scheduler()

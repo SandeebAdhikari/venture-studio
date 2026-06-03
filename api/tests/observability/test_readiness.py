@@ -67,5 +67,6 @@ async def test_run_readiness_checks_returns_all_components() -> None:
         "redis",
         "worker",
         "scheduler",
+        "alerting",
     ]
     assert all(item.status == "ok" for item in results)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.config import Settings, get_settings
 from app.logging import get_logger
+from app.observability.alerting.engine import init_alerting
 from app.observability.errors import init_error_tracking
 from app.observability.metrics import configure_metrics
 from app.observability.tracing import init_tracing
@@ -21,6 +22,12 @@ def init_observability(settings: Settings | None = None) -> None:
     configure_metrics(resolved)
     init_tracing(resolved)
     init_error_tracking(resolved)
+    try:
+        from app.redis.client import get_redis_client
+
+        init_alerting(resolved, redis=get_redis_client())
+    except RuntimeError:
+        init_alerting(resolved)
     _initialized = True
     logger.info(
         "Observability initialized",
@@ -28,5 +35,6 @@ def init_observability(settings: Settings | None = None) -> None:
             "metrics_enabled": resolved.observability_metrics_enabled,
             "tracing_provider": resolved.observability_tracing_provider,
             "error_tracking_provider": resolved.observability_error_tracking_provider,
+            "alerting_enabled": resolved.alerting_enabled,
         },
     )

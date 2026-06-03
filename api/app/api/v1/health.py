@@ -46,7 +46,7 @@ async def liveness() -> HealthResponse:
     summary="Readiness probe",
     description=(
         "Verifies PostgreSQL, Redis, worker availability (when required), "
-        "and scheduler availability (when enabled)."
+        "scheduler availability (when enabled), and alerting subsystem status."
     ),
     responses={
         status.HTTP_503_SERVICE_UNAVAILABLE: {

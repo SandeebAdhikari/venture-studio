@@ -1,6 +1,6 @@
 # Observability documentation
 
-Production observability for the AI Venture Studio API covers metrics, tracing, error tracking, and expanded health checks. Alerting is intentionally out of scope for this layer.
+Production observability for the AI Venture Studio API covers metrics, tracing, error tracking, expanded health checks, and production alerting. See [observability-alerting.md](./observability-alerting.md) for alert routing and configuration.
 
 ## Architecture
 
@@ -165,6 +165,5 @@ cd api && pytest tests/observability -q
 
 ## Out of scope
 
-- Alerting rules and notification routing (PagerDuty, Slack, etc.)
 - Grafana dashboard JSON (use Prometheus + dashboard metrics API as inputs)
 - Log aggregation backend setup (logs remain JSON via existing logging config)

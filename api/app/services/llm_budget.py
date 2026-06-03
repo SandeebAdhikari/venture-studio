@@ -170,6 +170,11 @@ class LLMBudgetService:
                 f"budget ${self.daily_budget_usd:.2f}"
             )
             logger.warning(message, extra={"graph_name": graph_name, "projected_usd": projected})
+            await self._emit_budget_alert(
+                spent_usd=usage["spent_usd"],
+                threshold_pct=100,
+                graph_name=graph_name,
+            )
             raise BudgetExceededError(
                 message,
                 spent_usd=usage["spent_usd"],
@@ -213,6 +218,29 @@ class LLMBudgetService:
                     "budget_usd": self.daily_budget_usd,
                 },
             )
+            await self._emit_budget_alert(
+                spent_usd=spent_usd,
+                threshold_pct=threshold,
+            )
+
+    async def _emit_budget_alert(
+        self,
+        *,
+        spent_usd: float,
+        threshold_pct: int | None = None,
+        graph_name: str | None = None,
+    ) -> None:
+        try:
+            from app.observability.alerting.checks import alert_llm_budget_exhausted
+
+            await alert_llm_budget_exhausted(
+                spent_usd=spent_usd,
+                budget_usd=self.daily_budget_usd,
+                threshold_pct=threshold_pct,
+                graph_name=graph_name,
+            )
+        except Exception:
+            logger.warning("Failed to emit LLM budget alert", exc_info=True)
 
     @staticmethod
     def _build_warnings(utilization_pct: float, alerts: list[Any]) -> list[dict[str, Any]]:

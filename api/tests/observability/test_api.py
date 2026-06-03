@@ -19,6 +19,7 @@ async def test_readiness_endpoint_reports_all_checks(client: AsyncClient, monkey
             ReadinessCheckResult("redis", "ok"),
             ReadinessCheckResult("worker", "ok", "not required"),
             ReadinessCheckResult("scheduler", "ok", "disabled"),
+            ReadinessCheckResult("alerting", "ok", "providers=[logging]"),
         ]
 
     monkeypatch.setattr(
@@ -29,7 +30,7 @@ async def test_readiness_endpoint_reports_all_checks(client: AsyncClient, monkey
     response = await client.get("/health/ready")
     assert response.status_code == 200
     check_names = {item["name"] for item in response.json()["checks"]}
-    assert check_names == {"postgresql", "redis", "worker", "scheduler"}
+    assert check_names == {"postgresql", "redis", "worker", "scheduler", "alerting"}
 
 
 @pytest.mark.asyncio

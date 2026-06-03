@@ -196,6 +196,16 @@ class PipelineOrchestrator:
                 trigger=trigger.value,
             )
 
+            if final_status.value in {"failed", "partial"}:
+                from app.observability.alerting.checks import alert_pipeline_failure
+
+                await alert_pipeline_failure(
+                    pipeline_run_id=run.id,
+                    status=final_status.value,
+                    trigger=trigger.value,
+                    error_summary=first_error,
+                )
+
             refreshed = await self._repos.pipelines.get_by_id_with_stages(run.id)
             assert refreshed is not None
 

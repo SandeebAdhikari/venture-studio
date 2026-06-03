@@ -96,6 +96,7 @@ class ComplaintCollectionService:
             try:
                 items = await collector.fetch(source)
                 if not items:
+                    await self._record_collector_success(source.id)
                     record_metrics().record_collector_run(
                         source_type=source.source_type,
                         status="completed",
@@ -113,6 +114,7 @@ class ComplaintCollectionService:
                 result = await self.ingest_batch(
                     RawComplaintBatch(source_id=source.id, items=items)
                 )
+                await self._record_collector_success(source.id)
                 record_metrics().record_collector_run(
                     source_type=source.source_type,
                     status="completed",
@@ -139,6 +141,12 @@ class ComplaintCollectionService:
                     status="failed",
                 )
                 await self._repos.sources.record_collection_error(source.id, str(exc))
+                await self._maybe_alert_collector_failure(
+                    source_id=source.id,
+                    source_name=source.name,
+                    source_type=source.source_type,
+                    error=str(exc),
+                )
                 logger.exception(
                     "Source collection failed",
                     extra={"source_id": str(source.id), "source_name": source.name},
@@ -163,6 +171,45 @@ class ComplaintCollectionService:
             },
         )
         return batch_result
+
+    async def _record_collector_success(self, source_id: UUID) -> None:
+        try:
+            from app.config import get_settings
+            from app.observability.alerting.collector_tracker import CollectorFailureTracker
+            from app.redis.client import get_redis_client
+
+            tracker = CollectorFailureTracker(get_redis_client(), get_settings())
+            await tracker.record_success(source_id)
+        except Exception:
+            logger.debug("Collector success tracking skipped", exc_info=True)
+
+    async def _maybe_alert_collector_failure(
+        self,
+        *,
+        source_id: UUID,
+        source_name: str,
+        source_type: str,
+        error: str,
+    ) -> None:
+        try:
+            from app.config import get_settings
+            from app.observability.alerting.checks import alert_collector_repeated_failure
+            from app.observability.alerting.collector_tracker import CollectorFailureTracker
+            from app.redis.client import get_redis_client
+
+            settings = get_settings()
+            tracker = CollectorFailureTracker(get_redis_client(), settings)
+            count = await tracker.record_failure(source_id)
+            if count >= settings.alert_collector_failure_threshold:
+                await alert_collector_repeated_failure(
+                    source_id=source_id,
+                    source_name=source_name,
+                    source_type=source_type,
+                    failure_count=count,
+                    last_error=error,
+                )
+        except Exception:
+            logger.debug("Collector failure alerting skipped", exc_info=True)
 
     async def _process_item(
         self,
