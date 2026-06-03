@@ -152,6 +152,10 @@ class Settings(BaseSettings):
     arq_queue_name: str = "arq:queue"
     arq_job_lock_ttl_sec: int = 3600
 
+    # APScheduler
+    scheduler_enabled: bool = True
+    scheduler_timezone: str = "UTC"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

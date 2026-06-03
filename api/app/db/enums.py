@@ -172,3 +172,15 @@ class PipelineTrigger(str, enum.Enum):
     API = "api"
     MANUAL = "manual"
     SCHEDULED = "scheduled"
+
+
+class SchedulerTrigger(str, enum.Enum):
+    SCHEDULED = "scheduled"
+    MANUAL = "manual"
+
+
+class SchedulerRunStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"

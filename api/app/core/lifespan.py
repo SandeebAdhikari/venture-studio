@@ -33,8 +33,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     register_reddit_collector()
     register_rss_collector()
 
+    from app.scheduler.scheduler import start_scheduler
+
+    await start_scheduler()
+
     yield
 
     logger.info("Shutting down application")
+    from app.scheduler.scheduler import shutdown_scheduler
+
+    await shutdown_scheduler()
     await close_redis()
     await close_db()

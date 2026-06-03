@@ -13,6 +13,14 @@ from app.redis.client import init_redis
 from app.workers.enqueue import close_arq_pool
 
 
+@pytest.fixture(autouse=True)
+def _disable_scheduler(monkeypatch):
+    monkeypatch.setenv("SCHEDULER_ENABLED", "false")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 @pytest.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     settings = get_settings()

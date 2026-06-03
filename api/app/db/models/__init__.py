@@ -29,6 +29,8 @@ from app.db.models.revenue_validation import RevenueValidation
 from app.db.models.revenue_validation_evidence import RevenueValidationEvidence
 from app.db.models.pipeline_run import PipelineRun
 from app.db.models.pipeline_stage_run import PipelineStageRun
+from app.db.models.scheduler_job import SchedulerJob
+from app.db.models.scheduler_run import SchedulerRun
 from app.db.models.signal import Signal
 from app.db.models.source import Source
 
@@ -60,6 +62,8 @@ __all__ = [
     "RssFeed",
     "RevenueValidation",
     "RevenueValidationEvidence",
+    "SchedulerJob",
+    "SchedulerRun",
     "Signal",
     "Source",
     "opportunity_complaints",
