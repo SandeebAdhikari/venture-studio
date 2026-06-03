@@ -27,6 +27,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db(settings)
     init_redis(settings)
 
+    from app.collectors.reddit import register_reddit_collector
+
+    register_reddit_collector()
+
     yield
 
     logger.info("Shutting down application")
