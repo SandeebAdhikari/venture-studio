@@ -1,11 +1,13 @@
 """Complaint repository."""
 
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.db.models.associations import opportunity_complaints
 from app.db.models.category import Category
 from app.db.models.complaint import Complaint
 from app.db.models.signal import Signal
@@ -147,3 +149,27 @@ class ComplaintRepository(BaseRepository[Complaint]):
         if category is None or domain is None or persona is None:
             return None
         return category, domain, persona
+
+    async def list_unlinked_for_generation(
+        self,
+        *,
+        window_days: int = 30,
+        limit: int = 500,
+    ) -> list[Complaint]:
+        cutoff = datetime.now(UTC) - timedelta(days=window_days)
+        linked_ids = select(opportunity_complaints.c.complaint_id)
+        result = await self.session.execute(
+            select(Complaint)
+            .options(
+                selectinload(Complaint.category),
+                selectinload(Complaint.domain),
+                selectinload(Complaint.persona),
+            )
+            .where(
+                Complaint.created_at >= cutoff,
+                Complaint.id.not_in(linked_ids),
+            )
+            .order_by(Complaint.created_at.asc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())

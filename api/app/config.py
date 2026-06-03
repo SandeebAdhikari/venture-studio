@@ -68,6 +68,14 @@ class Settings(BaseSettings):
     classification_max_retries: int = 2
     classification_temperature: float = 0.0
 
+    # LLM / opportunity generation
+    generation_model: str = "gpt-4o-mini"
+    generation_max_retries: int = 2
+    generation_temperature: float = 0.2
+    generation_batch_size: int = 500
+    min_opportunity_confidence: float = 0.4
+    min_avg_severity: float = 2.0
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

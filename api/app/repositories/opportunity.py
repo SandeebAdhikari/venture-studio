@@ -1,5 +1,6 @@
 """Opportunity repository."""
 
+import re
 from uuid import UUID
 
 from sqlalchemy import delete, func, insert, select
@@ -151,3 +152,15 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         await self.session.flush()
         await self.session.refresh(entity)
         return entity
+
+    async def exists_similar_title(self, topic: str) -> bool:
+        normalized = re.sub(r"[^a-z0-9]+", " ", topic.lower()).strip()
+        if not normalized:
+            return False
+
+        result = await self.session.execute(select(Opportunity.title))
+        for (title,) in result.all():
+            existing = re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+            if normalized in existing or existing in normalized:
+                return True
+        return False

@@ -67,6 +67,19 @@ from app.collection.service import ComplaintCollectionService
 
 Dedup layers: `(source_id, external_id)`, canonical URL, normalized content hash.
 
+## Opportunity Generator
+
+Classified complaints are analyzed for recurring topics via `OpportunityGeneratorService`.
+Each eligible pattern produces an opportunity brief with supporting complaints, confidence
+score, and explanation (stored in `problem_statement` and `opportunity_scores.scoring_notes`).
+
+```python
+# services.generation.generate(limit=500)
+```
+
+Pattern detection groups complaints by repeated phrases in summaries (min cluster size 3).
+No market research — synthesis uses complaint evidence only.
+
 ## Classification Agent
 
 Pending signals are classified via `ComplaintClassificationService` using a LangGraph
