@@ -20,7 +20,6 @@ async def test_webhook_provider_posts_payload() -> None:
         alert_webhook_url="https://hooks.example/alerts",
         alert_webhook_timeout_sec=5.0,
     )
-    provider = WebhookAlertProvider(settings)
     alert = Alert(
         alert_type=AlertType.QUEUE_BACKLOG_GROWTH,
         severity=AlertSeverity.WARNING,
@@ -34,14 +33,9 @@ async def test_webhook_provider_posts_payload() -> None:
     mock_response.raise_for_status = MagicMock()
     mock_client = AsyncMock()
     mock_client.post = AsyncMock(return_value=mock_response)
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
+    provider = WebhookAlertProvider(settings, client=mock_client)
 
-    with patch(
-        "app.observability.alerting.providers.webhook.httpx.AsyncClient",
-        return_value=mock_client,
-    ):
-        await provider.send(alert)
+    await provider.send(alert)
 
     mock_client.post.assert_awaited_once()
     args, kwargs = mock_client.post.await_args

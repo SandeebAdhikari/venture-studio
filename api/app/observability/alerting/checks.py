@@ -167,6 +167,22 @@ async def alert_llm_budget_exhausted(
     )
 
 
+async def send_test_alert(*, engine: AlertEngine | None = None) -> bool:
+    """Send a test alert through configured providers (bypasses cooldown)."""
+    engine = engine or get_alert_engine()
+    return await engine.fire(
+        Alert(
+            alert_type=AlertType.WORKER_OFFLINE,
+            severity=AlertSeverity.INFO,
+            title="Alert delivery test",
+            message="Test alert from AI Venture Studio alerting subsystem",
+            dedup_key="test-delivery",
+            context={"test": True, "source": "test_delivery"},
+        ),
+        skip_cooldown=True,
+    )
+
+
 async def alert_collector_repeated_failure(
     *,
     source_id: UUID,

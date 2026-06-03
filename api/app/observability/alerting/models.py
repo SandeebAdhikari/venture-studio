@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -44,5 +45,6 @@ class Alert(BaseModel):
             "title": self.title,
             "message": self.message,
             "dedup_key": self.dedup_key,
+            "fired_at": datetime.now(UTC).isoformat(),
             "context": self.context,
         }

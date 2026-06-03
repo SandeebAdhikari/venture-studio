@@ -28,6 +28,7 @@ from app.api.v1 import (
     scheduler,
     sources,
 )
+from app.api.v1 import alerting as alerting_routes
 
 router = APIRouter()
 
@@ -56,6 +57,7 @@ protected_router.include_router(pipeline.router)
 protected_router.include_router(approvals.router)
 protected_router.include_router(budget.router)
 protected_router.include_router(dashboard.router)
+protected_router.include_router(alerting_routes.router)
 protected_router.include_router(scheduler.router)
 protected_router.include_router(jobs.router)
 

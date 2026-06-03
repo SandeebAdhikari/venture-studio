@@ -177,7 +177,10 @@ class Settings(BaseSettings):
     alert_providers: str = "logging"
     alert_webhook_url: str = ""
     alert_slack_webhook_url: str = ""
+    alert_webhook_headers: str = ""
     alert_webhook_timeout_sec: float = 10.0
+    alert_failover_logging: bool = True
+    alert_validation_strict: bool = False
     alert_default_cooldown_sec: int = 300
     alert_worker_offline_cooldown_sec: int = 600
     alert_scheduler_offline_cooldown_sec: int = 600

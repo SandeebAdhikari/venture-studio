@@ -66,7 +66,13 @@ async def readiness(
         for item in results
     ]
 
-    all_ok = all(check.status == "ok" for check in checks)
+    def _check_passes(check: ReadinessCheck) -> bool:
+        if check.name == "alerting":
+            # Alerting is informational; warn/error do not fail overall readiness.
+            return check.status in {"ok", "warn", "error"}
+        return check.status == "ok"
+
+    all_ok = all(_check_passes(check) for check in checks)
     if not all_ok:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 

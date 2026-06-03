@@ -23,6 +23,7 @@ from app.observability.alerting.providers.email import EmailAlertProvider
 from app.observability.alerting.providers.logging_provider import LoggingAlertProvider
 from app.observability.alerting.providers.slack import SlackAlertProvider
 from app.observability.alerting.providers.webhook import WebhookAlertProvider
+from app.observability.alerting.validation import validate_alert_config
 
 if TYPE_CHECKING:
     from app.observability.alerting.providers.base import AlertProvider
@@ -45,21 +46,39 @@ def _default_cooldowns(settings: Settings) -> dict[AlertType, int]:
 
 
 def build_providers(settings: Settings) -> list[AlertProvider]:
+    validation = validate_alert_config(settings)
+    for warning in validation.warnings:
+        logger.warning("Alert config: %s", warning)
+    for error in validation.errors:
+        logger.error("Alert config: %s", error)
+
     providers: list[AlertProvider] = []
     for name in settings.alert_provider_names:
         if name == "logging":
             providers.append(LoggingAlertProvider())
-        elif name == "webhook" and settings.alert_webhook_url.strip():
-            providers.append(WebhookAlertProvider(settings))
-        elif name == "slack" and settings.alert_slack_webhook_url.strip():
-            providers.append(SlackAlertProvider(settings))
+        elif name == "webhook":
+            if "webhook" in validation.active_providers:
+                providers.append(WebhookAlertProvider(settings))
+            else:
+                logger.warning(
+                    "Alert provider 'webhook' skipped: configure ALERT_WEBHOOK_URL "
+                    "with a valid http(s) URL"
+                )
+        elif name == "slack":
+            if "slack" in validation.active_providers:
+                providers.append(SlackAlertProvider(settings))
+            else:
+                logger.warning(
+                    "Alert provider 'slack' skipped: configure ALERT_SLACK_WEBHOOK_URL "
+                    "with a valid Slack incoming webhook URL"
+                )
         elif name == "email":
             providers.append(EmailAlertProvider())
-        elif name in {"webhook", "slack"}:
-            logger.debug("Alert provider '%s' skipped: URL not configured", name)
         else:
             logger.warning("Unknown alert provider '%s'; skipping", name)
+
     if not providers:
+        logger.warning("No alert providers available; using logging fallback")
         providers.append(LoggingAlertProvider())
     return providers
 
@@ -76,6 +95,7 @@ class AlertEngine:
         self._providers = providers
         self._cooldown = cooldown
         self._cooldowns = _default_cooldowns(settings)
+        self._logging_fallback = LoggingAlertProvider()
 
     @property
     def enabled(self) -> bool:
@@ -90,14 +110,14 @@ class AlertEngine:
             return alert.cooldown_sec
         return self._cooldowns.get(alert.alert_type, self._settings.alert_default_cooldown_sec)
 
-    async def fire(self, alert: Alert) -> bool:
+    async def fire(self, alert: Alert, *, skip_cooldown: bool = False) -> bool:
         """Fire alert if not in cooldown. Returns True when delivered."""
         if not self.enabled:
             return False
 
         cooldown_sec = self.cooldown_for(alert)
         key = alert.cooldown_key
-        if await self._cooldown.is_suppressed(key, cooldown_sec):
+        if not skip_cooldown and await self._cooldown.is_suppressed(key, cooldown_sec):
             record_alert_suppressed(alert_type=alert.alert_type.value)
             return False
 
@@ -114,8 +134,29 @@ class AlertEngine:
                     exc_info=exc,
                 )
 
+        if (
+            not delivered
+            and self._settings.alert_failover_logging
+            and not any(provider.name == "logging" for provider in self._providers)
+        ):
+            try:
+                await self._logging_fallback.send(alert)
+                delivered = True
+                logger.info(
+                    "Alert delivered via logging failover",
+                    extra={"alert_type": alert.alert_type.value},
+                )
+            except Exception as exc:
+                record_provider_error(provider=self._logging_fallback.name)
+                logger.warning(
+                    "Alert logging failover failed",
+                    extra={"alert_type": alert.alert_type.value},
+                    exc_info=exc,
+                )
+
         if delivered:
-            await self._cooldown.mark_fired(key, cooldown_sec)
+            if not skip_cooldown:
+                await self._cooldown.mark_fired(key, cooldown_sec)
             record_alert_fired(
                 alert_type=alert.alert_type.value,
                 severity=alert.severity.value,

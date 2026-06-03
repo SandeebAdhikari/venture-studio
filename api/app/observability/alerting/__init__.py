@@ -8,6 +8,7 @@ from app.observability.alerting.checks import (
     alert_queue_backlog_growth,
     alert_scheduler_offline,
     alert_worker_offline,
+    send_test_alert,
 )
 from app.observability.alerting.engine import AlertEngine, get_alert_engine, init_alerting
 from app.observability.alerting.models import Alert, AlertSeverity, AlertType
@@ -24,6 +25,7 @@ __all__ = [
     "alert_queue_backlog_growth",
     "alert_scheduler_offline",
     "alert_worker_offline",
+    "send_test_alert",
     "get_alert_engine",
     "init_alerting",
 ]

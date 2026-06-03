@@ -6,6 +6,7 @@ import httpx
 
 from app.config import Settings
 from app.observability.alerting.models import Alert, AlertSeverity
+from app.observability.alerting.validation import is_http_url
 
 
 class SlackAlertProvider:
@@ -15,6 +16,12 @@ class SlackAlertProvider:
         self._webhook_url = settings.alert_slack_webhook_url.strip()
         self._timeout_sec = settings.alert_webhook_timeout_sec
         self._client = client
+        if not self._webhook_url:
+            raise ValueError(
+                "ALERT_SLACK_WEBHOOK_URL is required when slack provider is enabled"
+            )
+        if not is_http_url(self._webhook_url):
+            raise ValueError("ALERT_SLACK_WEBHOOK_URL must be a valid http(s) URL")
 
     async def send(self, alert: Alert) -> None:
         emoji = {
