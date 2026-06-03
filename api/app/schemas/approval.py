@@ -1,6 +1,5 @@
 """Approval workflow schemas."""
 
-from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -11,7 +10,7 @@ from app.db.enums import (
     ApprovalStatus,
     ApprovalSubjectType,
 )
-from app.schemas.common import ORMModel, UUIDSchema
+from app.schemas.common import UUIDSchema
 
 
 class ApprovalDecisionCreate(BaseModel):

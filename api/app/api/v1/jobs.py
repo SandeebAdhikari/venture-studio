@@ -8,7 +8,12 @@ from app.api.deps import JobEnqueuerDep
 from app.db.enums import PipelineTrigger
 from app.schemas.pagination import PaginatedResponse
 from app.workers.jobs import STAGE_JOB_MAP
-from app.workers.schemas import JobEnqueueResult, JobOptions, JobRecord, RunPipelineJobRequest, RunStageJobRequest
+from app.workers.schemas import (
+    JobEnqueueResult,
+    JobRecord,
+    RunPipelineJobRequest,
+    RunStageJobRequest,
+)
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -40,7 +45,9 @@ async def list_jobs(
 async def get_job(job_id: str, enqueuer: JobEnqueuerDep) -> JobRecord:
     record = await enqueuer.get_job(job_id)
     if record is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{job_id}' not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{job_id}' not found"
+        )
     return record
 
 

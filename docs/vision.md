@@ -2,9 +2,9 @@
 
 ## Purpose
 
-AI Venture Studio is a **continuous opportunity discovery system** for a solo founder. It ingests public signals from the internet, surfaces recurring complaints, clusters them into validated pain points, and generates ranked software business opportunities with enough context to decide what to build next.
+AI Venture Studio is a **continuous opportunity discovery and validation system** for a solo founder. It ingests public signals from the internet, surfaces recurring complaints, generates ranked software business opportunities, runs multi-agent research, and produces executive reports — with human approval gates before publication.
 
-Version 1 does not build products. It builds **decision-quality intelligence**: a steady stream of classified complaints and draft opportunity briefs that a human can review in under 30 minutes per day.
+The system builds **decision-quality intelligence**: classified complaints, evidence-backed opportunity briefs, agent research artifacts, executive rankings, and venture recommendation reports that a founder can review in under 30 minutes per day.
 
 ---
 
@@ -12,109 +12,81 @@ Version 1 does not build products. It builds **decision-quality intelligence**: 
 
 Solo founders waste time on:
 
-- Manually scrolling Reddit, Hacker News, Twitter/X, Product Hunt, and review sites for ideas
+- Manually scrolling Reddit, RSS feeds, and forums for ideas
 - Chasing one-off anecdotes instead of recurring patterns
 - Starting research from scratch for every promising thread
 - Losing context when signals are scattered across bookmarks and notes
 
-AI Venture Studio replaces ad-hoc browsing with a **repeatable pipeline** that collects, normalizes, classifies, and synthesizes signals into actionable opportunity records.
+AI Venture Studio replaces ad-hoc browsing with a **repeatable pipeline** that collects, normalizes, classifies, synthesizes, researches, ranks, and reports — orchestrated by FastAPI, ARQ workers, and a daily scheduler.
 
 ---
 
-## Target User (V1)
+## Target User
 
 | Attribute | Definition |
 |-----------|------------|
-| Primary user | Solo technical founder (you) |
-| Time budget | 30–60 min/day for review; pipeline runs unattended |
-| Decision output | "Which 1–3 opportunities deserve deeper manual research this week?" |
-| Non-goals (V1) | Multi-user SaaS, automated MVP building, autonomous agent swarms |
+| Primary user | Solo technical founder |
+| Time budget | 30–60 min/day for review; pipeline runs on schedule |
+| Decision output | "Which 1–3 opportunities deserve deeper manual action this week?" |
+| Non-goals | Multi-user SaaS, automated MVP building, autonomous external actions |
 
 ---
 
-## North Star (Full System — Aspirational)
+## North Star Pipeline
 
-The long-term system will:
+The implemented system executes these stages (see [pipeline.md](./pipeline.md)):
 
-1. Collect signals from the internet
-2. Identify recurring pain points
-3. Detect business opportunities
-4. Research markets
-5. Analyze competitors
-6. Validate revenue potential
-7. Create MVP plans
-8. Create go-to-market plans
-9. Rank opportunities
-10. Present recommendations to a human
+1. **Collect** — ingest signals from Reddit and RSS sources
+2. **Classify** — LLM extraction of structured complaints
+3. **Generate opportunities** — pattern detection + LLM synthesis from complaint clusters
+4. **Score** — deterministic 0–100 scoring from complaint evidence
+5. **Research agents** — market, competitor, customer, revenue, product, GTM, growth, human proxy
+6. **Executive ranking** — deterministic composite ranking from agent outputs
+7. **Venture report** — executive recommendation markdown with founder approval workflow
 
-**Version 1 implements steps 1–3 only**, with lightweight ranking embedded in opportunity generation. Steps 4–10 are documented here for alignment but are explicitly out of scope until V2+.
-
----
-
-## Version 1 Outcomes
-
-By the end of V1, the system should reliably:
-
-| Outcome | Success Criteria |
-|---------|------------------|
-| **Collect complaints** | Ingest 200+ raw signals/week from 3+ configured sources without manual copy-paste |
-| **Classify complaints** | ≥85% of ingested items receive category, severity, persona, and domain tags with audit trail |
-| **Generate opportunities** | Produce 5–15 opportunity briefs/week from clustered complaints, each linking back to source evidence |
-| **Human review loop** | Founder can approve, reject, or defer opportunities from a single dashboard in <30 min |
+Steps 1–7 are **implemented**. The founder dashboard (`web/`) surfaces opportunities, pipeline status, reports, approvals, budget, and agent activity.
 
 ---
 
 ## Core Concepts
 
 ### Signal
-A single piece of raw content: a Reddit post, HN comment, G2 review snippet, etc. Immutable after ingestion except for enrichment metadata.
+A single piece of raw content: a Reddit post/comment or RSS entry. Deduplicated by `(source_id, external_id)`, URL, and content hash.
 
 ### Complaint
-A structured extraction from a signal where a user expresses frustration, unmet need, or workaround behavior. One signal may yield zero or one complaint (V1 keeps this 1:1 for simplicity).
-
-### Pain Point Cluster
-A group of semantically similar complaints sharing domain, persona, and problem theme. Clusters are the input to opportunity generation.
+A structured extraction from a signal where a user expresses frustration or unmet need. At most one complaint per signal (1:1).
 
 ### Opportunity
-A synthesized business hypothesis: who hurts, what they need, why incumbents fail, and a draft wedge. Generated from a cluster, not from a single anecdote.
+A synthesized business hypothesis generated from a recurring complaint pattern (topic cluster), linked to evidence complaints via `opportunity_complaints`.
+
+### Agent Evaluation
+Structured output from a V2 LangGraph agent (market brief, competitor analysis, etc.) stored per opportunity with evidence tables.
 
 ### Pipeline Run
-A bounded execution of collect → classify → cluster → generate, tracked with status, timestamps, and error logs.
+A bounded execution of all 14 pipeline stages tracked in `pipeline_runs` and `pipeline_stage_runs`.
+
+### Approval Request
+Founder gate for executive rankings and venture reports when `REQUIRE_FOUNDER_APPROVAL=true` (default).
 
 ---
 
 ## Design Principles
 
-1. **Evidence over eloquence** — Every opportunity must cite linked complaints and source URLs. No orphan claims.
-2. **Batch over realtime** — Scheduled jobs (cron) beat streaming complexity for a solo founder.
-3. **Human-in-the-loop by default** — AI proposes; the founder disposes. No auto-publishing or auto-building.
-4. **Idempotent ingestion** — Re-running collection must not duplicate signals (`source + external_id` uniqueness).
-5. **Observable failures** — Every stage logs to PostgreSQL; Redis is for queues and locks, not source of truth.
-6. **Cheap to operate** — Target <$100/month infra + LLM at V1 scale (see MVP doc for limits).
+1. **Evidence over eloquence** — Every opportunity and agent output must cite linked complaints and source URLs.
+2. **Batch over realtime** — Scheduled jobs and ARQ workers beat streaming complexity for a solo founder.
+3. **Human-in-the-loop by default** — AI proposes; the founder approves rankings and venture reports.
+4. **Idempotent ingestion** — Re-running collection must not duplicate signals.
+5. **Observable failures** — Pipeline, scheduler, and LLM audit trails in PostgreSQL; Redis for queues and locks.
+6. **Budget-aware LLM usage** — Daily spend cap enforced before every agent LLM call.
 
 ---
 
-## What V1 Is Not
+## What the System Is Not
 
-- Not a market research platform (no TAM/SAM, no competitor deep-dives)
 - Not an MVP builder or code generator
-- Not a multi-tenant product
-- Not a general-purpose web scraper (only whitelisted, ToS-respecting sources)
-- Not an autonomous agent that takes external actions (post, email, deploy)
-
-Future agents (market research, competitor analysis, revenue validation, MVP/GTM planning) will plug into the same `Opportunity` entity and pipeline orchestration layer designed in V1.
-
----
-
-## Success Metrics (90-Day Horizon)
-
-| Metric | Target |
-|--------|--------|
-| Pipeline uptime | ≥95% of scheduled runs complete without manual intervention |
-| Signal freshness | Median age of unprocessed signals < 24 hours |
-| Cluster quality | Founder rates ≥60% of generated opportunities as "worth considering" |
-| Time saved | Founder stops manual signal hunting entirely |
-| Cost per opportunity | < $2 LLM cost per generated opportunity brief |
+- Not a multi-tenant product (single shared API key auth)
+- Not a general-purpose web scraper (only registered collectors: Reddit, RSS)
+- Not fully autonomous in production (founder approval gates reports by default)
 
 ---
 
@@ -122,11 +94,13 @@ Future agents (market research, competitor analysis, revenue validation, MVP/GTM
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| UI | Next.js (App Router) | Fast dashboard for solo founder; SSR for auth-ready pages later |
-| API | FastAPI | Async Python ecosystem for LangGraph and data jobs |
-| Database | PostgreSQL | Relational model for signals, lineage, and audit |
-| Queue / cache | Redis | Job queues, rate-limit counters, distributed locks |
-| Orchestration | LangGraph | Stateful multi-step LLM workflows with checkpoints |
+| UI | Next.js 15 (App Router) | Founder dashboard with BFF proxy |
+| API | FastAPI | Async Python for LangGraph and data jobs |
+| Database | PostgreSQL 16 + pgvector | Relational model, embeddings on complaints |
+| Queue / cache | Redis | ARQ job queue, rate limits, distributed locks |
+| Orchestration | LangGraph | Stateful multi-step LLM workflows |
+| Scheduling | APScheduler | Daily cron slots enqueue ARQ jobs |
+| Workers | ARQ | Background pipeline stage execution |
 
 ---
 
@@ -134,7 +108,16 @@ Future agents (market research, competitor analysis, revenue validation, MVP/GTM
 
 | Document | Contents |
 |----------|----------|
-| [mvp.md](./mvp.md) | V1 scope, milestones, source list, LLM budget |
-| [architecture.md](./architecture.md) | Services, deployment, API surface, LangGraph graphs |
+| [mvp.md](./mvp.md) | Implemented scope, milestones, source list |
+| [architecture.md](./architecture.md) | Services, deployment, API surface |
 | [database.md](./database.md) | Schema, indexes, migrations |
-| [pipeline.md](./pipeline.md) | Stage definitions, schedules, error handling |
+| [pipeline.md](./pipeline.md) | Stage definitions and configuration |
+| [pipeline-orchestration.md](./pipeline-orchestration.md) | Orchestrator, workers, scheduler integration |
+| [agents.md](./agents.md) | LangGraph agents and ranking engine |
+| [workers.md](./workers.md) | ARQ job system |
+| [scheduler.md](./scheduler.md) | APScheduler daily jobs |
+| [dashboard.md](./dashboard.md) | Founder dashboard |
+| [operations.md](./operations.md) | Running, monitoring, recovery |
+| [deployment.md](./deployment.md) | Docker and production deployment |
+| [api-overview.md](./api-overview.md) | REST API reference |
+| [ci.md](./ci.md) | GitHub Actions workflows |

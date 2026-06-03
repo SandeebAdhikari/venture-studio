@@ -54,7 +54,10 @@ DEFAULT_SCHEDULER_JOBS: tuple[SchedulerJobDefinition, ...] = (
     SchedulerJobDefinition(
         job_name="research_agents",
         display_name="Research Agents",
-        description="Run all research agents (market, competitor, customer, revenue, product, GTM, growth, human proxy)",
+        description=(
+            "Run all research agents (market, competitor, customer, revenue, "
+            "product, GTM, growth, human proxy)"
+        ),
         schedule_hour=5,
         schedule_minute=0,
         arq_jobs=RESEARCH_AGENT_JOBS,

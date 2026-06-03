@@ -54,7 +54,9 @@ class RssFeedEntry(BaseModel):
             return None
 
         title = (getattr(entry, "title", None) or "").strip() or None
-        summary = (getattr(entry, "summary", None) or getattr(entry, "description", None) or "").strip()
+        summary = (
+            getattr(entry, "summary", None) or getattr(entry, "description", None) or ""
+        ).strip()
         body = summary or title or ""
         if not body:
             return None
@@ -64,7 +66,9 @@ class RssFeedEntry(BaseModel):
 
         author = getattr(entry, "author", None)
         published_at = None
-        published = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
+        published = getattr(entry, "published_parsed", None) or getattr(
+            entry, "updated_parsed", None
+        )
         if published is not None:
             try:
                 published_at = datetime(*published[:6], tzinfo=UTC)

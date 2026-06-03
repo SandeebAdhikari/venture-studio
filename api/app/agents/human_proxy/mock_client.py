@@ -105,7 +105,8 @@ def default_mock_human_proxy_output() -> HumanProxyLLMOutput:
             complexity_level="medium",
             operational_burden="Moderate ongoing support for multi-location scheduling edge cases",
             rationale=(
-                "Solo founder can ship MVP, but customer onboarding and support add operational load."
+                "Solo founder can ship MVP, but customer onboarding and support "
+                "add operational load."
             ),
         ),
         capital_requirements=CapitalRequirementsOutput(

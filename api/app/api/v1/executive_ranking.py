@@ -19,11 +19,16 @@ router = APIRouter(prefix="/executive-ranking", tags=["executive-ranking"])
     response_model=ExecutiveRankingResult,
     status_code=status.HTTP_201_CREATED,
     summary="Generate executive opportunity ranking",
-    description="Rank all opportunities using outputs from prior agents and return the top opportunities.",
+    description=(
+        "Rank all opportunities using outputs from prior agents "
+        "and return the top opportunities."
+    ),
 )
 async def generate_executive_ranking(
     services: Services,
-    top_n: Annotated[int, Query(ge=1, le=50, description="Number of top opportunities to highlight")] = 5,
+    top_n: Annotated[
+        int, Query(ge=1, le=50, description="Number of top opportunities to highlight")
+    ] = 5,
     founder_profile_id: Annotated[
         UUID | None,
         Query(description="Founder profile for human proxy scores; defaults to system profile"),

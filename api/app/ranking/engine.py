@@ -65,11 +65,7 @@ class ExecutiveRankingEngine:
             "founder_fit": components.founder_fit_score,
         }
 
-        available = {
-            key: value
-            for key, value in dimension_values.items()
-            if value is not None
-        }
+        available = {key: value for key, value in dimension_values.items() if value is not None}
         if not available:
             return None
 

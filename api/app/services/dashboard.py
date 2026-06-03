@@ -23,8 +23,8 @@ from app.schemas.dashboard import (
     DashboardPipelineRunSummary,
     DashboardPipelineStageSummary,
     DashboardRankingSummary,
-    DashboardReportSummary,
     DashboardReportsResponse,
+    DashboardReportSummary,
     DashboardResearchMetrics,
     DashboardSchedulerSummary,
     DashboardSummaryResponse,
@@ -34,7 +34,7 @@ from app.schemas.pagination import PaginatedResponse
 from app.schemas.pipeline import PipelineRunRead, PipelineStageRunRead
 
 if TYPE_CHECKING:
-    from app.workers.enqueue import JobEnqueuer
+    pass
 
 
 class DashboardService:
@@ -113,7 +113,9 @@ class DashboardService:
             },
         )
 
-    async def get_opportunities(self, *, top_n: int | None = None) -> DashboardOpportunitiesResponse:
+    async def get_opportunities(
+        self, *, top_n: int | None = None
+    ) -> DashboardOpportunitiesResponse:
         limit = top_n or self._settings.executive_ranking_top_n
         total = await self._metrics.count_opportunities()
 
@@ -190,9 +192,7 @@ class DashboardService:
                     stage_runs = sorted(full_run.stage_runs, key=lambda stage: stage.sequence)
                     latest_detail = DashboardPipelineDetail(
                         run=self._pipeline_run_summary(full_run),
-                        stage_runs=[
-                            self._pipeline_stage_summary(stage) for stage in stage_runs
-                        ],
+                        stage_runs=[self._pipeline_stage_summary(stage) for stage in stage_runs],
                     )
 
         return DashboardPipelineResponse(
@@ -304,14 +304,16 @@ class DashboardService:
 
     @staticmethod
     def _ranking_opportunity_item(entry, opportunity) -> DashboardOpportunityItem:
-        title = opportunity.title if opportunity is not None else entry.ranking_details.get(
-            "opportunity_title",
-            "Unknown opportunity",
+        title = (
+            opportunity.title
+            if opportunity is not None
+            else entry.ranking_details.get(
+                "opportunity_title",
+                "Unknown opportunity",
+            )
         )
         review_status = (
-            ReviewStatus(opportunity.review_status)
-            if opportunity is not None
-            else ReviewStatus.NEW
+            ReviewStatus(opportunity.review_status) if opportunity is not None else ReviewStatus.NEW
         )
         confidence = opportunity.confidence_score if opportunity is not None else 0.0
         return DashboardOpportunityItem(

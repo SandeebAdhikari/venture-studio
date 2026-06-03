@@ -5,16 +5,17 @@ Revises: 008_customer_research
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "009_revenue_validation"
-down_revision: Union[str, None] = "008_customer_research"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "008_customer_research"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -95,7 +96,9 @@ def upgrade() -> None:
         postgresql_where=sa.text("is_current = true"),
     )
     op.create_index("idx_revenue_validations_status", "revenue_validations", ["status"])
-    op.create_index("idx_revenue_validations_wtp", "revenue_validations", ["willingness_to_pay_score"])
+    op.create_index(
+        "idx_revenue_validations_wtp", "revenue_validations", ["willingness_to_pay_score"]
+    )
 
     op.create_table(
         "revenue_validation_evidence",
@@ -168,9 +171,7 @@ def downgrade() -> None:
         "DROP TRIGGER IF EXISTS trg_revenue_validation_evidence_updated_at "
         "ON revenue_validation_evidence"
     )
-    op.execute(
-        "DROP TRIGGER IF EXISTS trg_revenue_validations_updated_at ON revenue_validations"
-    )
+    op.execute("DROP TRIGGER IF EXISTS trg_revenue_validations_updated_at ON revenue_validations")
     op.drop_index(
         "idx_revenue_validation_evidence_complaint",
         table_name="revenue_validation_evidence",

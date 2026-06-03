@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.db.enums import SchedulerRunStatus, SchedulerTrigger
-from app.schemas.common import ORMModel, UUIDSchema
+from app.schemas.common import UUIDSchema
 
 
 class SchedulerRunRead(UUIDSchema):

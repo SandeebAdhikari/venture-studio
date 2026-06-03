@@ -1,7 +1,5 @@
 """Founder profile repository."""
 
-from uuid import UUID
-
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +32,9 @@ class FounderProfileRepository(BaseRepository[FounderProfile]):
     async def create(self, data: FounderProfileCreate) -> FounderProfile:
         if data.is_default:
             await self.session.execute(
-                update(FounderProfile).where(FounderProfile.is_default.is_(True)).values(is_default=False)
+                update(FounderProfile)
+                .where(FounderProfile.is_default.is_(True))
+                .values(is_default=False)
             )
 
         entity = FounderProfile(

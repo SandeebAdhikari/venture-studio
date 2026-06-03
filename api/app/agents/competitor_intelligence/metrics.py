@@ -2,7 +2,6 @@
 
 from app.agents.competitor_intelligence.schemas import CompetitorAnalysisLLMOutput
 
-
 SENTIMENT_LABEL_RANGES: dict[str, tuple[float, float]] = {
     "positive": (0.2, 1.0),
     "neutral": (-0.2, 0.2),
@@ -29,25 +28,29 @@ def compute_evaluation_metrics(output: CompetitorAnalysisLLMOutput) -> dict[str,
         }
 
     avg_sentiment = sum(competitor.sentiment_score for competitor in competitors) / count
-    negative_ratio = sum(
-        1
-        for competitor in competitors
-        if competitor.review_sentiment in {"negative", "mixed"}
-    ) / count
-    pricing_transparency = sum(
-        1
-        for competitor in competitors
-        if competitor.pricing.starting_price_usd is not None
-        or competitor.pricing.model_type != "unknown"
-    ) / count
-    complaint_density = sum(len(competitor.customer_complaints) for competitor in competitors) / count
+    negative_ratio = (
+        sum(1 for competitor in competitors if competitor.review_sentiment in {"negative", "mixed"})
+        / count
+    )
+    pricing_transparency = (
+        sum(
+            1
+            for competitor in competitors
+            if competitor.pricing.starting_price_usd is not None
+            or competitor.pricing.model_type != "unknown"
+        )
+        / count
+    )
+    complaint_density = (
+        sum(len(competitor.customer_complaints) for competitor in competitors) / count
+    )
     gaps_count = len(output.competitive_gaps)
     weakness_count = sum(len(competitor.weaknesses) for competitor in competitors)
     differentiation_score = min(1.0, gaps_count * 0.15 + weakness_count * 0.04)
 
-    positive_ratio = sum(
-        1 for competitor in competitors if competitor.review_sentiment == "positive"
-    ) / count
+    positive_ratio = (
+        sum(1 for competitor in competitors if competitor.review_sentiment == "positive") / count
+    )
     avg_strengths = sum(len(competitor.strengths) for competitor in competitors) / count
     threat_score = min(1.0, positive_ratio * 0.5 + avg_strengths * 0.08)
 

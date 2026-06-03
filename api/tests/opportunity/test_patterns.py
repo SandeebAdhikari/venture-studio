@@ -21,8 +21,7 @@ def _complaint(summary: str, *, severity: int = 4) -> ComplaintEvidence:
 
 def test_detects_staff_scheduling_pattern() -> None:
     complaints = [
-        _complaint("Staff scheduling breaks every week when staff call out sick.")
-        for _ in range(5)
+        _complaint("Staff scheduling breaks every week when staff call out sick.") for _ in range(5)
     ]
     complaints.append(
         _complaint("Pricing is unrelated and should not dominate the batch.", severity=2)

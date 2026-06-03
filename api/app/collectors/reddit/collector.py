@@ -8,7 +8,12 @@ from uuid import UUID
 
 import httpx
 
-from app.collectors.reddit.models import RedditCollectorSettings, RedditComment, RedditPost, RedditSourceConfig
+from app.collectors.reddit.models import (
+    RedditCollectorSettings,
+    RedditComment,
+    RedditPost,
+    RedditSourceConfig,
+)
 from app.logging import get_logger
 
 logger = get_logger(__name__)

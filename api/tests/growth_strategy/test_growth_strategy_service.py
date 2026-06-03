@@ -138,9 +138,7 @@ async def test_evaluate_opportunity_persists_scores_and_roadmap(
     assert len(result.draft.growth_roadmap) == 3
     assert result.draft.evaluation_metrics["growth_readiness_score"] > 0
 
-    evaluation = await repos.growth_evaluations.get_by_id_with_evidence(
-        result.growth_evaluation_id
-    )
+    evaluation = await repos.growth_evaluations.get_by_id_with_evidence(result.growth_evaluation_id)
     assert evaluation is not None
     assert evaluation.status == GrowthEvaluationStatus.COMPLETED.value
     assert evaluation.is_current is True

@@ -18,7 +18,6 @@ from app.db.enums import (
     ReviewStatus,
 )
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.pipeline import PipelineRunRead, PipelineStageRunRead
 
 
 class DashboardReportSummary(BaseModel):

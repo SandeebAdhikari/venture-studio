@@ -1,33 +1,40 @@
 """Service container wiring repositories to services."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.classification.service import ComplaintClassificationService
 from app.agents.competitor_intelligence.service import CompetitorIntelligenceService
 from app.agents.customer_research.service import CustomerResearchService
+from app.agents.go_to_market.service import GoToMarketService
 from app.agents.growth_strategy.service import GrowthStrategyService
 from app.agents.human_proxy.service import HumanProxyService
-from app.agents.go_to_market.service import GoToMarketService
 from app.agents.market_research.service import MarketResearchService
+from app.agents.opportunity.service import OpportunityGeneratorService
 from app.agents.product_strategy.service import ProductStrategyService
 from app.agents.revenue_validation.service import RevenueValidationService
-from app.agents.opportunity.service import OpportunityGeneratorService
 from app.collection.service import ComplaintCollectionService
-from app.repositories import RepositoryContainer, get_repositories
 from app.ranking.service import ExecutiveRankingService
 from app.reports.executive.service import ExecutiveReportService
 from app.reports.venture.service import VentureReportService
+from app.repositories import RepositoryContainer, get_repositories
 from app.scoring.service import OpportunityScoringService
+from app.services.approval import ApprovalService
 from app.services.category import CategoryService
 from app.services.complaint import ComplaintService
-from app.services.opportunity import OpportunityService
-from app.services.report import ReportService
-from app.services.approval import ApprovalService
 from app.services.dashboard import DashboardService
 from app.services.llm_budget import LLMBudgetService
-from app.services.scheduler import SchedulerService
+from app.services.opportunity import OpportunityService
+from app.services.report import ReportService
 from app.services.rss_feed import RssFeedService
+from app.services.scheduler import SchedulerService
 from app.services.source import SourceService
+
+if TYPE_CHECKING:
+    from app.pipeline.orchestrator import PipelineOrchestrator
 
 
 class ServiceContainer:
@@ -48,7 +55,9 @@ class ServiceContainer:
         self.executive_ranking = ExecutiveRankingService(repos, approval_service=self.approval)
         self.venture_reports = VentureReportService(repos, approval_service=self.approval)
         self.market_research = MarketResearchService(repos, budget_service=self.llm_budget)
-        self.competitor_intelligence = CompetitorIntelligenceService(repos, budget_service=self.llm_budget)
+        self.competitor_intelligence = CompetitorIntelligenceService(
+            repos, budget_service=self.llm_budget
+        )
         self.customer_research = CustomerResearchService(repos, budget_service=self.llm_budget)
         self.revenue_validation = RevenueValidationService(repos, budget_service=self.llm_budget)
         self.product_strategy = ProductStrategyService(repos, budget_service=self.llm_budget)
@@ -60,7 +69,7 @@ class ServiceContainer:
         self.dashboard = DashboardService(repos)
 
     @property
-    def pipeline(self) -> "PipelineOrchestrator":
+    def pipeline(self) -> PipelineOrchestrator:
         if not hasattr(self, "_pipeline"):
             from app.pipeline.orchestrator import PipelineOrchestrator
 

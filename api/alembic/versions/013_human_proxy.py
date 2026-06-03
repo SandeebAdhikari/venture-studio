@@ -5,16 +5,17 @@ Revises: 012_growth_evaluations
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "013_human_proxy"
-down_revision: Union[str, None] = "012_growth_evaluations"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "012_growth_evaluations"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -166,7 +167,9 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["opportunity_id"], ["opportunities.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["founder_profile_id"], ["founder_profiles.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["founder_profile_id"], ["founder_profiles.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.CheckConstraint("version >= 1", name="ck_human_proxy_evaluations_version"),
         sa.CheckConstraint(

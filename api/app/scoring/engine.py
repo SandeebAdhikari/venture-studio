@@ -98,11 +98,7 @@ class OpportunityScoringEngine:
         gap_signal = 15 if len(data.gap_text.strip()) >= 30 else 5
         confidence_signal = data.confidence_score * 20
         total = (
-            product_signal
-            + volume_signal
-            + alternatives_signal
-            + gap_signal
-            + confidence_signal
+            product_signal + volume_signal + alternatives_signal + gap_signal + confidence_signal
         )
         return int(round(min(100.0, total)))
 

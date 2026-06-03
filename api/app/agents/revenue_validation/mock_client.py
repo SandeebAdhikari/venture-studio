@@ -66,7 +66,9 @@ class MockRevenueValidationLLMClient:
         )
 
 
-def default_mock_revenue_validation_output(*, include_competitor_pricing: bool = True) -> RevenueValidationLLMOutput:
+def default_mock_revenue_validation_output(
+    *, include_competitor_pricing: bool = True
+) -> RevenueValidationLLMOutput:
     evidence = [
         RevenueEvidenceOutput(
             evidence_type="existing_spending",

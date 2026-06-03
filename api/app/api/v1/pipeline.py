@@ -8,7 +8,12 @@ from fastapi import APIRouter, Query, Response, status
 from app.api.deps import JobEnqueuerDep, Services
 from app.api.pagination import Pagination
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.pipeline import PipelineRunDetail, PipelineRunRead, PipelineRunRequest, PipelineRunResult
+from app.schemas.pipeline import (
+    PipelineRunDetail,
+    PipelineRunRead,
+    PipelineRunRequest,
+    PipelineRunResult,
+)
 from app.workers.schemas import JobEnqueueResult
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
@@ -22,7 +27,8 @@ router = APIRouter(prefix="/pipeline", tags=["pipeline"])
     },
     summary="Run the full Venture Studio pipeline",
     description=(
-        "Execute all pipeline stages sequentially. Set background=true to enqueue an ARQ worker job."
+        "Execute all pipeline stages sequentially. "
+        "Set background=true to enqueue an ARQ worker job."
     ),
 )
 async def run_pipeline(

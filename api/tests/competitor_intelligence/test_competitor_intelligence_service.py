@@ -133,7 +133,9 @@ async def test_analyze_opportunity_persists_profiles_and_gaps(
     assert len(result.draft.competitors) == 2
     assert result.draft.evaluation_metrics["competitor_count"] == 2
 
-    analysis = await repos.competitor_analyses.get_by_id_with_profiles(result.competitor_analysis_id)
+    analysis = await repos.competitor_analyses.get_by_id_with_profiles(
+        result.competitor_analysis_id
+    )
     assert analysis is not None
     assert analysis.status == CompetitorAnalysisStatus.COMPLETED.value
     assert analysis.is_current is True

@@ -1,5 +1,7 @@
 """Unit tests for competitor analysis validator."""
 
+from uuid import uuid4
+
 import pytest
 
 from app.agents.competitor_intelligence.mock_client import default_mock_competitor_output
@@ -8,7 +10,6 @@ from app.agents.competitor_intelligence.validator import (
     CompetitorAnalysisValidator,
     CompetitorValidationError,
 )
-from uuid import uuid4
 
 
 def _context(**kwargs) -> OpportunityCompetitorContext:

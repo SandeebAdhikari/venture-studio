@@ -6,10 +6,10 @@ from uuid import UUID
 
 from app.agents.competitor_intelligence.llm_client import LLMInvocationResult
 from app.agents.competitor_intelligence.schemas import (
+    CompetitiveGap,
     CompetitorAnalysisLLMOutput,
     CompetitorPricingModel,
     CompetitorProfileOutput,
-    CompetitiveGap,
     CustomerComplaintSummary,
     OpportunityCompetitorContext,
 )
@@ -20,7 +20,8 @@ class MockCompetitorIntelligenceLLMClient:
 
     def __init__(
         self,
-        responses: list[CompetitorAnalysisLLMOutput | None] | dict[UUID, CompetitorAnalysisLLMOutput],
+        responses: list[CompetitorAnalysisLLMOutput | None]
+        | dict[UUID, CompetitorAnalysisLLMOutput],
         *,
         model: str = "mock-competitor",
     ) -> None:
@@ -81,7 +82,8 @@ def default_mock_competitor_output() -> CompetitorAnalysisLLMOutput:
                     starting_price_usd=8.0,
                     billing_period="per_user_monthly",
                     pricing_notes=(
-                        "Published per-user monthly pricing with tiered plans for multi-location teams."
+                        "Published per-user monthly pricing with tiered plans "
+                        "for multi-location teams."
                     ),
                 ),
                 strengths=[

@@ -38,7 +38,9 @@ class ExecutiveRankingRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     top_n: Mapped[int] = mapped_column(Integer, nullable=False, server_default="5")
     opportunity_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
-    ranked_opportunity_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    ranked_opportunity_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
     ranking_engine: Mapped[str] = mapped_column(String(50), nullable=False)
     ranking_metadata: Mapped[dict[str, Any]] = mapped_column(
         JSONB,

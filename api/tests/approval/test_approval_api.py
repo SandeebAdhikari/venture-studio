@@ -5,7 +5,8 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.enums import ApprovalStatus, ReportStatus
-from tests.approval.test_approval_service import ranked_opportunity  # noqa: F401
+
+pytest_plugins = ["tests.approval.test_approval_service"]
 
 
 @pytest.mark.asyncio

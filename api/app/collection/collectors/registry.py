@@ -11,8 +11,7 @@ from app.db.models.source import Source
 class SourceCollector(Protocol):
     """Fetches raw complaint items from an external source."""
 
-    async def fetch(self, source: Source) -> list[RawComplaintInput]:
-        ...
+    async def fetch(self, source: Source) -> list[RawComplaintInput]: ...
 
 
 _COLLECTORS: dict[str, SourceCollector] = {}

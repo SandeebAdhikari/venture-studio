@@ -74,9 +74,13 @@ class LLMBudgetService:
         completion_tokens: int | None = None,
     ) -> float:
         if prompt_tokens is None or completion_tokens is None:
-            default_prompt, default_completion = DEFAULT_TOKEN_ESTIMATES.get(graph_name, (2500, 1000))
+            default_prompt, default_completion = DEFAULT_TOKEN_ESTIMATES.get(
+                graph_name, (2500, 1000)
+            )
             prompt_tokens = default_prompt if prompt_tokens is None else prompt_tokens
-            completion_tokens = default_completion if completion_tokens is None else completion_tokens
+            completion_tokens = (
+                default_completion if completion_tokens is None else completion_tokens
+            )
         return estimate_cost_usd(model, prompt_tokens, completion_tokens)
 
     async def get_daily_usage(self, day: date | None = None) -> dict[str, Any]:

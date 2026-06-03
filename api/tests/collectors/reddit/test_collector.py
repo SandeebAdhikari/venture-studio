@@ -20,7 +20,10 @@ def _post_listing(subreddit: str = "SaaS") -> dict:
                         "id": "abc123",
                         "name": "t3_abc123",
                         "title": "Billing exports are broken",
-                        "selftext": "Our team is frustrated because pricing is too expensive and exports fail daily.",
+                        "selftext": (
+                            "Our team is frustrated because pricing is too expensive "
+                            "and exports fail daily."
+                        ),
                         "author": "founder1",
                         "created_utc": 1_700_000_000,
                         "permalink": f"/r/{subreddit}/comments/abc123/billing/",
@@ -35,7 +38,10 @@ def _post_listing(subreddit: str = "SaaS") -> dict:
                         "id": "neutral1",
                         "name": "t3_neutral1",
                         "title": "Weekly thread",
-                        "selftext": "Share what you are building this week in our community discussion thread.",
+                        "selftext": (
+                            "Share what you are building this week "
+                            "in our community discussion thread."
+                        ),
                         "author": "mod_user",
                         "created_utc": 1_700_000_100,
                         "permalink": f"/r/{subreddit}/comments/neutral1/weekly/",

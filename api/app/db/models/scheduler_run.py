@@ -30,7 +30,9 @@ class SchedulerRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     arq_job_ids: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default="[]")
-    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False, server_default="{}")
+    metadata_: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSONB, nullable=False, server_default="{}"
+    )
 
     job: Mapped[SchedulerJob] = relationship(back_populates="runs")
 

@@ -5,7 +5,17 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, Float, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -44,7 +54,9 @@ class OpportunityScore(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     opportunity: Mapped[Opportunity] = relationship(back_populates="scores")
 
     __table_args__ = (
-        CheckConstraint("overall_score >= 0 AND overall_score <= 1", name="ck_opportunity_scores_overall"),
+        CheckConstraint(
+            "overall_score >= 0 AND overall_score <= 1", name="ck_opportunity_scores_overall"
+        ),
         CheckConstraint("score >= 0 AND score <= 100", name="ck_opportunity_scores_score"),
         CheckConstraint(
             "confidence_score >= 0 AND confidence_score <= 1",

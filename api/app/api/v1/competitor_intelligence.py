@@ -117,5 +117,7 @@ async def generate_competitor_intelligence(
     summary="Get competitor analysis",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Competitor analysis not found"}},
 )
-async def get_competitor_analysis(analysis_id: UUID, services: Services) -> CompetitorAnalysisDetail:
+async def get_competitor_analysis(
+    analysis_id: UUID, services: Services
+) -> CompetitorAnalysisDetail:
     return await services.competitor_intelligence.get_analysis(analysis_id)

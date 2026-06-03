@@ -101,10 +101,14 @@ async def test_create_complaint_requires_signal(
         )
     )
     domain = await db_session.scalar(
-        select(Category).where(Category.kind == CategoryKind.DOMAIN.value, Category.code == "saas_b2b")
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value, Category.code == "saas_b2b"
+        )
     )
     persona = await db_session.scalar(
-        select(Category).where(Category.kind == CategoryKind.PERSONA.value, Category.code == "founder")
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value, Category.code == "founder"
+        )
     )
     assert category is not None and domain is not None and persona is not None
 
@@ -161,10 +165,14 @@ async def test_create_complaint_and_list(
         )
     )
     domain = await db_session.scalar(
-        select(Category).where(Category.kind == CategoryKind.DOMAIN.value, Category.code == "saas_b2b")
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value, Category.code == "saas_b2b"
+        )
     )
     persona = await db_session.scalar(
-        select(Category).where(Category.kind == CategoryKind.PERSONA.value, Category.code == "founder")
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value, Category.code == "founder"
+        )
     )
     assert category is not None and domain is not None and persona is not None
 
@@ -237,10 +245,14 @@ async def test_create_and_review_opportunity(
         )
     )
     domain = await db_session.scalar(
-        select(Category).where(Category.kind == CategoryKind.DOMAIN.value, Category.code == "saas_b2b")
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value, Category.code == "saas_b2b"
+        )
     )
     persona = await db_session.scalar(
-        select(Category).where(Category.kind == CategoryKind.PERSONA.value, Category.code == "founder")
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value, Category.code == "founder"
+        )
     )
     assert category is not None and domain is not None and persona is not None
 

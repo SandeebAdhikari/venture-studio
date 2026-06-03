@@ -11,7 +11,6 @@ from app.db.enums import (
     ApprovalDecisionType,
     ApprovalStatus,
     ApprovalSubjectType,
-    ReportStatus,
 )
 from app.exceptions import NotFoundError, ValidationError
 from app.repositories import RepositoryContainer
@@ -268,7 +267,9 @@ class ApprovalService:
                 entity.subject_type == ApprovalSubjectType.EXECUTIVE_RANKING.value
                 and entity.executive_ranking_run_id
             ):
-                run = await self._repos.executive_rankings.get_by_id(entity.executive_ranking_run_id)
+                run = await self._repos.executive_rankings.get_by_id(
+                    entity.executive_ranking_run_id
+                )
                 if run is not None:
                     metadata = dict(run.ranking_metadata or {})
                     metadata.update(
@@ -295,7 +296,9 @@ class ApprovalService:
                     metadata["approval_status"] = ApprovalStatus.REJECTED.value
                     report.report_metadata = metadata
             if entity.executive_ranking_run_id:
-                run = await self._repos.executive_rankings.get_by_id(entity.executive_ranking_run_id)
+                run = await self._repos.executive_rankings.get_by_id(
+                    entity.executive_ranking_run_id
+                )
                 if run is not None:
                     metadata = dict(run.ranking_metadata or {})
                     metadata["approval_status"] = ApprovalStatus.REJECTED.value
@@ -309,7 +312,9 @@ class ApprovalService:
                     metadata["approval_status"] = ApprovalStatus.RESEARCH_REQUESTED.value
                     report.report_metadata = metadata
             if entity.executive_ranking_run_id:
-                run = await self._repos.executive_rankings.get_by_id(entity.executive_ranking_run_id)
+                run = await self._repos.executive_rankings.get_by_id(
+                    entity.executive_ranking_run_id
+                )
                 if run is not None:
                     metadata = dict(run.ranking_metadata or {})
                     metadata["approval_status"] = ApprovalStatus.RESEARCH_REQUESTED.value

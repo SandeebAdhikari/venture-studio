@@ -22,7 +22,9 @@ def _growth_evaluation_filters(
         GrowthEvaluationStatus | None,
         Query(alias="status", description="Filter by evaluation status"),
     ] = None,
-    is_current: Annotated[bool | None, Query(description="Filter by current evaluation flag")] = None,
+    is_current: Annotated[
+        bool | None, Query(description="Filter by current evaluation flag")
+    ] = None,
     min_growth_score: Annotated[
         int | None,
         Query(ge=0, le=100, description="Minimum growth score"),

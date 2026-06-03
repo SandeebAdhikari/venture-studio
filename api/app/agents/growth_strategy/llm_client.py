@@ -55,7 +55,8 @@ class OpenAIGrowthStrategyClient:
             "Analyze SEO potential, referral potential, partnership opportunities, "
             "paid acquisition potential, and market expansion opportunities using only "
             "the provided opportunity context. "
-            "Do NOT perform product development, go-to-market launch planning, or revenue modeling. "
+            "Do NOT perform product development, go-to-market launch planning, "
+            "or revenue modeling. "
             "Focus only on long-term growth strategy. "
             "Use complaint_index to ground evidence references."
         )

@@ -293,7 +293,10 @@ async def test_generate_ranking_returns_top_opportunities(
 
     assert result.ranked_opportunity_count == 2
     assert len(result.top_opportunities) == 2
-    assert result.top_opportunities[0].final_opportunity_score > result.top_opportunities[1].final_opportunity_score
+    assert (
+        result.top_opportunities[0].final_opportunity_score
+        > result.top_opportunities[1].final_opportunity_score
+    )
     assert result.top_opportunities[0].opportunity_id == high.id
     assert result.top_opportunities[0].pain_score is not None
     assert result.top_opportunities[0].founder_fit_score is not None

@@ -5,16 +5,17 @@ Revises: 016_rss_feeds
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "017_scheduler"
-down_revision: Union[str, None] = "016_rss_feeds"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "016_rss_feeds"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -46,7 +47,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("job_name"),
-        sa.CheckConstraint("schedule_hour >= 0 AND schedule_hour <= 23", name="ck_scheduler_jobs_hour"),
+        sa.CheckConstraint(
+            "schedule_hour >= 0 AND schedule_hour <= 23", name="ck_scheduler_jobs_hour"
+        ),
         sa.CheckConstraint(
             "schedule_minute >= 0 AND schedule_minute <= 59",
             name="ck_scheduler_jobs_minute",

@@ -6,7 +6,17 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,7 +33,9 @@ class RssFeed(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     feed_url: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
-    polling_interval_sec: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3600")
+    polling_interval_sec: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="3600"
+    )
     entry_limit: Mapped[int] = mapped_column(Integer, nullable=False, server_default="30")
     source_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

@@ -49,7 +49,7 @@ The browser calls `/api/v1/*` on the Next.js server, which proxies to FastAPI wi
 
 ## Architecture
 
-See [docs/dashboard-architecture.md](../docs/dashboard-architecture.md) for the full design.
+See [docs/dashboard.md](../docs/dashboard.md) and [docs/dashboard-architecture.md](../docs/dashboard-architecture.md).
 
 ## Scripts
 

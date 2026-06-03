@@ -68,9 +68,7 @@ class ReportRepository(BaseRepository[Report]):
         query = select(Report).where(Report.report_type == report_type.value)
         if status is not None:
             query = query.where(Report.status == status.value)
-        result = await self.session.execute(
-            query.order_by(Report.created_at.desc()).limit(limit)
-        )
+        result = await self.session.execute(query.order_by(Report.created_at.desc()).limit(limit))
         return list(result.scalars().all())
 
     async def create(self, data: ReportCreate) -> Report:

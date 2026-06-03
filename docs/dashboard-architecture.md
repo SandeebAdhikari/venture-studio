@@ -1,5 +1,7 @@
 # Founder Dashboard Architecture
 
+> User-facing overview: [dashboard.md](./dashboard.md)
+
 The founder dashboard is a **Backend-for-Frontend (BFF)** Next.js application. It renders data from existing FastAPI endpoints and forwards mutations without embedding venture-studio business rules.
 
 ```
@@ -167,6 +169,7 @@ Every page uses SWR `error` + skeleton placeholders + `ErrorState` with retry. E
 
 ## Related documentation
 
+- [dashboard.md](./dashboard.md) — pages and local setup
 - [architecture.md](./architecture.md) — full system design
+- [api-overview.md](./api-overview.md) — REST API reference
 - [ci.md](./ci.md) — GitHub Actions pipelines
-- [api/README.md](../api/README.md) — backend endpoints

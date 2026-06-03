@@ -226,7 +226,9 @@ async def test_evaluate_retries_malformed_response(
     assert result.status == "completed"
     assert mock.call_count == 2
 
-    total_evaluations = await db_session.scalar(select(func.count()).select_from(HumanProxyEvaluation))
+    total_evaluations = await db_session.scalar(
+        select(func.count()).select_from(HumanProxyEvaluation)
+    )
     total_evidence = await db_session.scalar(
         select(func.count()).select_from(HumanProxyEvaluationEvidence)
     )

@@ -167,7 +167,9 @@ def default_mock_product_strategy_output() -> ProductStrategyLLMOutput:
             TechnicalRiskOutput(
                 risk="Multi-location schedule conflicts increase data model complexity.",
                 severity="high",
-                mitigation="Start with single-location MVP schema and add location scoping in phase 2.",
+                mitigation=(
+                    "Start with single-location MVP schema and add location scoping in phase 2."
+                ),
             ),
         ],
         supporting_evidence=[

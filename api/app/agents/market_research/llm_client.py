@@ -85,13 +85,15 @@ class OpenAIMarketResearchClient:
                             f"Problem: {context.problem_statement}\n"
                             f"Target user: {context.target_user}\n"
                             f"Frequency signal: {context.frequency_signal}\n"
-                            f"Existing alternatives (from complaints): {context.existing_alternatives}\n"
+                            f"Existing alternatives (from complaints): "
+                            f"{context.existing_alternatives}\n"
                             f"Gap: {context.gap}\n"
                             f"Confidence: {context.confidence_score:.2f}\n"
                             f"Domains: {', '.join(context.domain_codes) or 'unknown'}\n"
                             f"Categories: {', '.join(context.category_codes) or 'unknown'}\n"
                             f"Personas: {', '.join(context.persona_codes) or 'unknown'}\n\n"
-                            f"Complaint summaries:\n{self._format_complaints(context.complaint_summaries)}\n\n"
+                            f"Complaint summaries:\n"
+                            f"{self._format_complaints(context.complaint_summaries)}\n\n"
                             "Research market intelligence for this opportunity."
                         ),
                     },

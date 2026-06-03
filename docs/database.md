@@ -1,20 +1,21 @@
-# AI Venture Studio — Database Design (V1)
+# AI Venture Studio — Database Design
 
 ## Overview
 
-PostgreSQL is the **system of record**. All entities, pipeline state, LLM audit trails, and human decisions live here. Redis is not persisted to long-term storage except via job metadata mirrors.
+PostgreSQL 16 is the **system of record**. All entities, pipeline state, agent outputs, LLM audit trails, scheduler history, and approval decisions live here. Redis is ephemeral (queues, locks, job status).
 
-**Extensions required:**
+**Extensions** (migration `001_enable_extensions.py`):
 
-- `uuid-ossp` or `gen_random_uuid()` (PG 13+)
-- `pgvector` — complaint and cluster embeddings (1536 dims for `text-embedding-3-small`)
+- `pgvector` — complaint embeddings (1536 dimensions)
+- `uuid-ossp` / `gen_random_uuid()` for primary keys
 
 **Naming conventions:**
 
-- Tables: plural snake_case (`signals`, `complaints`)
+- Tables: plural snake_case
 - Primary keys: `id UUID DEFAULT gen_random_uuid()`
-- Timestamps: `created_at`, `updated_at` (trigger-maintained)
-- Soft deletes: not used in V1 (hard delete via cascade only in dev)
+- Timestamps: `created_at`, `updated_at` (trigger-maintained on core tables)
+
+**Migrations:** 19 revisions in `api/alembic/versions/` (001–019), single linear chain.
 
 ---
 
@@ -27,323 +28,259 @@ sources ─────────────┐
                   signals ─────────────┐
                      │ 1:0..1         │
                      ▼                │
-                 complaints ─────────┤
-                     │ N:1            │
+                 complaints ──────────┤
+                     │                │
+                     │ M:N            │
                      ▼                │
-              pain_point_clusters     │
-                     │ 1:0..1         │
-                     ▼                │
-               opportunities ◄───────┘ (via opportunity_complaints M:N)
+               opportunities ◄───────┘
                      │
-                     ▼
-            opportunity_reviews (audit)
+        ┌────────────┼────────────┬──────────────┐
+        ▼            ▼            ▼              ▼
+ opportunity_scores  market_briefs  competitor_analyses  … (agent tables)
+        │            │            │
+        └────────────┴────────────┴──► executive_ranking_runs
+                                          │
+                                          ▼
+                                    executive_ranking_entries
+                                          │
+                                          ▼
+                                       reports
+                                          │
+                                          ▼
+                                  approval_requests
+                                          │
+                                          ▼
+                                  approval_decisions
 
 pipeline_runs ──► pipeline_stage_runs
-llm_calls (audit, polymorphic reference)
+scheduler_jobs ──► scheduler_runs
+llm_calls (audit)
+llm_budget_alerts
+rss_feeds ──► sources
+founder_profiles ──► human_proxy_evaluations
 ```
+
+There is **no** `pain_point_clusters` table. Complaint grouping for opportunity generation happens in-memory via `TopicPatternDetector`.
 
 ---
 
-## Tables
+## Core Tables
 
 ### `sources`
 
 Configured ingestion endpoints.
 
-| Column            | Type         | Constraints  | Description                      |
-| ----------------- | ------------ | ------------ | -------------------------------- |
-| id                | UUID         | PK           |                                  |
-| name              | VARCHAR(100) | NOT NULL     | Human label, e.g. "r/SaaS"       |
-| source_type       | VARCHAR(30)  | NOT NULL     | `reddit`, `hn_algolia`, `rss`    |
-| config            | JSONB        | NOT NULL     | Type-specific params (see below) |
-| enabled           | BOOLEAN      | DEFAULT true |                                  |
-| last_collected_at | TIMESTAMPTZ  | NULL         |                                  |
-| last_error        | TEXT         | NULL         |                                  |
-| created_at        | TIMESTAMPTZ  | NOT NULL     |                                  |
-| updated_at        | TIMESTAMPTZ  | NOT NULL     |                                  |
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| name | VARCHAR(100) | Human label |
+| source_type | VARCHAR(30) | `reddit`, `hn_algolia`, `rss` |
+| config | JSONB | Type-specific params |
+| enabled | BOOLEAN | Default true |
+| last_collected_at | TIMESTAMPTZ | |
+| last_error | TEXT | |
+| created_at, updated_at | TIMESTAMPTZ | |
 
-**`config` examples:**
+**Collectors registered at runtime:** `reddit`, `rss` only.
 
-```json
-// reddit
-{ "subreddit": "SaaS", "sort": "new", "limit": 50, "time_filter": "day" }
+### `rss_feeds`
 
-// hn_algolia
-{ "query": "wish OR \"someone should build\"", "tags": "story,comment", "days_back": 7 }
+Dedicated RSS feed registry (migration `016_rss_feeds.py`).
 
-// rss
-{ "url": "https://www.indiehackers.com/feed", "limit": 30 }
-```
-
-**Indexes:**
-
-- `idx_sources_enabled` ON `(enabled)` WHERE `enabled = true`
-
----
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| source_id | UUID FK → sources | Auto-created source row |
+| feed_url | TEXT UNIQUE | |
+| category | VARCHAR(30) | business, tech, startup, etc. |
+| enabled | BOOLEAN | |
+| polling_interval_sec | INT | Min 60 |
+| entry_limit | INT | |
+| last_polled_at | TIMESTAMPTZ | |
 
 ### `signals`
 
-Raw ingested content. Immutable text after insert.
+Raw ingested content.
 
-| Column            | Type         | Constraints                | Description                |
-| ----------------- | ------------ | -------------------------- | -------------------------- |
-| id                | UUID         | PK                         |                            |
-| source_id         | UUID         | FK → sources.id            |                            |
-| external_id       | VARCHAR(255) | NOT NULL                   | Platform-native ID         |
-| url               | TEXT         | NOT NULL                   | Canonical link             |
-| title             | TEXT         | NULL                       | Post title if applicable   |
-| body              | TEXT         | NOT NULL                   | Full text for LLM          |
-| author            | VARCHAR(255) | NULL                       |                            |
-| published_at      | TIMESTAMPTZ  | NULL                       | Original post time         |
-| metadata          | JSONB        | DEFAULT '{}'               | Score, comment count, etc. |
-| processing_status | VARCHAR(30)  | NOT NULL DEFAULT 'pending' | See enum below             |
-| skip_reason       | TEXT         | NULL                       | If skipped                 |
-| collected_at      | TIMESTAMPTZ  | NOT NULL                   | Ingestion time             |
-| created_at        | TIMESTAMPTZ  | NOT NULL                   |                            |
-| updated_at        | TIMESTAMPTZ  | NOT NULL                   |                            |
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| source_id | UUID FK | |
+| external_id | VARCHAR(255) | Platform-native ID |
+| url | TEXT | Canonical link |
+| title, body | TEXT | |
+| author | VARCHAR(255) | |
+| published_at | TIMESTAMPTZ | |
+| metadata | JSONB | Score, subreddit, collector version |
+| content_hash | VARCHAR(64) | Dedup layer (migration 003) |
+| processing_status | VARCHAR(30) | pending → classified \| skipped \| failed |
+| skip_reason | TEXT | |
+| collected_at | TIMESTAMPTZ | |
 
-**`processing_status` enum:**
-`pending` → `processing` → `classified` | `skipped` | `failed`
+**Unique:** `(source_id, external_id)`
 
-**Unique constraint:**
+### `categories`
 
-- `uq_signals_source_external` UNIQUE `(source_id, external_id)`
+Unified taxonomy table (replaces separate `taxonomy_*` tables).
 
-**Indexes:**
-
-- `idx_signals_status_collected` ON `(processing_status, collected_at)` — worker pickup
-- `idx_signals_published` ON `(published_at DESC)`
-
----
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| code | VARCHAR(50) UNIQUE | e.g. `pricing`, `saas_b2b` |
+| label | VARCHAR(100) | |
+| description | TEXT | |
+| kind | VARCHAR(30) | `complaint_category`, `domain`, `persona` |
 
 ### `complaints`
 
-Structured extraction from a signal. V1 enforces **at most one complaint per signal**.
+Structured extraction from signals. **1:1** with signal (`signal_id UNIQUE`).
 
-| Column           | Type         | Constraints                       | Description                  |
-| ---------------- | ------------ | --------------------------------- | ---------------------------- |
-| id               | UUID         | PK                                |                              |
-| signal_id        | UUID         | FK → signals.id, UNIQUE           | 1:1 with signal              |
-| summary          | TEXT         | NOT NULL                          | 1–2 sentence neutral summary |
-| verbatim_quote   | TEXT         | NOT NULL                          | Exact user language          |
-| category         | VARCHAR(50)  | NOT NULL                          | Taxonomy enum                |
-| domain           | VARCHAR(50)  | NOT NULL                          | Taxonomy enum                |
-| persona          | VARCHAR(50)  | NOT NULL                          | Taxonomy enum                |
-| severity         | SMALLINT     | NOT NULL CHECK (1–5)              |                              |
-| product_mentions | TEXT[]       | DEFAULT '{}'                      | Tools named in text          |
-| embedding        | vector(1536) | NULL                              | Set after insert             |
-| cluster_id       | UUID         | FK → pain_point_clusters.id, NULL | Assigned during clustering   |
-| llm_model        | VARCHAR(50)  | NOT NULL                          | Model used for extraction    |
-| llm_confidence   | REAL         | NULL                              | 0.0–1.0                      |
-| created_at       | TIMESTAMPTZ  | NOT NULL                          |                              |
-| updated_at       | TIMESTAMPTZ  | NOT NULL                          |                              |
-
-**Indexes:**
-
-- `idx_complaints_cluster` ON `(cluster_id)` WHERE `cluster_id IS NOT NULL`
-- `idx_complaints_domain_category` ON `(domain, category)`
-- `idx_complaints_embedding` USING ivfflat `(embedding vector_cosine_ops)` WITH (lists = 100) — create after ≥1000 rows or use exact search at low volume
-
----
-
-### `pain_point_clusters`
-
-Groups of similar complaints within a rolling window.
-
-| Column             | Type         | Constraints           | Description                                |
-| ------------------ | ------------ | --------------------- | ------------------------------------------ |
-| id                 | UUID         | PK                    |                                            |
-| label              | VARCHAR(200) | NOT NULL              | LLM-generated cluster name                 |
-| description        | TEXT         | NULL                  |                                            |
-| domain             | VARCHAR(50)  | NOT NULL              | Majority domain                            |
-| complaint_count    | INT          | NOT NULL DEFAULT 0    | Denormalized                               |
-| centroid_embedding | vector(1536) | NULL                  | Mean of member embeddings                  |
-| window_start       | DATE         | NOT NULL              | Clustering window                          |
-| window_end         | DATE         | NOT NULL              |                                            |
-| pipeline_run_id    | UUID         | FK → pipeline_runs.id |                                            |
-| status             | VARCHAR(30)  | DEFAULT 'open'        | `open`, `opportunity_created`, `dismissed` |
-| created_at         | TIMESTAMPTZ  | NOT NULL              |                                            |
-| updated_at         | TIMESTAMPTZ  | NOT NULL              |                                            |
-
-**Indexes:**
-
-- `idx_clusters_status_window` ON `(status, window_end DESC)`
-
----
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| signal_id | UUID FK UNIQUE | |
+| category_id, domain_id, persona_id | UUID FK → categories | |
+| summary, verbatim_quote | TEXT | |
+| severity | INT CHECK 1–5 | |
+| product_mentions | TEXT[] | |
+| embedding | vector(1536) | Optional pgvector |
+| llm_model | VARCHAR(50) | |
+| llm_confidence | REAL | |
 
 ### `opportunities`
 
-Synthesized business hypotheses from clusters.
+Synthesized business hypotheses.
 
-| Column                | Type         | Constraints                         | Description                               |
-| --------------------- | ------------ | ----------------------------------- | ----------------------------------------- |
-| id                    | UUID         | PK                                  |                                           |
-| cluster_id            | UUID         | FK → pain_point_clusters.id, UNIQUE | 1:1 per cluster in V1                     |
-| title                 | VARCHAR(200) | NOT NULL                            |                                           |
-| problem_statement     | TEXT         | NOT NULL                            |                                           |
-| target_user           | TEXT         | NOT NULL                            |                                           |
-| frequency_signal      | TEXT         | NOT NULL                            |                                           |
-| existing_alternatives | TEXT         | NOT NULL                            | Evidence-only                             |
-| gap                   | TEXT         | NOT NULL                            |                                           |
-| confidence_score      | REAL         | NOT NULL CHECK (0–1)                |                                           |
-| review_status         | VARCHAR(30)  | DEFAULT 'new'                       | `new`, `approved`, `rejected`, `deferred` |
-| reviewed_at           | TIMESTAMPTZ  | NULL                                |                                           |
-| review_notes          | TEXT         | NULL                                | Founder notes                             |
-| llm_model             | VARCHAR(50)  | NOT NULL                            |                                           |
-| pipeline_run_id       | UUID         | FK → pipeline_runs.id               |                                           |
-| created_at            | TIMESTAMPTZ  | NOT NULL                            |                                           |
-| updated_at            | TIMESTAMPTZ  | NOT NULL                            |                                           |
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| title | VARCHAR(200) | |
+| problem_statement, target_user | TEXT | |
+| frequency_signal | TEXT | |
+| existing_alternatives, gap | TEXT | |
+| confidence_score | REAL CHECK 0–1 | |
+| review_status | VARCHAR(30) | new, approved, rejected, deferred |
+| reviewed_at, review_notes | | |
+| llm_model | VARCHAR(50) | |
 
-**Indexes:**
+Linked to complaints via `opportunity_complaints` (M:N junction).
 
-- `idx_opportunities_review_status` ON `(review_status, created_at DESC)`
+### `opportunity_scores`
 
----
+Scoring history (migration `005_opportunity_score_dimensions.py`).
 
-### `opportunity_complaints`
-
-M:N evidence linkage (denormalized convenience; cluster membership is primary).
-
-| Column         | Type                           | Constraints                             |
-| -------------- | ------------------------------ | --------------------------------------- |
-| opportunity_id | UUID                           | FK → opportunities.id ON DELETE CASCADE |
-| complaint_id   | UUID                           | FK → complaints.id ON DELETE CASCADE    |
-| PRIMARY KEY    | (opportunity_id, complaint_id) |                                         |
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| opportunity_id | UUID FK | |
+| score | INT 0–100 | |
+| is_current | BOOLEAN | One current row per opportunity |
+| volume_score, severity_score, … | REAL | Dimension breakdown |
+| scoring_model | VARCHAR(50) | `scoring_engine_v1` |
+| scoring_notes | TEXT | |
 
 ---
 
-### `opportunity_reviews`
+## Agent Output Tables
 
-Append-only audit of human decisions.
+Each research agent persists structured output plus evidence junction tables:
 
-| Column         | Type        | Constraints           | Description |
-| -------------- | ----------- | --------------------- | ----------- |
-| id             | UUID        | PK                    |             |
-| opportunity_id | UUID        | FK → opportunities.id |             |
-| from_status    | VARCHAR(30) | NOT NULL              |             |
-| to_status      | VARCHAR(30) | NOT NULL              |             |
-| notes          | TEXT        | NULL                  |             |
-| created_at     | TIMESTAMPTZ | NOT NULL              |             |
+| Agent | Main table | Evidence table | Migration |
+|-------|------------|----------------|-----------|
+| Market Research | `market_briefs` | — | 006 |
+| Competitor Intelligence | `competitor_analyses`, `competitor_profiles` | — | 007 |
+| Customer Research | `customer_research` | `customer_research_evidence` | 008 |
+| Revenue Validation | `revenue_validations` | `revenue_validation_evidence` | 009 |
+| Product Strategy | `product_strategies` | `product_strategy_evidence` | 010 |
+| Go-To-Market | `gtm_plans` | `gtm_plan_evidence` | 011 |
+| Growth Strategy | `growth_evaluations` | `growth_evaluation_evidence` | 012 |
+| Human Proxy | `human_proxy_evaluations` | `human_proxy_evaluation_evidence` | 013 |
+| Founder profiles | `founder_profiles` | — | 013 |
+
+Common patterns: `opportunity_id` FK, `is_current` flag, `status` enum, `llm_model`, agent-specific score fields.
 
 ---
+
+## Ranking and Reports
+
+### `executive_ranking_runs` / `executive_ranking_entries`
+
+Migration `014_executive_ranking.py`. Stores deterministic ranking runs with component scores (pain, market, revenue, competition, growth, founder_fit).
+
+### `reports`
+
+Markdown and structured report content. Types include `top_opportunities`, `venture_recommendation`, `pipeline_summary`, `daily_digest`.
+
+---
+
+## Pipeline and Operations Tables
 
 ### `pipeline_runs`
 
-Top-level pipeline execution record.
-
-| Column          | Type        | Constraints  | Description                                 |
-| --------------- | ----------- | ------------ | ------------------------------------------- |
-| id              | UUID        | PK           |                                             |
-| trigger         | VARCHAR(30) | NOT NULL     | `scheduled`, `manual`, `api`                |
-| status          | VARCHAR(30) | NOT NULL     | `running`, `completed`, `failed`, `partial` |
-| started_at      | TIMESTAMPTZ | NOT NULL     |                                             |
-| finished_at     | TIMESTAMPTZ | NULL         |                                             |
-| config_snapshot | JSONB       | DEFAULT '{}' | Thresholds used                             |
-| error_summary   | TEXT        | NULL         |                                             |
-| created_at      | TIMESTAMPTZ | NOT NULL     |                                             |
-
----
+| Column | Description |
+|--------|-------------|
+| trigger | scheduled, manual, api, worker |
+| status | running, completed, failed, partial, cancelled |
+| started_at, finished_at | |
+| config_snapshot | JSONB thresholds used |
+| error_summary | TEXT |
 
 ### `pipeline_stage_runs`
 
-Per-stage metrics within a pipeline run.
+Per-stage metrics within a run. Stage values match `PipelineStage` enum (14 stages — see [pipeline.md](./pipeline.md)).
 
-| Column          | Type        | Constraints           | Description                                  |
-| --------------- | ----------- | --------------------- | -------------------------------------------- |
-| id              | UUID        | PK                    |                                              |
-| pipeline_run_id | UUID        | FK → pipeline_runs.id |                                              |
-| stage           | VARCHAR(50) | NOT NULL              | `collect`, `classify`, `cluster`, `generate` |
-| status          | VARCHAR(30) | NOT NULL              |                                              |
-| started_at      | TIMESTAMPTZ | NOT NULL              |                                              |
-| finished_at     | TIMESTAMPTZ | NULL                  |                                              |
-| items_in        | INT         | DEFAULT 0             |                                              |
-| items_out       | INT         | DEFAULT 0             |                                              |
-| items_failed    | INT         | DEFAULT 0             |                                              |
-| error_detail    | TEXT        | NULL                  |                                              |
-| created_at      | TIMESTAMPTZ | NOT NULL              |                                              |
+### `scheduler_jobs` / `scheduler_runs`
 
-**Index:**
-
-- `idx_stage_runs_pipeline` ON `(pipeline_run_id, stage)`
-
----
+Migration `017_scheduler.py`. Cron configuration and execution audit trail with linked `arq_job_ids`.
 
 ### `llm_calls`
 
-Audit log for cost tracking and debugging.
+LLM audit log (migration `004_llm_calls.py`).
 
-| Column            | Type          | Constraints | Description                        |
-| ----------------- | ------------- | ----------- | ---------------------------------- |
-| id                | UUID          | PK          |                                    |
-| entity_type       | VARCHAR(50)   | NOT NULL    | `signal`, `cluster`, `opportunity` |
-| entity_id         | UUID          | NOT NULL    |                                    |
-| graph_name        | VARCHAR(100)  | NOT NULL    | e.g.`classify_complaint`           |
-| model             | VARCHAR(50)   | NOT NULL    |                                    |
-| prompt_tokens     | INT           | NOT NULL    |                                    |
-| completion_tokens | INT           | NOT NULL    |                                    |
-| cost_usd          | NUMERIC(10,6) | NULL        |                                    |
-| latency_ms        | INT           | NULL        |                                    |
-| request_hash      | VARCHAR(64)   | NULL        | Dedup/debug                        |
-| created_at        | TIMESTAMPTZ   | NOT NULL    |                                    |
+| Column | Description |
+|--------|-------------|
+| entity_type, entity_id | Polymorphic reference |
+| graph_name | e.g. `classify_complaint` |
+| model, prompt_tokens, completion_tokens | |
+| estimated_cost_usd | Migration `019_llm_budget.py` |
+| latency_ms | |
 
-**Indexes:**
+### `llm_budget_alerts`
 
-- `idx_llm_calls_entity` ON `(entity_type, entity_id)`
-- `idx_llm_calls_created` ON `(created_at DESC)`
+Daily threshold warnings (50/75/90%). Migration `019_llm_budget.py`.
+
+### `approval_requests` / `approval_decisions`
+
+Founder approval workflow. Migration `018_approval_workflow.py`. Subjects: executive ranking runs, venture reports.
 
 ---
 
-## Lookup Tables (Taxonomy)
+## Key Queries
 
-### `taxonomy_categories`, `taxonomy_domains`, `taxonomy_personas`
-
-| Column      | Type           |
-| ----------- | -------------- |
-| code        | VARCHAR(50) PK |
-| label       | VARCHAR(100)   |
-| description | TEXT           |
-
-Seed via migration. Application validates against these codes; LLM prompt includes allowed values.
-
----
-
-## Key Queries (V1)
-
-### Worker: fetch signals to classify
+### Worker: pending signals for classification
 
 ```sql
 SELECT id, title, body, url
 FROM signals
 WHERE processing_status = 'pending'
 ORDER BY collected_at ASC
-LIMIT 50
-FOR UPDATE SKIP LOCKED;
+LIMIT 50;
 ```
 
-### Dashboard: new opportunities inbox
+### Dashboard: new opportunities
 
 ```sql
-SELECT o.*, c.label AS cluster_label, c.complaint_count
+SELECT o.*, os.score
 FROM opportunities o
-JOIN pain_point_clusters c ON c.id = o.cluster_id
+LEFT JOIN opportunity_scores os ON os.opportunity_id = o.id AND os.is_current = true
 WHERE o.review_status = 'new'
-ORDER BY o.confidence_score DESC, o.created_at DESC;
-```
-
-### Opportunity detail with evidence
-
-```sql
-SELECT comp.*
-FROM complaints comp
-JOIN opportunity_complaints oc ON oc.complaint_id = comp.id
-WHERE oc.opportunity_id = $1
-ORDER BY comp.severity DESC;
+ORDER BY os.score DESC NULLS LAST, o.confidence_score DESC;
 ```
 
 ### Daily LLM spend
 
 ```sql
-SELECT DATE(created_at), SUM(cost_usd)
+SELECT DATE(created_at AT TIME ZONE 'UTC'), SUM(estimated_cost_usd)
 FROM llm_calls
 WHERE created_at >= NOW() - INTERVAL '7 days'
 GROUP BY 1;
@@ -353,36 +290,41 @@ GROUP BY 1;
 
 ## Migration Strategy
 
-- **Tool:** Alembic (Python/FastAPI side)
-- **Order:** extensions → lookup seeds → core tables → indexes → pgvector index (deferred)
-- **Versioning:** Single linear chain; no branch migrations in V1
-- **Local reset:** `alembic downgrade base && alembic upgrade head` + seed script
+- **Tool:** Alembic (`api/alembic/`)
+- **Driver:** `postgresql+psycopg` (sync) for migrations; `postgresql+asyncpg` at runtime
+- **CI validation:** single head check, `upgrade head`, `alembic check`
+- **Local reset:** `alembic downgrade base && alembic upgrade head`
+
+### Migration index
+
+| Revision | File | Purpose |
+|----------|------|---------|
+| 001 | enable_extensions | pgvector |
+| 002 | core_persistence | sources, signals, complaints, opportunities, categories |
+| 003 | signal_content_hash | content hash dedup |
+| 004 | llm_calls | LLM audit |
+| 005 | opportunity_score_dimensions | scoring |
+| 006–013 | agent tables | V2 research agents |
+| 014 | executive_ranking | ranking runs |
+| 015 | pipeline | pipeline_runs, pipeline_stage_runs |
+| 016 | rss_feeds | RSS registry |
+| 017 | scheduler | scheduler_jobs, scheduler_runs |
+| 018 | approval_workflow | approvals |
+| 019 | llm_budget | cost tracking, alerts |
 
 ---
 
-## Data Volume Estimates (V1 — 90 days)
+## Redis Keys (Not PostgreSQL)
 
-| Table         | Rows    | Storage                     |
-| ------------- | ------- | --------------------------- |
-| signals       | ~25,000 | ~50 MB                      |
-| complaints    | ~18,000 | ~30 MB + embeddings ~110 MB |
-| clusters      | ~300    | negligible                  |
-| opportunities | ~250    | negligible                  |
-| llm_calls     | ~20,000 | ~5 MB                       |
-
-Well within single PostgreSQL instance limits. Re-evaluate partitioning at 500K+ signals.
-
----
-
-## Redis Keys (Not PostgreSQL — Documented for Completeness)
-
-| Key Pattern                    | TTL    | Purpose                                      |
-| ------------------------------ | ------ | -------------------------------------------- |
-| `queue:classify`               | —      | List of signal IDs (or use ARQ native queue) |
-| `queue:embed`                  | —      | Complaint IDs needing embedding              |
-| `lock:pipeline:run`            | 3600s  | Prevent concurrent full pipeline runs        |
-| `ratelimit:reddit:{source_id}` | 60s    | Collection rate limiting                     |
-| `cache:source:{id}:cursor`     | 86400s | Pagination cursor for collectors             |
+| Key Pattern | Purpose |
+|-------------|---------|
+| `lock:pipeline:run` | Full pipeline concurrency lock |
+| `lock:job:{name}:{key}` | Idempotent job dedup |
+| `job:status:{job_id}` | ARQ job monitoring (7-day TTL) |
+| `jobs:recent` | Recent job ID sorted set |
+| `ratelimit:reddit:{scope}` | Reddit collector rate limit |
+| `ratelimit:rss:{scope}` | RSS collector rate limit |
+| `arq:queue` | ARQ default queue |
 
 PostgreSQL remains authoritative; Redis loss means job retry, not data loss.
 
@@ -391,7 +333,7 @@ PostgreSQL remains authoritative; Redis loss means job retry, not data loss.
 ## Integrity Rules
 
 1. Signal → complaint is 1:0..1; deleting signal cascades to complaint
-2. Cluster → opportunity is 1:0..1 in V1
-3. `complaints.cluster_id` must reference cluster containing that complaint (enforced in application layer during clustering transaction)
-4. `opportunity_complaints` must be subset of cluster members
-5. `review_status` changes must insert `opportunity_reviews` row in same transaction
+2. Complaint → opportunity is M:N via `opportunity_complaints`
+3. One `is_current=true` opportunity_score per opportunity (application enforced)
+4. Approval decisions append-only on `approval_decisions`
+5. Review status changes on opportunities persist via service layer

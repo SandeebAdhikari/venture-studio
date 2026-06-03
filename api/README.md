@@ -1,154 +1,179 @@
 # Backend API — AI Venture Studio
 
-FastAPI backend for the AI Venture Studio platform.
+FastAPI backend for the AI Venture Studio platform: ingestion, LangGraph agents, pipeline orchestration, ARQ workers, scheduler, and dashboard APIs.
+
+Full API reference: [docs/api-overview.md](../docs/api-overview.md)
+
+---
 
 ## Prerequisites
 
 - Python 3.12+ (`python3.12 -m venv .venv`)
-- Docker & Docker Compose (for PostgreSQL and Redis)
+- Docker & Docker Compose (PostgreSQL + Redis)
 
-If ports `5432` or `6379` are already in use locally, either stop those services or override
-`POSTGRES_PORT` / `REDIS_PORT` in `.env` and adjust `docker-compose.yml` host mappings.
+If ports `5432` or `6379` are in use, override `POSTGRES_PORT` / `REDIS_PORT` in `.env`.
+
+---
 
 ## Quick Start
 
 ```bash
 # From repository root
 cp .env.example .env
-# Edit .env — set API_KEY to a secure random string
+# Edit .env — set API_KEY (min 16 chars) and OPENAI_API_KEY
 
 docker compose up -d postgres redis
 
 cd api
 pip install -e ".[dev]"
-
-# Run migrations
 alembic upgrade head
 
-# Start API
+# API
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Start background worker (separate terminal)
+# Worker (separate terminal)
 arq app.workers.worker.WorkerSettings
 ```
 
-Or run everything with Docker Compose (includes `worker` service):
+Or run API + worker via Docker Compose:
 
 ```bash
 docker compose up -d
+docker compose exec api alembic upgrade head
 ```
 
-## Endpoints
+---
 
-All `/api/v1/*` resource routes require the `X-API-Key` header.
+## Authentication
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Liveness probe |
-| GET | `/health/ready` | Readiness probe (PostgreSQL + Redis) |
-| GET | `/api/v1/sources` | List sources (filter: `enabled`, `source_type`) |
-| POST | `/api/v1/sources` | Create source |
-| GET | `/api/v1/sources/{id}` | Get source |
-| PATCH | `/api/v1/sources/{id}` | Update source |
-| DELETE | `/api/v1/sources/{id}` | Delete source (local/staging only) |
-| GET | `/api/v1/categories` | List categories (filter: `kind`, `code`) |
-| GET | `/api/v1/complaints` | List complaints (filter: category/domain/persona/severity) |
-| GET | `/api/v1/opportunities` | List opportunities (filter: `review_status`, `min_confidence`) |
-| POST | `/api/v1/opportunities/{id}/review` | Set review status |
-| GET | `/api/v1/reports` | List reports (filter: `opportunity_id`, `report_type`, `status`) |
-| POST | `/api/v1/reports/top-opportunities/generate` | Generate Top Opportunities markdown report |
-| GET | `/api/v1/reports/{id}/markdown` | Retrieve report markdown body |
-| GET | `/docs` | OpenAPI UI (local/staging only) |
+All `/api/v1/*` routes require:
+
+```
+X-API-Key: <API_KEY>
+```
+
+Public endpoints: `GET /health`, `GET /health/ready`
+
+OpenAPI UI: `GET /docs` (local/staging only)
+
+---
+
+## Endpoint Summary
+
+See [docs/api-overview.md](../docs/api-overview.md) for the complete reference.
+
+| Area | Prefix | Key operations |
+|------|--------|----------------|
+| Health | `/health` | Liveness, readiness |
+| Sources | `/api/v1/sources` | CRUD for ingestion sources |
+| RSS Feeds | `/api/v1/rss-feeds` | Create, list, delete feeds |
+| Categories | `/api/v1/categories` | Taxonomy CRUD |
+| Complaints | `/api/v1/complaints` | List, get, CRUD |
+| Opportunities | `/api/v1/opportunities` | List, review, score |
+| Reports | `/api/v1/reports` | CRUD, top-opportunities generate, markdown |
+| Executive Reports | `/api/v1/executive-reports` | Venture report generate, markdown, download |
+| Market Research | `/api/v1/market-research` | List, generate, per-opportunity |
+| Competitor Intelligence | `/api/v1/competitor-intelligence` | List, generate, per-opportunity |
+| Customer Research | `/api/v1/customer-research` | List, generate, per-opportunity |
+| Revenue Validation | `/api/v1/revenue-validation` | List, generate, per-opportunity |
+| Product Strategy | `/api/v1/product-strategy` | List, generate, per-opportunity |
+| Go-To-Market | `/api/v1/go-to-market` | List, generate, per-opportunity |
+| Growth Strategy | `/api/v1/growth-strategy` | List, generate, per-opportunity |
+| Human Proxy | `/api/v1/human-proxy` | Evaluations, founder profiles |
+| Executive Ranking | `/api/v1/executive-ranking` | Generate, current, history |
+| Pipeline | `/api/v1/pipeline` | Run full pipeline, list runs |
+| Jobs | `/api/v1/jobs` | Enqueue stage jobs, poll status |
+| Scheduler | `/api/v1/scheduler` | Cron jobs, enable/disable, manual run |
+| Dashboard | `/api/v1/dashboard` | Summary, opportunities, pipeline, reports |
+| Approvals | `/api/v1/approvals` | List, approve, reject, research |
+| Budget | `/api/v1/budget` | Daily spend, history |
 
 List endpoints support `limit` (1–100) and `offset` pagination.
 
-## Collection Service
+---
 
-Raw complaint data is ingested via `ComplaintCollectionService` (no LLM). Items are
-normalized, deduplicated, and stored as `signals` with `processing_status=pending`
-for later classification.
+## Core Services
+
+### Collection
+
+`ComplaintCollectionService` ingests via registered collectors (Reddit, RSS). No LLM.
 
 ```python
-from app.collection.schemas import RawComplaintInput
-from app.repositories import get_repositories
-from app.collection.service import ComplaintCollectionService
-
-# services.collection.ingest(source_id, RawComplaintInput(...))
+# services.collection.collect_enabled_sources()
 ```
 
-Dedup layers: `(source_id, external_id)`, canonical URL, normalized content hash.
+Dedup: `(source_id, external_id)`, URL, content hash.
 
-## Opportunity Generator
+### Classification
 
-Classified complaints are analyzed for recurring topics via `OpportunityGeneratorService`.
-Each eligible pattern produces an opportunity brief with supporting complaints, confidence
-score, and explanation (stored in `problem_statement` and `opportunity_scores.scoring_notes`).
+LangGraph `classify_complaint` via `ComplaintClassificationService`:
+
+```python
+# services.classification.classify_pending(limit=50)
+```
+
+### Opportunity Generation
+
+`OpportunityGeneratorService` — pattern detection + LangGraph synthesis:
 
 ```python
 # services.generation.generate(limit=500)
 ```
 
-Pattern detection groups complaints by repeated phrases in summaries (min cluster size 3).
-No market research — synthesis uses complaint evidence only.
+### Scoring
 
-## Opportunity Scoring Engine
-
-Opportunities are ranked 0–100 via `OpportunityScoringService` using complaint volume,
-severity, evidence-based market indicators, implementation ease, and founder fit.
-Each rescore appends to `opportunity_scores` history (one `is_current` row per opportunity).
+Deterministic `OpportunityScoringEngine` (no LLM):
 
 ```python
 # services.scoring.score_opportunity(opportunity_id)
-# services.scoring.get_score_history(opportunity_id)
+# services.scoring.score_all(limit=1000)
 ```
 
-## Executive Report Engine
-
-Generates a **Top Opportunities Report** in markdown from highest-scored opportunities.
-Each entry includes title, score, confidence, supporting evidence, key complaints,
-and a recommendation. Reports are stored in `reports` with full structured content.
+### Pipeline
 
 ```python
-# services.executive_reports.generate_top_opportunities_report(limit=10)
-# services.executive_reports.get_report_markdown(report_id)
+# services.pipeline.run_pipeline(trigger="manual")
+# POST /api/v1/pipeline/run?background=true
+# POST /api/v1/jobs/{job_name}
 ```
 
-## Classification Agent
+14 stages — see [docs/pipeline.md](../docs/pipeline.md).
 
-Pending signals are classified via `ComplaintClassificationService` using a LangGraph
-workflow (`classify_complaint`) with OpenAI structured output.
+### Executive Ranking
+
+Deterministic engine combining agent outputs:
 
 ```python
-from app.repositories import get_repositories
-from app.services.container import get_services
-
-# services.classification.classify_signal(signal_id)
-# services.classification.classify_pending(limit=50)
+# services.executive_ranking.generate_ranking(top_n=5)
 ```
 
-Output fields: `industry`, `customer_type`, `problem_category`, `severity_score`, `summary`.
-Results are stored in `complaints`; each LLM attempt is logged in `llm_calls`.
+### Venture Reports
 
-Set `OPENAI_API_KEY` in `.env` for live classification. Tests use a mock LLM client.
+```python
+# services.venture_reports.generate_venture_report(top_n=5)
+```
+
+---
 
 ## Tests
 
 ```bash
 cd api
-POSTGRES_PORT=5433 pytest tests/ -v
+docker compose up -d postgres redis   # from repo root
+pip install -e ".[dev]"
+alembic upgrade head
+PYTHONPATH=. pytest tests/ -q
 ```
 
-CI runs Ruff, pytest, migration validation, and build checks on every push/PR to `main`.
-See [docs/ci.md](../docs/ci.md) for workflow details.
+**230 tests.** CI runs Ruff, pytest, migration validation, and Docker build on every push/PR to `main`.
 
-## Docker (full stack)
+See [docs/ci.md](../docs/ci.md).
 
-```bash
-cp .env.example .env
-docker compose up --build
-```
+---
 
 ## Migrations
+
+19 revisions in `alembic/versions/` (001–019). Single linear chain.
 
 ```bash
 cd api
@@ -157,6 +182,42 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
+---
+
 ## Project Layout
 
-See repository `docs/architecture.md` for the full system design.
+```
+api/app/
+├── agents/           # LangGraph agents + deterministic engines
+├── api/v1/           # REST routers (25 modules)
+├── collectors/       # Reddit, RSS
+├── collection/       # ComplaintCollectionService
+├── pipeline/         # Orchestrator, executor
+├── ranking/          # Executive ranking engine
+├── scoring/          # Opportunity scoring engine
+├── reports/          # Report generators
+├── services/         # Service layer
+├── repositories/     # Data access
+├── workers/          # ARQ jobs
+└── scheduler/        # APScheduler
+```
+
+See [docs/architecture.md](../docs/architecture.md).
+
+---
+
+## Configuration
+
+Key environment variables (see `.env.example` at repo root):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `API_KEY` | — | Shared auth key (required, min 16 chars) |
+| `OPENAI_API_KEY` | — | LLM provider key |
+| `LLM_DAILY_BUDGET_USD` | 2.0 | Daily spend cap |
+| `SCHEDULER_ENABLED` | true | Start APScheduler on API boot |
+| `REQUIRE_FOUNDER_APPROVAL` | true | Gate rankings and venture reports |
+| `CLASSIFY_BATCH_SIZE` | 50 | Classification batch size |
+| `MIN_CLUSTER_SIZE` | 3 | Min complaints per opportunity pattern |
+
+Full list in `app/config.py`.

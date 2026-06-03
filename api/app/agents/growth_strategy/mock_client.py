@@ -130,7 +130,9 @@ def default_mock_growth_strategy_output() -> GrowthStrategyLLMOutput:
             MarketExpansionOutput(
                 segment_name="Healthcare clinic scheduling",
                 geography="United States",
-                expansion_rationale="Similar hourly staffing coordination pain with higher compliance needs.",
+                expansion_rationale=(
+                    "Similar hourly staffing coordination pain with higher compliance needs."
+                ),
                 priority="medium",
             ),
             MarketExpansionOutput(

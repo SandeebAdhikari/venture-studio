@@ -76,7 +76,10 @@ async def test_collect_stage_with_registered_collector(
                     external_id=f"ext-{uuid4()}",
                     url=f"https://example.com/{uuid4()}",
                     title="Tool is too expensive",
-                    body="We cannot afford this SaaS product at our stage. It blocks our workflow daily.",
+                    body=(
+                        "We cannot afford this SaaS product at our stage. "
+                        "It blocks our workflow daily."
+                    ),
                 )
             ]
         ),

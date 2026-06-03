@@ -29,9 +29,7 @@ class GrowthEvaluationRepository(BaseRepository[GrowthEvaluation]):
         if filters.min_growth_score is not None:
             query = query.where(GrowthEvaluation.growth_score >= filters.min_growth_score)
         if filters.min_scalability_score is not None:
-            query = query.where(
-                GrowthEvaluation.scalability_score >= filters.min_scalability_score
-            )
+            query = query.where(GrowthEvaluation.scalability_score >= filters.min_scalability_score)
         if filters.max_risk_score is not None:
             query = query.where(GrowthEvaluation.risk_score <= filters.max_risk_score)
         if filters.min_growth_readiness_score is not None:

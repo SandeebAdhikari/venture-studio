@@ -26,7 +26,9 @@ class SchedulerJob(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     runs: Mapped[list[SchedulerRun]] = relationship(back_populates="job")
 
     __table_args__ = (
-        CheckConstraint("schedule_hour >= 0 AND schedule_hour <= 23", name="ck_scheduler_jobs_hour"),
+        CheckConstraint(
+            "schedule_hour >= 0 AND schedule_hour <= 23", name="ck_scheduler_jobs_hour"
+        ),
         CheckConstraint(
             "schedule_minute >= 0 AND schedule_minute <= 59",
             name="ck_scheduler_jobs_minute",

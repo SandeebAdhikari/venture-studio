@@ -34,7 +34,9 @@ class CompetitorAnalysisValidator:
             errors.append("competitive_gaps must not be empty")
 
         known_products = {product.lower() for product in context.known_products if product.strip()}
-        known_products.update(product.lower() for product in context.product_mentions if product.strip())
+        known_products.update(
+            product.lower() for product in context.product_mentions if product.strip()
+        )
 
         for index, competitor in enumerate(output.competitors, start=1):
             if len(competitor.name.strip()) < 2:
@@ -73,9 +75,7 @@ class CompetitorAnalysisValidator:
                 for product in known_products
             )
             if not grounded:
-                errors.append(
-                    "no competitor profile grounded in opportunity evidence products"
-                )
+                errors.append("no competitor profile grounded in opportunity evidence products")
 
         for index, gap in enumerate(output.competitive_gaps, start=1):
             if len(gap.gap.strip()) < 5:

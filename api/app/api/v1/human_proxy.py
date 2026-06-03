@@ -27,7 +27,9 @@ def _human_proxy_evaluation_filters(
         HumanProxyEvaluationStatus | None,
         Query(alias="status", description="Filter by evaluation status"),
     ] = None,
-    is_current: Annotated[bool | None, Query(description="Filter by current evaluation flag")] = None,
+    is_current: Annotated[
+        bool | None, Query(description="Filter by current evaluation flag")
+    ] = None,
     min_founder_fit_score: Annotated[
         int | None,
         Query(ge=0, le=100, description="Minimum founder fit score"),

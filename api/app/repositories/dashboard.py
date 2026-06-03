@@ -48,9 +48,7 @@ class DashboardMetricsRepository:
 
     async def count_enabled_sources(self) -> int:
         result = await self.session.scalar(
-            select(func.count())
-            .select_from(Source)
-            .where(Source.enabled.is_(True))
+            select(func.count()).select_from(Source).where(Source.enabled.is_(True))
         )
         return int(result or 0)
 
@@ -117,7 +115,9 @@ class DashboardMetricsRepository:
         statuses: list[dict[str, Any]] = []
         for model, key, display_name in agents:
             statuses.append(
-                await self.agent_current_status_counts(model, agent_key=key, display_name=display_name)
+                await self.agent_current_status_counts(
+                    model, agent_key=key, display_name=display_name
+                )
             )
         return statuses
 
@@ -150,10 +150,7 @@ class DashboardMetricsRepository:
 
     @staticmethod
     def review_status_map(raw: dict[str, int]) -> dict[str, int]:
-        return {
-            status.value: raw.get(status.value, 0)
-            for status in ReviewStatus
-        }
+        return {status.value: raw.get(status.value, 0) for status in ReviewStatus}
 
     async def collection_metrics(self) -> dict[str, int]:
         signal_counts = self.signal_status_map(await self.count_signals_by_status())

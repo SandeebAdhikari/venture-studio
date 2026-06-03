@@ -5,17 +5,18 @@ Revises: 001_extensions
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "002_core_persistence"
-down_revision: Union[str, None] = "001_extensions"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "001_extensions"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 TIMESTAMP_TABLES = (
     "sources",
@@ -33,7 +34,12 @@ CATEGORY_SEEDS: list[tuple[str, str, str, str]] = [
     ("ux_ui", "UX / UI", "Usability and interface problems", "complaint_category"),
     ("performance", "Performance", "Speed, reliability, or scale issues", "complaint_category"),
     ("support", "Support", "Customer support experience", "complaint_category"),
-    ("missing_feature", "Missing Feature", "Capability gap in existing tools", "complaint_category"),
+    (
+        "missing_feature",
+        "Missing Feature",
+        "Capability gap in existing tools",
+        "complaint_category",
+    ),
     ("workflow", "Workflow", "Process or workflow friction", "complaint_category"),
     ("data_export", "Data Export", "Import, export, or portability issues", "complaint_category"),
     ("onboarding", "Onboarding", "Setup and getting-started pain", "complaint_category"),
@@ -87,15 +93,35 @@ def upgrade() -> None:
 
     op.create_table(
         "sources",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("source_type", sa.String(length=30), nullable=False),
-        sa.Column("config", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
+        sa.Column(
+            "config",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
+        ),
         sa.Column("enabled", sa.Boolean(), server_default=sa.text("true"), nullable=False),
         sa.Column("last_collected_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_error", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -108,13 +134,28 @@ def upgrade() -> None:
 
     op.create_table(
         "categories",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("code", sa.String(length=50), nullable=False),
         sa.Column("label", sa.String(length=100), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("kind", sa.String(length=30), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("code", "kind", name="uq_categories_code_kind"),
     )
@@ -122,7 +163,12 @@ def upgrade() -> None:
 
     op.create_table(
         "signals",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("source_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("external_id", sa.String(length=255), nullable=False),
         sa.Column("url", sa.Text(), nullable=False),
@@ -130,22 +176,54 @@ def upgrade() -> None:
         sa.Column("body", sa.Text(), nullable=False),
         sa.Column("author", sa.String(length=255), nullable=True),
         sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("metadata", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
-        sa.Column("processing_status", sa.String(length=30), server_default="pending", nullable=False),
+        sa.Column(
+            "metadata",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
+        ),
+        sa.Column(
+            "processing_status", sa.String(length=30), server_default="pending", nullable=False
+        ),
         sa.Column("skip_reason", sa.Text(), nullable=True),
-        sa.Column("collected_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "collected_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["source_id"], ["sources.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("source_id", "external_id", name="uq_signals_source_external"),
     )
-    op.create_index("idx_signals_status_collected", "signals", ["processing_status", "collected_at"], unique=False)
+    op.create_index(
+        "idx_signals_status_collected",
+        "signals",
+        ["processing_status", "collected_at"],
+        unique=False,
+    )
     op.create_index("idx_signals_published", "signals", ["published_at"], unique=False)
 
     op.create_table(
         "complaints",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("signal_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("category_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("domain_id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -153,12 +231,24 @@ def upgrade() -> None:
         sa.Column("summary", sa.Text(), nullable=False),
         sa.Column("verbatim_quote", sa.Text(), nullable=False),
         sa.Column("severity", sa.Integer(), nullable=False),
-        sa.Column("product_mentions", postgresql.ARRAY(sa.Text()), server_default="{}", nullable=False),
+        sa.Column(
+            "product_mentions", postgresql.ARRAY(sa.Text()), server_default="{}", nullable=False
+        ),
         sa.Column("embedding", Vector(1536), nullable=True),
         sa.Column("llm_model", sa.String(length=50), nullable=False),
         sa.Column("llm_confidence", sa.Float(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.CheckConstraint("severity >= 1 AND severity <= 5", name="ck_complaints_severity"),
         sa.ForeignKeyConstraint(["signal_id"], ["signals.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["category_id"], ["categories.id"], ondelete="RESTRICT"),
@@ -167,12 +257,19 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("signal_id"),
     )
-    op.create_index("idx_complaints_category_domain", "complaints", ["category_id", "domain_id"], unique=False)
+    op.create_index(
+        "idx_complaints_category_domain", "complaints", ["category_id", "domain_id"], unique=False
+    )
     op.create_index("idx_complaints_severity", "complaints", ["severity"], unique=False)
 
     op.create_table(
         "opportunities",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("title", sa.String(length=200), nullable=False),
         sa.Column("problem_statement", sa.Text(), nullable=False),
         sa.Column("target_user", sa.Text(), nullable=False),
@@ -184,13 +281,35 @@ def upgrade() -> None:
         sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("review_notes", sa.Text(), nullable=True),
         sa.Column("llm_model", sa.String(length=50), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.CheckConstraint("confidence_score >= 0 AND confidence_score <= 1", name="ck_opportunities_confidence"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.CheckConstraint(
+            "confidence_score >= 0 AND confidence_score <= 1", name="ck_opportunities_confidence"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("idx_opportunities_review_status", "opportunities", ["review_status", "created_at"], unique=False)
-    op.create_index("idx_opportunities_confidence", "opportunities", [sa.text("confidence_score DESC")], unique=False)
+    op.create_index(
+        "idx_opportunities_review_status",
+        "opportunities",
+        ["review_status", "created_at"],
+        unique=False,
+    )
+    op.create_index(
+        "idx_opportunities_confidence",
+        "opportunities",
+        [sa.text("confidence_score DESC")],
+        unique=False,
+    )
 
     op.create_table(
         "opportunity_complaints",
@@ -203,7 +322,12 @@ def upgrade() -> None:
 
     op.create_table(
         "opportunity_scores",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("opportunity_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("overall_score", sa.Float(), nullable=False),
         sa.Column("confidence_score", sa.Float(), nullable=False),
@@ -213,13 +337,34 @@ def upgrade() -> None:
         sa.Column("scoring_model", sa.String(length=50), nullable=False),
         sa.Column("scoring_notes", sa.Text(), nullable=True),
         sa.Column("is_current", sa.Boolean(), server_default=sa.text("true"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.CheckConstraint("overall_score >= 0 AND overall_score <= 1", name="ck_opportunity_scores_overall"),
-        sa.CheckConstraint("confidence_score >= 0 AND confidence_score <= 1", name="ck_opportunity_scores_confidence"),
-        sa.CheckConstraint("frequency_score >= 0 AND frequency_score <= 1", name="ck_opportunity_scores_frequency"),
-        sa.CheckConstraint("severity_score >= 0 AND severity_score <= 1", name="ck_opportunity_scores_severity"),
-        sa.CheckConstraint("evidence_score >= 0 AND evidence_score <= 1", name="ck_opportunity_scores_evidence"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.CheckConstraint(
+            "overall_score >= 0 AND overall_score <= 1", name="ck_opportunity_scores_overall"
+        ),
+        sa.CheckConstraint(
+            "confidence_score >= 0 AND confidence_score <= 1",
+            name="ck_opportunity_scores_confidence",
+        ),
+        sa.CheckConstraint(
+            "frequency_score >= 0 AND frequency_score <= 1", name="ck_opportunity_scores_frequency"
+        ),
+        sa.CheckConstraint(
+            "severity_score >= 0 AND severity_score <= 1", name="ck_opportunity_scores_severity"
+        ),
+        sa.CheckConstraint(
+            "evidence_score >= 0 AND evidence_score <= 1", name="ck_opportunity_scores_evidence"
+        ),
         sa.ForeignKeyConstraint(["opportunity_id"], ["opportunities.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -245,16 +390,41 @@ def upgrade() -> None:
 
     op.create_table(
         "reports",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("opportunity_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("report_type", sa.String(length=30), nullable=False),
         sa.Column("title", sa.String(length=200), nullable=False),
         sa.Column("summary", sa.Text(), nullable=True),
-        sa.Column("content", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
+        sa.Column(
+            "content",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
+        ),
         sa.Column("status", sa.String(length=30), server_default="draft", nullable=False),
-        sa.Column("metadata", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "metadata",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'{}'::jsonb"),
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["opportunity_id"], ["opportunities.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )

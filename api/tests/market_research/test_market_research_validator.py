@@ -4,7 +4,10 @@ import pytest
 
 from app.agents.market_research.mock_client import default_mock_research_output
 from app.agents.market_research.schemas import CustomerSegment, MarketResearchLLMOutput
-from app.agents.market_research.validator import MarketResearchValidationError, MarketResearchValidator
+from app.agents.market_research.validator import (
+    MarketResearchValidationError,
+    MarketResearchValidator,
+)
 
 
 def _valid_output() -> MarketResearchLLMOutput:

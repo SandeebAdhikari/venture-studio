@@ -17,8 +17,8 @@ from app.agents.opportunity.schemas import (
 from app.config import Settings, get_settings
 from app.logging import get_logger
 from app.repositories import RepositoryContainer
-from app.scoring.service import OpportunityScoringService
 from app.schemas.opportunity import OpportunityCreate
+from app.scoring.service import OpportunityScoringService
 
 if TYPE_CHECKING:
     from app.services.llm_budget import LLMBudgetService

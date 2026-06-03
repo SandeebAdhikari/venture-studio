@@ -160,8 +160,13 @@ On GitHub, enable branch protection for `main` and require status checks:
 3. Push — CI runs `upgrade head` and `alembic check`
 4. If `alembic check` fails, update the migration or ORM models until schema and metadata match
 
+## Frontend CI
+
+The `web/` dashboard is **not** included in CI workflows. Only backend (`api/`) is validated. Add a workflow when frontend lint/build gates are needed.
+
 ## Related docs
 
 - [architecture.md](./architecture.md) — system layout
 - [database.md](./database.md) — schema and migration conventions
+- [deployment.md](./deployment.md) — production deployment
 - [api/README.md](../api/README.md) — local development and test commands

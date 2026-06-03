@@ -8,7 +8,12 @@ from app.exceptions import ValidationError
 from app.repositories import RepositoryContainer
 from app.scheduler.definitions import SCHEDULER_JOB_MAP
 from app.scheduler.scheduler import get_scheduler
-from app.schemas.scheduler import SchedulerJobRead, SchedulerJobUpdate, SchedulerRunRead, SchedulerRunResult
+from app.schemas.scheduler import (
+    SchedulerJobRead,
+    SchedulerJobUpdate,
+    SchedulerRunRead,
+    SchedulerRunResult,
+)
 
 if TYPE_CHECKING:
     from app.workers.enqueue import JobEnqueuer
@@ -81,7 +86,8 @@ class SchedulerService:
     async def trigger_job(self, job_name: str, enqueuer: JobEnqueuer) -> SchedulerRunResult:
         if job_name not in SCHEDULER_JOB_MAP:
             raise ValidationError(
-                f"Unknown scheduler job '{job_name}'. Valid jobs: {sorted(SCHEDULER_JOB_MAP.keys())}"
+                f"Unknown scheduler job '{job_name}'. "
+                f"Valid jobs: {sorted(SCHEDULER_JOB_MAP.keys())}"
             )
 
         await self._repos.scheduler_jobs.ensure_defaults()

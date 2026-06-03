@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.agents.product_strategy.graph import GRAPH_NAME, ProductStrategyAgent
-from app.agents.product_strategy.llm_client import OpenAIProductStrategyClient, ProductStrategyLLMClient
+from app.agents.product_strategy.llm_client import (
+    OpenAIProductStrategyClient,
+    ProductStrategyLLMClient,
+)
 from app.agents.product_strategy.schemas import (
     ComplaintEvidenceItem,
     OpportunityPlanningContext,

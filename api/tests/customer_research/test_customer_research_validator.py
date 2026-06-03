@@ -1,7 +1,8 @@
 """Unit tests for customer research validator."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from app.agents.customer_research.metrics import compute_validation_metrics
 from app.agents.customer_research.mock_client import default_mock_customer_research_output

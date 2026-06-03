@@ -174,7 +174,9 @@ async def classify(ctx: dict, options: dict[str, Any] | None = None) -> dict[str
     return await _execute_stage_job(ctx, PipelineStage.CLASSIFY, "classify", options)
 
 
-async def generate_opportunities(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:
+async def generate_opportunities(
+    ctx: dict, options: dict[str, Any] | None = None
+) -> dict[str, Any]:
     return await _execute_stage_job(
         ctx,
         PipelineStage.GENERATE_OPPORTUNITIES,
@@ -201,15 +203,21 @@ async def competitor_analysis(ctx: dict, options: dict[str, Any] | None = None) 
 
 
 async def customer_research(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:
-    return await _execute_stage_job(ctx, PipelineStage.CUSTOMER_RESEARCH, "customer_research", options)
+    return await _execute_stage_job(
+        ctx, PipelineStage.CUSTOMER_RESEARCH, "customer_research", options
+    )
 
 
 async def revenue_validation(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:
-    return await _execute_stage_job(ctx, PipelineStage.REVENUE_VALIDATION, "revenue_validation", options)
+    return await _execute_stage_job(
+        ctx, PipelineStage.REVENUE_VALIDATION, "revenue_validation", options
+    )
 
 
 async def product_strategy(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:
-    return await _execute_stage_job(ctx, PipelineStage.PRODUCT_STRATEGY, "product_strategy", options)
+    return await _execute_stage_job(
+        ctx, PipelineStage.PRODUCT_STRATEGY, "product_strategy", options
+    )
 
 
 async def go_to_market(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -225,7 +233,9 @@ async def human_proxy(ctx: dict, options: dict[str, Any] | None = None) -> dict[
 
 
 async def executive_ranking(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:
-    return await _execute_stage_job(ctx, PipelineStage.EXECUTIVE_RANKING, "executive_ranking", options)
+    return await _execute_stage_job(
+        ctx, PipelineStage.EXECUTIVE_RANKING, "executive_ranking", options
+    )
 
 
 async def venture_report(ctx: dict, options: dict[str, Any] | None = None) -> dict[str, Any]:

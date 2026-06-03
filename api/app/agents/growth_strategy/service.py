@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.agents.growth_strategy.graph import GRAPH_NAME, GrowthStrategyAgent
-from app.agents.growth_strategy.llm_client import GrowthStrategyLLMClient, OpenAIGrowthStrategyClient
+from app.agents.growth_strategy.llm_client import (
+    GrowthStrategyLLMClient,
+    OpenAIGrowthStrategyClient,
+)
 from app.agents.growth_strategy.schemas import (
     ComplaintEvidenceItem,
     GrowthStrategyBatchResult,

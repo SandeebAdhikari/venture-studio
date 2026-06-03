@@ -1,14 +1,19 @@
 """Shared RSS test fixtures."""
 
+
 def sample_rss_xml(*, duplicate_guid: bool = False) -> str:
-    duplicate_item = """
+    duplicate_item = (
+        """
     <item>
       <title>Duplicate headline</title>
       <link>https://example.com/article/1</link>
       <description>Duplicate body text.</description>
       <guid>article-1</guid>
     </item>
-    """ if duplicate_guid else ""
+    """
+        if duplicate_guid
+        else ""
+    )
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>

@@ -40,6 +40,7 @@ flowchart LR
 | 02:00 | `collect` | `collect` |
 | 03:00 | `classify` | `classify` |
 | 04:00 | `generate_opportunities` | `generate_opportunities` |
+| — | *(not scheduled)* | `score` — run via full pipeline or `POST /api/v1/jobs/score` |
 | 05:00 | `research_agents` | `market_research`, `competitor_analysis`, `customer_research`, `revenue_validation`, `product_strategy`, `go_to_market`, `growth_strategy`, `human_proxy` |
 | 06:00 | `executive_ranking` | `executive_ranking` |
 | 07:00 | `venture_report` | `venture_report` |

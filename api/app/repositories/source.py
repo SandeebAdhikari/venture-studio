@@ -31,9 +31,7 @@ class SourceRepository(BaseRepository[Source]):
         offset: int = 0,
     ) -> list[Source]:
         query = self._apply_filters(select(Source), filters)
-        result = await self.session.execute(
-            query.order_by(Source.name).limit(limit).offset(offset)
-        )
+        result = await self.session.execute(query.order_by(Source.name).limit(limit).offset(offset))
         return list(result.scalars().all())
 
     async def count_filtered(self, filters: SourceListFilter) -> int:
@@ -53,9 +51,7 @@ class SourceRepository(BaseRepository[Source]):
 
     async def list_by_type(self, source_type: SourceType) -> list[Source]:
         result = await self.session.execute(
-            select(Source)
-            .where(Source.source_type == source_type.value)
-            .order_by(Source.name)
+            select(Source).where(Source.source_type == source_type.value).order_by(Source.name)
         )
         return list(result.scalars().all())
 

@@ -90,7 +90,9 @@ async def test_execute_scheduler_job_records_failure(
 
 
 @pytest.mark.asyncio
-async def test_scheduled_run_skips_disabled_job(db_session: AsyncSession, job_enqueuer: JobEnqueuer):
+async def test_scheduled_run_skips_disabled_job(
+    db_session: AsyncSession, job_enqueuer: JobEnqueuer
+):
     repos = get_repositories(db_session)
     await repos.scheduler_jobs.ensure_defaults()
     job = await repos.scheduler_jobs.get_by_name("collect")

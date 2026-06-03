@@ -15,7 +15,10 @@ from app.agents.market_research.schemas import (
     MarketResearchResult,
     OpportunityResearchContext,
 )
-from app.agents.market_research.validator import MarketResearchValidationError, MarketResearchValidator
+from app.agents.market_research.validator import (
+    MarketResearchValidationError,
+    MarketResearchValidator,
+)
 from app.config import Settings
 from app.logging import get_logger
 

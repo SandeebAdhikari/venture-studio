@@ -72,7 +72,14 @@ class LLMBudgetRepository:
                 "estimated_cost_usd_total": float(estimated_cost or 0),
                 "actual_cost_usd_total": float(actual_cost or 0),
             }
-            for graph_name, calls, prompt_tokens, completion_tokens, estimated_cost, actual_cost in result.all()
+            for (
+                graph_name,
+                calls,
+                prompt_tokens,
+                completion_tokens,
+                estimated_cost,
+                actual_cost,
+            ) in result.all()
         ]
 
     async def daily_history(self, *, days: int) -> list[dict[str, Any]]:
@@ -104,7 +111,14 @@ class LLMBudgetRepository:
                 "estimated_cost_usd_total": float(estimated_cost or 0),
                 "actual_cost_usd_total": float(actual_cost or 0),
             }
-            for usage_date, calls, prompt_tokens, completion_tokens, estimated_cost, actual_cost in result.all()
+            for (
+                usage_date,
+                calls,
+                prompt_tokens,
+                completion_tokens,
+                estimated_cost,
+                actual_cost,
+            ) in result.all()
         ]
 
     async def list_alerts_for_day(self, day: date) -> list[LLMBudgetAlert]:

@@ -5,16 +5,17 @@ Revises: 018_approval_workflow
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "019_llm_budget"
-down_revision: Union[str, None] = "018_approval_workflow"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "018_approval_workflow"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -48,7 +49,9 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("budget_date", "threshold_pct", name="uq_llm_budget_alerts_day_threshold"),
+        sa.UniqueConstraint(
+            "budget_date", "threshold_pct", name="uq_llm_budget_alerts_day_threshold"
+        ),
     )
     op.create_index(
         "idx_llm_budget_alerts_date",

@@ -44,10 +44,16 @@ class VentureReportCollector:
         if opportunity is None:
             raise ValueError(f"Opportunity {entry.opportunity_id} not found")
 
-        market_brief = await self._repos.market_briefs.get_current_for_opportunity(entry.opportunity_id)
-        competitor = await self._repos.competitor_analyses.get_current_for_opportunity(entry.opportunity_id)
+        market_brief = await self._repos.market_briefs.get_current_for_opportunity(
+            entry.opportunity_id
+        )
+        competitor = await self._repos.competitor_analyses.get_current_for_opportunity(
+            entry.opportunity_id
+        )
         if competitor is not None:
-            competitor = await self._repos.competitor_analyses.get_by_id_with_profiles(competitor.id)
+            competitor = await self._repos.competitor_analyses.get_by_id_with_profiles(
+                competitor.id
+            )
         customer_current = await self._repos.customer_research.get_current_for_opportunity(
             entry.opportunity_id
         )
@@ -56,14 +62,20 @@ class VentureReportCollector:
             customer = await self._repos.customer_research.get_by_id_with_evidence(
                 customer_current.id
             )
-        revenue = await self._repos.revenue_validations.get_current_for_opportunity(entry.opportunity_id)
+        revenue = await self._repos.revenue_validations.get_current_for_opportunity(
+            entry.opportunity_id
+        )
         if revenue is not None:
             revenue = await self._repos.revenue_validations.get_by_id_with_evidence(revenue.id)
-        product = await self._repos.product_strategies.get_current_for_opportunity(entry.opportunity_id)
+        product = await self._repos.product_strategies.get_current_for_opportunity(
+            entry.opportunity_id
+        )
         if product is not None:
             product = await self._repos.product_strategies.get_by_id_with_evidence(product.id)
         gtm = await self._repos.gtm_plans.get_current_for_opportunity(entry.opportunity_id)
-        growth = await self._repos.growth_evaluations.get_current_for_opportunity(entry.opportunity_id)
+        growth = await self._repos.growth_evaluations.get_current_for_opportunity(
+            entry.opportunity_id
+        )
         human_proxy = None
         if founder_profile_id is not None:
             human_proxy = await self._repos.human_proxy_evaluations.get_current_for_opportunity(
@@ -178,7 +190,8 @@ class VentureReportCollector:
         lines = [
             competitor.executive_summary or "Competitor landscape analyzed.",
             "",
-            f"- **Competitors tracked:** {metrics.get('competitor_count', len(competitor.profiles or []))}",
+            f"- **Competitors tracked:** "
+            f"{metrics.get('competitor_count', len(competitor.profiles or []))}",
             f"- **Differentiation score:** {metrics.get('differentiation_score', 'N/A')}",
             f"- **Threat level:** {metrics.get('threat_level', 'N/A')}",
             "",
@@ -206,7 +219,9 @@ class VentureReportCollector:
                 )
 
         if not items:
-            for complaint in sorted(opportunity.complaints, key=lambda c: c.severity, reverse=True)[:5]:
+            for complaint in sorted(opportunity.complaints, key=lambda c: c.severity, reverse=True)[
+                :5
+            ]:
                 source_url = complaint.signal.url if complaint.signal else None
                 items.append(
                     CustomerEvidenceItem(
@@ -356,6 +371,8 @@ class VentureReportCollector:
             _bullet_lines([str(item) for item in skill_matches]),
             "",
             "**Skill gaps**",
-            _bullet_lines([str(item) for item in skill_gaps], empty="_No major skill gaps identified._"),
+            _bullet_lines(
+                [str(item) for item in skill_gaps], empty="_No major skill gaps identified._"
+            ),
         ]
         return "\n".join(lines)

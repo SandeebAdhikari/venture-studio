@@ -48,9 +48,7 @@ class GTMPlanRepository(BaseRepository[GTMPlan]):
 
     async def get_by_id_with_evidence(self, entity_id: UUID) -> GTMPlan | None:
         result = await self.session.execute(
-            select(GTMPlan)
-            .options(selectinload(GTMPlan.evidence))
-            .where(GTMPlan.id == entity_id)
+            select(GTMPlan).options(selectinload(GTMPlan.evidence)).where(GTMPlan.id == entity_id)
         )
         return result.scalar_one_or_none()
 

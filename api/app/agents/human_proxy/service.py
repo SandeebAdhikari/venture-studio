@@ -118,7 +118,10 @@ class HumanProxyService:
                 opportunity_id,
                 founder_profile_id=profile.id,
             )
-            if existing is not None and existing.status == HumanProxyEvaluationStatus.COMPLETED.value:
+            if (
+                existing is not None
+                and existing.status == HumanProxyEvaluationStatus.COMPLETED.value
+            ):
                 return HumanProxyResult(
                     opportunity_id=opportunity_id,
                     founder_profile_id=profile.id,

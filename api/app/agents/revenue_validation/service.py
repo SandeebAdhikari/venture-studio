@@ -11,8 +11,8 @@ from app.agents.revenue_validation.llm_client import (
     RevenueValidationLLMClient,
 )
 from app.agents.revenue_validation.schemas import (
-    ComplaintEvidenceItem,
     CompetitorPricingContext,
+    ComplaintEvidenceItem,
     OpportunityRevenueContext,
     RevenueValidationBatchResult,
     RevenueValidationResult,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.config import Settings, get_settings
@@ -12,9 +13,16 @@ from app.logging import get_logger
 from app.ranking.service import ExecutiveRankingService
 from app.reports.venture.collector import VentureReportCollector
 from app.reports.venture.generator import REPORT_ENGINE, VentureReportGenerator
-from app.reports.venture.schemas import VentureReportContent, VentureReportMarkdownRead, VentureReportResult
+from app.reports.venture.schemas import (
+    VentureReportContent,
+    VentureReportMarkdownRead,
+    VentureReportResult,
+)
 from app.repositories import RepositoryContainer
 from app.schemas.report import ReportCreate, ReportRead
+
+if TYPE_CHECKING:
+    from app.services.approval import ApprovalService
 
 logger = get_logger(__name__)
 
@@ -28,7 +36,7 @@ class VentureReportService:
         settings: Settings | None = None,
         generator: VentureReportGenerator | None = None,
         ranking_service: ExecutiveRankingService | None = None,
-        approval_service: "ApprovalService | None" = None,
+        approval_service: ApprovalService | None = None,
     ) -> None:
         self._repos = repos
         self._settings = settings or get_settings()
@@ -78,7 +86,9 @@ class VentureReportService:
             top_entries = sorted(ranking.entries, key=lambda item: item.rank)[:top_limit]
 
         if not top_entries:
-            raise ValidationError("Executive ranking has no opportunities to include in the report.")
+            raise ValidationError(
+                "Executive ranking has no opportunities to include in the report."
+            )
 
         profile_id = founder_profile_id or ranking.founder_profile_id
         opportunity_reports = []

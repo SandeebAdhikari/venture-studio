@@ -11,8 +11,8 @@ from app.exceptions import ValidationError
 from app.ranking.service import ExecutiveRankingService
 from app.reports.venture.service import VentureReportService
 from app.repositories import get_repositories
-from app.services.approval import ApprovalService
 from app.schemas.approval import ApprovalActionRequest
+from app.services.approval import ApprovalService
 from tests.ranking.test_executive_ranking_service import (
     AgentScoreProfile,
     _create_opportunity,
@@ -76,7 +76,9 @@ async def test_venture_report_creates_draft_and_pending_approval(
         ranking_service=ranking_service,
         approval_service=approval,
     )
-    result = await venture_service.generate_venture_report(top_n=5, generate_ranking_if_missing=False)
+    result = await venture_service.generate_venture_report(
+        top_n=5, generate_ranking_if_missing=False
+    )
 
     report = await repos.reports.get_by_id(result.report_id)
     assert report is not None
@@ -103,7 +105,9 @@ async def test_approve_venture_report_publishes_and_records_history(
         ranking_service=ranking_service,
         approval_service=approval,
     )
-    result = await venture_service.generate_venture_report(top_n=5, generate_ranking_if_missing=False)
+    result = await venture_service.generate_venture_report(
+        top_n=5, generate_ranking_if_missing=False
+    )
 
     approval_request = await repos.approval_requests.get_by_report_id(result.report_id)
     assert approval_request is not None

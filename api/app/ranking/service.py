@@ -93,10 +93,10 @@ class ExecutiveRankingService:
                     agent_coverage_count=ranking_score.agent_coverage_count,
                     is_top_opportunity=index <= top_limit,
                     source_references=ranking_score.source_references.model_dump(mode="json"),
-                ranking_details={
-                    **ranking_score.ranking_details,
-                    "opportunity_title": ranking_score.opportunity_title,
-                },
+                    ranking_details={
+                        **ranking_score.ranking_details,
+                        "opportunity_title": ranking_score.opportunity_title,
+                    },
                 )
             )
 

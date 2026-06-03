@@ -38,9 +38,7 @@ class CustomerResearchValidator:
         if label_range is not None:
             low, high = label_range
             if not (low <= output.sentiment_score <= high):
-                errors.append(
-                    "sentiment_score inconsistent with customer_sentiment label"
-                )
+                errors.append("sentiment_score inconsistent with customer_sentiment label")
 
         if output.cares_verdict == "yes" and output.pain_score < 40:
             errors.append("cares_verdict=yes requires pain_score >= 40")
@@ -68,9 +66,7 @@ class CustomerResearchValidator:
                 errors.append(f"supporting_evidence[{index}].excerpt is too short")
             if item.complaint_index is not None:
                 if item.complaint_index < 0 or item.complaint_index > max_index:
-                    errors.append(
-                        f"supporting_evidence[{index}].complaint_index out of range"
-                    )
+                    errors.append(f"supporting_evidence[{index}].complaint_index out of range")
 
         if not context.complaint_evidence and output.cares_verdict != "no":
             errors.append("cannot conclude customers care without complaint evidence")

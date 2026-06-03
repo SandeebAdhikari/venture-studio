@@ -1,6 +1,6 @@
 """Risk and recommendation logic for venture reports."""
 
-from app.reports.venture.schemas import RiskItem, VentureOpportunityReport
+from app.reports.venture.schemas import RiskItem
 
 RECOMMEND_PURSUE = "Pursue — strong composite score with validated demand and founder fit."
 RECOMMEND_EXPLORE = "Explore — promising signal; run focused validation before committing."
@@ -25,7 +25,10 @@ def build_risk_items(
             RiskItem(
                 category="growth",
                 severity=severity,
-                description=f"Growth risk score is {growth_risk_score}/100 — scaling may be harder than expected.",
+                description=(
+                    f"Growth risk score is {growth_risk_score}/100 — "
+                    "scaling may be harder than expected."
+                ),
             )
         )
 
@@ -89,7 +92,9 @@ def build_risk_items(
             RiskItem(
                 category="general",
                 severity="low",
-                description="No major risks flagged from current agent outputs; continue validation.",
+                description=(
+                    "No major risks flagged from current agent outputs; continue validation."
+                ),
             )
         )
 

@@ -2,7 +2,6 @@
 
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -107,9 +106,7 @@ class SchedulerRunRepository(BaseRepository[SchedulerRun]):
 
     async def count_for_job(self, job_name: str) -> int:
         result = await self.session.scalar(
-            select(func.count())
-            .select_from(SchedulerRun)
-            .where(SchedulerRun.job_name == job_name)
+            select(func.count()).select_from(SchedulerRun).where(SchedulerRun.job_name == job_name)
         )
         return int(result or 0)
 

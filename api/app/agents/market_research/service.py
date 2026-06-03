@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.agents.market_research.graph import GRAPH_NAME, MarketResearchAgent
-from app.agents.market_research.llm_client import MarketResearchLLMClient, OpenAIMarketResearchClient
+from app.agents.market_research.llm_client import (
+    MarketResearchLLMClient,
+    OpenAIMarketResearchClient,
+)
 from app.agents.market_research.schemas import (
     MarketResearchBatchResult,
     MarketResearchResult,

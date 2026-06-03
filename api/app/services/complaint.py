@@ -81,7 +81,10 @@ class ComplaintService:
             ("domain", data.domain_id),
             ("persona", data.persona_id),
         ):
-            if category_id is not None and await self._repos.categories.get_by_id(category_id) is None:
+            if (
+                category_id is not None
+                and await self._repos.categories.get_by_id(category_id) is None
+            ):
                 raise ValidationError(f"{label} '{category_id}' does not exist")
         entity = await self._repos.complaints.update(entity, data)
         return ComplaintRead.model_validate(entity)

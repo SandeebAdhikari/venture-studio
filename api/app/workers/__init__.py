@@ -1,6 +1,6 @@
 """Background job workers (ARQ + Redis)."""
 
-from app.workers.enqueue import JobEnqueuer, REGISTERED_JOBS, close_arq_pool, get_arq_pool
+from app.workers.enqueue import REGISTERED_JOBS, JobEnqueuer, close_arq_pool, get_arq_pool
 from app.workers.jobs import STAGE_JOB_MAP
 from app.workers.monitoring import JobMonitor
 from app.workers.schemas import JobEnqueueResult, JobRecord, JobStatus

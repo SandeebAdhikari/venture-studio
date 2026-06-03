@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from app.db.enums import PipelineRunStatus, PipelineTrigger
+from app.db.enums import PipelineRunStatus
 
 if TYPE_CHECKING:
     from app.db.models.pipeline_stage_run import PipelineStageRun

@@ -81,8 +81,10 @@ class VentureReportGenerator:
         score_line = (
             f"**Composite score:** {report.final_opportunity_score}/100 · "
             f"Pain {report.pain_score or '—'} · Market {report.market_score or '—'} · "
-            f"Revenue {report.revenue_score or '—'} · Competition {report.competition_score or '—'} · "
-            f"Growth {report.growth_score or '—'} · Founder fit {report.founder_fit_score or '—'}"
+            f"Revenue {report.revenue_score or '—'} · "
+            f"Competition {report.competition_score or '—'} · "
+            f"Growth {report.growth_score or '—'} · "
+            f"Founder fit {report.founder_fit_score or '—'}"
         )
 
         lines = [
@@ -90,7 +92,7 @@ class VentureReportGenerator:
             "",
             score_line,
             "",
-            f"### Recommendation",
+            "### Recommendation",
             report.recommendation,
             "",
             "### Opportunity summary",

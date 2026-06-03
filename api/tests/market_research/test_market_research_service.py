@@ -14,7 +14,6 @@ from app.agents.market_research.service import MarketResearchService
 from app.config import Settings
 from app.db.enums import CategoryKind, MarketResearchStatus, SourceType
 from app.db.models.category import Category
-from app.db.models.complaint import Complaint
 from app.db.models.llm_call import LLMCall
 from app.db.models.market_brief import MarketBrief
 from app.db.models.opportunity import Opportunity
@@ -171,7 +170,9 @@ async def test_research_opportunity_force_creates_new_version(
 ) -> None:
     opportunity = await _create_opportunity(db_session, taxonomy_ids)
     repos = get_repositories(db_session)
-    mock = MockMarketResearchLLMClient([default_mock_research_output(), default_mock_research_output()])
+    mock = MockMarketResearchLLMClient(
+        [default_mock_research_output(), default_mock_research_output()]
+    )
     service = MarketResearchService(repos, research_settings, llm_client=mock)
 
     await service.research_opportunity(opportunity.id)

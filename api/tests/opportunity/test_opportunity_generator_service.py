@@ -134,8 +134,7 @@ async def test_generate_creates_opportunity_with_linked_complaints(
         "Staff scheduling conflicts cause overtime and missed coverage across stores.",
     ]
     complaints = [
-        await _create_complaint(db_session, taxonomy_ids, summary=summary)
-        for summary in summaries
+        await _create_complaint(db_session, taxonomy_ids, summary=summary) for summary in summaries
     ]
 
     repos = get_repositories(db_session)

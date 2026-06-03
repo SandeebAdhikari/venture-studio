@@ -3,7 +3,31 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import verify_api_key
-from app.api.v1 import approvals, budget, categories, complaints, competitor_intelligence, customer_research, dashboard, executive_ranking, executive_reports, go_to_market, growth_strategy, health, human_proxy, jobs, market_research, opportunities, pipeline, product_strategy, reports, revenue_validation, rss_feeds, scheduler, sources
+from app.api.v1 import (
+    approvals,
+    budget,
+    categories,
+    competitor_intelligence,
+    complaints,
+    customer_research,
+    dashboard,
+    executive_ranking,
+    executive_reports,
+    go_to_market,
+    growth_strategy,
+    health,
+    human_proxy,
+    jobs,
+    market_research,
+    opportunities,
+    pipeline,
+    product_strategy,
+    reports,
+    revenue_validation,
+    rss_feeds,
+    scheduler,
+    sources,
+)
 
 router = APIRouter()
 

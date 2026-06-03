@@ -5,16 +5,17 @@ Revises: 011_gtm_plans
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "012_growth_evaluations"
-down_revision: Union[str, None] = "011_gtm_plans"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "011_gtm_plans"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -200,9 +201,7 @@ def downgrade() -> None:
         "DROP TRIGGER IF EXISTS trg_growth_evaluation_evidence_updated_at "
         "ON growth_evaluation_evidence"
     )
-    op.execute(
-        "DROP TRIGGER IF EXISTS trg_growth_evaluations_updated_at ON growth_evaluations"
-    )
+    op.execute("DROP TRIGGER IF EXISTS trg_growth_evaluations_updated_at ON growth_evaluations")
     op.drop_index(
         "idx_growth_evaluation_evidence_complaint",
         table_name="growth_evaluation_evidence",

@@ -86,9 +86,7 @@ class AgentEvaluationCollector:
             founder_fit_score,
         ]
         agent_coverage_count = sum(
-            1
-            for source_id in sources.model_dump().values()
-            if source_id is not None
+            1 for source_id in sources.model_dump().values() if source_id is not None
         )
 
         return AgentEvaluationInput(

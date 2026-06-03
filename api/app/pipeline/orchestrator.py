@@ -313,9 +313,7 @@ class PipelineOrchestrator:
     async def _acquire_lock(self) -> str | None:
         running = await self._repos.pipelines.get_running()
         if running is not None:
-            raise ConflictError(
-                f"Pipeline run '{running.id}' is already in progress"
-            )
+            raise ConflictError(f"Pipeline run '{running.id}' is already in progress")
 
         token = datetime.now(UTC).isoformat()
         try:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,7 +33,9 @@ class ApprovalRequest(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("reports.id", ondelete="CASCADE"),
         nullable=True,
     )
-    audit_trail: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, server_default="[]")
+    audit_trail: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )
 
     executive_ranking_run: Mapped[ExecutiveRankingRun | None] = relationship()
     report: Mapped[Report | None] = relationship()

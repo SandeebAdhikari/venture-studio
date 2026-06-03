@@ -5,7 +5,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.agents.revenue_validation.schemas import RevenueValidationBatchResult, RevenueValidationResult
+from app.agents.revenue_validation.schemas import (
+    RevenueValidationBatchResult,
+    RevenueValidationResult,
+)
 from app.api.deps import Services
 from app.api.pagination import Pagination
 from app.db.enums import RevenueValidationStatus
@@ -22,7 +25,9 @@ def _revenue_validation_filters(
         RevenueValidationStatus | None,
         Query(alias="status", description="Filter by validation status"),
     ] = None,
-    is_current: Annotated[bool | None, Query(description="Filter by current validation flag")] = None,
+    is_current: Annotated[
+        bool | None, Query(description="Filter by current validation flag")
+    ] = None,
     min_willingness_to_pay: Annotated[
         int | None,
         Query(ge=0, le=100, description="Minimum willingness-to-pay score"),

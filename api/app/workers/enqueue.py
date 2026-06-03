@@ -13,7 +13,7 @@ from app.exceptions import ValidationError
 from app.schemas.pipeline import PipelineRunOptions
 from app.workers.jobs import STAGE_JOB_MAP
 from app.workers.monitoring import JobMonitor
-from app.workers.schemas import JobEnqueueResult, JobOptions, JobStatus
+from app.workers.schemas import JobEnqueueResult, JobOptions
 
 _pool: ArqRedis | None = None
 
@@ -61,7 +61,9 @@ class JobEnqueuer:
         **job_kwargs: Any,
     ) -> JobEnqueueResult:
         if job_name not in REGISTERED_JOBS:
-            raise ValidationError(f"Unknown job '{job_name}'. Valid jobs: {sorted(REGISTERED_JOBS)}")
+            raise ValidationError(
+                f"Unknown job '{job_name}'. Valid jobs: {sorted(REGISTERED_JOBS)}"
+            )
 
         if job_name == "run_pipeline":
             enqueue_kwargs = {

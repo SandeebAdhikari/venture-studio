@@ -258,4 +258,3 @@ class ComplaintClassificationAgent:
         if title:
             return f"{title}\n\n{body}"
         return body
-

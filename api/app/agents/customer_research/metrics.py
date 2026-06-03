@@ -1,6 +1,9 @@
 """Deterministic validation metrics for customer research."""
 
-from app.agents.customer_research.schemas import CustomerResearchLLMOutput, OpportunityCustomerContext
+from app.agents.customer_research.schemas import (
+    CustomerResearchLLMOutput,
+    OpportunityCustomerContext,
+)
 
 SENTIMENT_LABEL_RANGES: dict[str, tuple[float, float]] = {
     "positive": (0.2, 1.0),
@@ -22,9 +25,7 @@ def compute_validation_metrics(
     source_diversity = len(evidence_types) / 5.0
 
     complaint_count = len(context.complaint_evidence)
-    complaint_coverage = (
-        linked_complaint_count / complaint_count if complaint_count else 0.0
-    )
+    complaint_coverage = linked_complaint_count / complaint_count if complaint_count else 0.0
 
     avg_severity = 0.0
     if output.representative_complaints:

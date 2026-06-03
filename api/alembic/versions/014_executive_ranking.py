@@ -5,16 +5,17 @@ Revises: 013_human_proxy
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "014_executive_ranking"
-down_revision: Union[str, None] = "013_human_proxy"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "013_human_proxy"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -90,7 +91,9 @@ def upgrade() -> None:
         sa.Column("growth_score", sa.Integer(), nullable=True),
         sa.Column("founder_fit_score", sa.Integer(), nullable=True),
         sa.Column("agent_coverage_count", sa.Integer(), server_default="0", nullable=False),
-        sa.Column("is_top_opportunity", sa.Boolean(), server_default=sa.text("false"), nullable=False),
+        sa.Column(
+            "is_top_opportunity", sa.Boolean(), server_default=sa.text("false"), nullable=False
+        ),
         sa.Column(
             "source_references",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -175,7 +178,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index("idx_executive_ranking_entries_top", table_name="executive_ranking_entries")
-    op.drop_index("idx_executive_ranking_entries_opportunity", table_name="executive_ranking_entries")
+    op.drop_index(
+        "idx_executive_ranking_entries_opportunity", table_name="executive_ranking_entries"
+    )
     op.drop_index("idx_executive_ranking_entries_run", table_name="executive_ranking_entries")
     op.drop_table("executive_ranking_entries")
     op.drop_index("idx_executive_ranking_runs_status", table_name="executive_ranking_runs")

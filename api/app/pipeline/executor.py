@@ -56,7 +56,9 @@ class PipelineStageExecutor:
 
         if stage == PipelineStage.CLASSIFY:
             batch_size = options.classify_batch_size or self._settings.classify_batch_size
-            max_batches = options.classify_max_batches or self._settings.pipeline_classify_max_batches
+            max_batches = (
+                options.classify_max_batches or self._settings.pipeline_classify_max_batches
+            )
             total_in = 0
             total_out = 0
             total_failed = 0

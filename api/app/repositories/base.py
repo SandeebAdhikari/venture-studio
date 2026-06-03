@@ -44,9 +44,7 @@ class BaseRepository(Generic[ModelT]):
         return list(result.scalars().all())
 
     async def count(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).select_from(self.model)
-        )
+        result = await self.session.execute(select(func.count()).select_from(self.model))
         return int(result.scalar_one())
 
     async def add(self, entity: ModelT) -> ModelT:

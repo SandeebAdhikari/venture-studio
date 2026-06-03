@@ -5,7 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app.exceptions import AppError, ConflictError, ForbiddenError, NotFoundError, ValidationError as ServiceValidationError
+from app.exceptions import AppError, ConflictError, ForbiddenError, NotFoundError
+from app.exceptions import ValidationError as ServiceValidationError
 from app.logging import get_logger
 
 logger = get_logger(__name__)
@@ -74,5 +75,8 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.error("Response validation failed", exc_info=exc)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "response_validation_error", "message": "Internal response format error"},
+            content={
+                "error": "response_validation_error",
+                "message": "Internal response format error",
+            },
         )

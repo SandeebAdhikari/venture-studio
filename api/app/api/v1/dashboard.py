@@ -22,7 +22,10 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
     "/summary",
     response_model=DashboardSummaryResponse,
     summary="Dashboard overview snapshot",
-    description="Aggregated pipeline, ingestion, opportunity, ranking, report, and background job metrics.",
+    description=(
+        "Aggregated pipeline, ingestion, opportunity, ranking, report, "
+        "and background job metrics."
+    ),
 )
 async def get_dashboard_summary(
     services: Services,

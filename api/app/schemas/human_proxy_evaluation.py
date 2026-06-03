@@ -54,7 +54,9 @@ class HumanProxyEvaluationEvidenceRead(BaseModel):
     signal_id: UUID | None
 
     @classmethod
-    def from_entity(cls, entity: HumanProxyEvaluationEvidence) -> "HumanProxyEvaluationEvidenceRead":
+    def from_entity(
+        cls, entity: HumanProxyEvaluationEvidence
+    ) -> "HumanProxyEvaluationEvidenceRead":
         return cls(
             id=entity.id,
             evidence_type=entity.evidence_type,

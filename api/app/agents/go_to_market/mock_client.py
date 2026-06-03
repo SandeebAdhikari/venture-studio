@@ -150,7 +150,9 @@ def default_mock_go_to_market_output() -> GoToMarketLLMOutput:
                 "Ops admin productivity",
             ],
             formats=["Comparison guides", "Short demo videos", "Workflow templates"],
-            distribution_plan="Publish on site, syndicate in ops communities, repurpose for outbound",
+            distribution_plan=(
+                "Publish on site, syndicate in ops communities, repurpose for outbound"
+            ),
             publishing_cadence="Two assets per week during launch phase",
         ),
         seo_opportunities=[
@@ -248,14 +250,19 @@ def default_mock_go_to_market_output() -> GoToMarketLLMOutput:
             ),
             GTMEvidenceOutput(
                 evidence_type="audience_signal",
-                excerpt="Ops admins at multi-location service businesses are the stated target user.",
+                excerpt=(
+                    "Ops admins at multi-location service businesses are the stated target user."
+                ),
                 source_reference="Opportunity target user",
                 supports_conclusion="persona",
                 confidence="medium",
             ),
             GTMEvidenceOutput(
                 evidence_type="channel_signal",
-                excerpt="Teams discuss scheduling pain in ops communities and compare incumbent tools.",
+                excerpt=(
+                    "Teams discuss scheduling pain in ops communities "
+                    "and compare incumbent tools."
+                ),
                 source_reference="Opportunity alternatives and frequency signal",
                 supports_conclusion="channel",
                 confidence="medium",

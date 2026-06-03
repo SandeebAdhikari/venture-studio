@@ -5,16 +5,17 @@ Revises: 007_competitor_intelligence
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "008_customer_research"
-down_revision: Union[str, None] = "007_competitor_intelligence"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "007_competitor_intelligence"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -168,11 +169,13 @@ def downgrade() -> None:
         "DROP TRIGGER IF EXISTS trg_customer_research_evidence_updated_at "
         "ON customer_research_evidence"
     )
-    op.execute(
-        "DROP TRIGGER IF EXISTS trg_customer_research_updated_at ON customer_research"
+    op.execute("DROP TRIGGER IF EXISTS trg_customer_research_updated_at ON customer_research")
+    op.drop_index(
+        "idx_customer_research_evidence_complaint", table_name="customer_research_evidence"
     )
-    op.drop_index("idx_customer_research_evidence_complaint", table_name="customer_research_evidence")
-    op.drop_index("idx_customer_research_evidence_research", table_name="customer_research_evidence")
+    op.drop_index(
+        "idx_customer_research_evidence_research", table_name="customer_research_evidence"
+    )
     op.drop_table("customer_research_evidence")
     op.drop_index("idx_customer_research_pain_score", table_name="customer_research")
     op.drop_index("idx_customer_research_status", table_name="customer_research")

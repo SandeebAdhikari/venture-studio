@@ -5,22 +5,28 @@ Revises: 003_signal_content_hash
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "004_llm_calls"
-down_revision: Union[str, None] = "003_signal_content_hash"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003_signal_content_hash"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     op.create_table(
         "llm_calls",
-        sa.Column("id", postgresql.UUID(as_uuid=True), server_default=sa.text("gen_random_uuid()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            server_default=sa.text("gen_random_uuid()"),
+            nullable=False,
+        ),
         sa.Column("entity_type", sa.String(length=50), nullable=False),
         sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("graph_name", sa.String(length=100), nullable=False),
@@ -38,13 +44,25 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("'{}'::jsonb"),
         ),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("idx_llm_calls_entity", "llm_calls", ["entity_type", "entity_id"], unique=False)
     op.create_index("idx_llm_calls_created", "llm_calls", ["created_at"], unique=False)
-    op.create_index("idx_llm_calls_graph_status", "llm_calls", ["graph_name", "status"], unique=False)
+    op.create_index(
+        "idx_llm_calls_graph_status", "llm_calls", ["graph_name", "status"], unique=False
+    )
 
     for table in ("llm_calls",):
         op.execute(

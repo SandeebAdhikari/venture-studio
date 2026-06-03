@@ -12,7 +12,10 @@ router = APIRouter(prefix="/scheduler", tags=["scheduler"])
     "/jobs",
     response_model=list[SchedulerJobRead],
     summary="List scheduled Venture Studio jobs",
-    description="Returns configured cron jobs with schedule, enabled state, last run, and failure counts.",
+    description=(
+        "Returns configured cron jobs with schedule, enabled state, "
+        "last run, and failure counts."
+    ),
 )
 async def list_scheduler_jobs(services: Services) -> list[SchedulerJobRead]:
     return await services.scheduler.list_jobs()

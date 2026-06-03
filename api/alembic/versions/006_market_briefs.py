@@ -5,16 +5,17 @@ Revises: 005_opportunity_score_dimensions
 Create Date: 2026-06-03
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "006_market_briefs"
-down_revision: Union[str, None] = "005_opportunity_score_dimensions"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "005_opportunity_score_dimensions"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -87,7 +88,9 @@ def upgrade() -> None:
         sa.CheckConstraint("tam_usd IS NULL OR tam_usd >= 0", name="ck_market_briefs_tam"),
         sa.CheckConstraint("sam_usd IS NULL OR sam_usd >= 0", name="ck_market_briefs_sam"),
     )
-    op.create_index("idx_market_briefs_opportunity", "market_briefs", ["opportunity_id", "created_at"])
+    op.create_index(
+        "idx_market_briefs_opportunity", "market_briefs", ["opportunity_id", "created_at"]
+    )
     op.create_index(
         "idx_market_briefs_current",
         "market_briefs",

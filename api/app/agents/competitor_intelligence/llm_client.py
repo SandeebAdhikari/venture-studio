@@ -85,9 +85,12 @@ class OpenAICompetitorIntelligenceClient:
                             f"Target user: {context.target_user}\n"
                             f"Existing alternatives: {context.existing_alternatives}\n"
                             f"Gap: {context.gap}\n"
-                            f"Known products from evidence: {', '.join(context.known_products) or 'none'}\n"
-                            f"Product mentions: {', '.join(context.product_mentions) or 'none'}\n\n"
-                            f"Complaint summaries:\n{self._format_complaints(context.complaint_summaries)}\n\n"
+                            f"Known products from evidence: "
+                            f"{', '.join(context.known_products) or 'none'}\n"
+                            f"Product mentions: "
+                            f"{', '.join(context.product_mentions) or 'none'}\n\n"
+                            f"Complaint summaries:\n"
+                            f"{self._format_complaints(context.complaint_summaries)}\n\n"
                             "Analyze the competitive landscape for this opportunity."
                         ),
                     },

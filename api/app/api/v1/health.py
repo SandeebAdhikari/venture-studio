@@ -49,7 +49,9 @@ async def liveness() -> HealthResponse:
     summary="Readiness probe",
     description="Verifies PostgreSQL and Redis connectivity.",
     responses={
-        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "One or more dependencies unavailable"},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "description": "One or more dependencies unavailable"
+        },
     },
 )
 async def readiness(

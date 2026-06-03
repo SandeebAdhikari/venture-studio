@@ -1,6 +1,9 @@
 """Validation for revenue validation LLM output."""
 
-from app.agents.revenue_validation.schemas import OpportunityRevenueContext, RevenueValidationLLMOutput
+from app.agents.revenue_validation.schemas import (
+    OpportunityRevenueContext,
+    RevenueValidationLLMOutput,
+)
 
 
 class RevenueValidationError(Exception):
@@ -26,9 +29,7 @@ class RevenueValidationValidator:
             errors.append("executive_summary is too short")
 
         if output.willingness_to_pay_score >= 70 and output.revenue_confidence_score < 30:
-            errors.append(
-                "high willingness_to_pay_score requires revenue_confidence_score >= 30"
-            )
+            errors.append("high willingness_to_pay_score requires revenue_confidence_score >= 30")
 
         for index, recommendation in enumerate(output.pricing_recommendations, start=1):
             if len(recommendation.rationale.strip()) < 15:

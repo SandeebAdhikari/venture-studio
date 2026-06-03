@@ -37,10 +37,7 @@ class PipelineRepository(BaseRepository[PipelineRun]):
 
     async def list_runs(self, *, limit: int = 20, offset: int = 0) -> list[PipelineRun]:
         result = await self.session.execute(
-            select(PipelineRun)
-            .order_by(PipelineRun.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+            select(PipelineRun).order_by(PipelineRun.created_at.desc()).limit(limit).offset(offset)
         )
         return list(result.scalars().all())
 

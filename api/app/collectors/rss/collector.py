@@ -112,7 +112,9 @@ class RssFeedCollector:
                 if getattr(parsed, "bozo", False) and not parsed.entries:
                     raise ValueError(getattr(parsed, "bozo_exception", "Invalid RSS feed"))
 
-                feed_title = getattr(parsed.feed, "title", None) if hasattr(parsed, "feed") else None
+                feed_title = (
+                    getattr(parsed.feed, "title", None) if hasattr(parsed, "feed") else None
+                )
                 entries: list[RssFeedEntry] = []
                 for entry in parsed.entries[:entry_limit]:
                     mapped = RssFeedEntry.from_feedparser_entry(entry, feed_title=feed_title)

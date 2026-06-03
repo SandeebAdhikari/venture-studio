@@ -55,9 +55,9 @@ class OpportunityRepository(BaseRepository[Opportunity]):
                 selectinload(Opportunity.complaints).selectinload(Complaint.category),
                 selectinload(Opportunity.complaints).selectinload(Complaint.domain),
                 selectinload(Opportunity.complaints).selectinload(Complaint.persona),
-                selectinload(Opportunity.complaints).selectinload(Complaint.signal).selectinload(
-                    Signal.source
-                ),
+                selectinload(Opportunity.complaints)
+                .selectinload(Complaint.signal)
+                .selectinload(Signal.source),
                 selectinload(Opportunity.scores),
                 selectinload(Opportunity.reports),
             )

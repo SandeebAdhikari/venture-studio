@@ -14,16 +14,15 @@ from app.db.models.associations import opportunity_complaints
 
 if TYPE_CHECKING:
     from app.db.models.competitor_analysis import CompetitorAnalysis
-    from app.db.models.customer_research import CustomerResearch
     from app.db.models.complaint import Complaint
-    from app.db.models.market_brief import MarketBrief
-    from app.db.models.opportunity_score import OpportunityScore
-    from app.db.models.report import Report
-    from app.db.models.founder_profile import FounderProfile
+    from app.db.models.customer_research import CustomerResearch
     from app.db.models.growth_evaluation import GrowthEvaluation
     from app.db.models.gtm_plan import GTMPlan
     from app.db.models.human_proxy_evaluation import HumanProxyEvaluation
+    from app.db.models.market_brief import MarketBrief
+    from app.db.models.opportunity_score import OpportunityScore
     from app.db.models.product_strategy import ProductStrategy
+    from app.db.models.report import Report
     from app.db.models.revenue_validation import RevenueValidation
 
 

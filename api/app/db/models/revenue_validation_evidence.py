@@ -12,8 +12,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
-    from app.db.models.complaint import Complaint
     from app.db.models.competitor_profile import CompetitorProfile
+    from app.db.models.complaint import Complaint
     from app.db.models.revenue_validation import RevenueValidation
     from app.db.models.signal import Signal
 

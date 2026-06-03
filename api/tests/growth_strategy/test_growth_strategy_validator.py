@@ -7,7 +7,10 @@ import pytest
 from app.agents.growth_strategy.metrics import compute_evaluation_metrics, generate_growth_roadmap
 from app.agents.growth_strategy.mock_client import default_mock_growth_strategy_output
 from app.agents.growth_strategy.schemas import ComplaintEvidenceItem, OpportunityGrowthContext
-from app.agents.growth_strategy.validator import GrowthStrategyValidationError, GrowthStrategyValidator
+from app.agents.growth_strategy.validator import (
+    GrowthStrategyValidationError,
+    GrowthStrategyValidator,
+)
 
 QUOTE = "Staff scheduling breaks every week when employees swap shifts without notice."
 

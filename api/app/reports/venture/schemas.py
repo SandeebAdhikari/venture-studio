@@ -1,6 +1,5 @@
 """Schemas for venture recommendation reports."""
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field

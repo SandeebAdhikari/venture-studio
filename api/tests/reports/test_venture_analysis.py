@@ -2,7 +2,6 @@
 
 from app.reports.venture.analysis import (
     RECOMMEND_EXPLORE,
-    RECOMMEND_PASS,
     RECOMMEND_PURSUE,
     build_recommendation,
     build_risk_items,
