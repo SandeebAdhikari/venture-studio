@@ -60,6 +60,7 @@ npm run start        # production server
 npm run typecheck    # TypeScript (tsc --noEmit)
 npm run lint         # ESLint (fails on warnings)
 npm run test         # Vitest unit tests
+npm run test:e2e     # Playwright E2E (requires API + auth env; see docs/e2e-testing.md)
 npm run verify-build # post-build route/artifact checks
 npm run validate     # full CI gate locally
 ```
@@ -72,6 +73,9 @@ GitHub Actions validate every push/PR to `main`:
 |----------|--------|
 | `web-quality.yml` | `npm ci`, typecheck, lint, unit tests |
 | `web-deployment-check.yml` | production build, route verification, Docker image |
+| `web-e2e.yml` | Playwright E2E against Compose API + dashboard |
+
+See [docs/e2e-testing.md](../docs/e2e-testing.md) for local E2E setup.
 
 Run the same gates locally:
 

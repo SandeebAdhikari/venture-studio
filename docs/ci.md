@@ -12,8 +12,9 @@ The `web/` dashboard is validated on every push and pull request to `main` by tw
 |----------|------|---------|
 | Web Quality | `web-quality.yml` | TypeScript, ESLint, Vitest unit tests |
 | Web Deployment Check | `web-deployment-check.yml` | `next build`, route verification, Docker image |
+| Web E2E | `web-e2e.yml` | Playwright dashboard tests against Compose API + `next start` |
 
-See [web-deployment.md](./web-deployment.md) for deployment strategy (Vercel vs container).
+See [web-deployment.md](./web-deployment.md) for deployment strategy (Vercel vs container). E2E details: [e2e-testing.md](./e2e-testing.md).
 
 ## Pipeline overview
 
@@ -50,6 +51,12 @@ flowchart LR
     VerifyRoutes[verify-build.mjs]
     WebDocker[web Docker build]
   end
+
+  subgraph webE2e [web-e2e.yml]
+    ComposeE2E[docker compose up]
+    SeedE2E[seed_e2e_fixtures]
+    Playwright[Playwright E2E]
+  end
 ```
 
 Backend and frontend workflows run **in parallel** on GitHub Actions. All required checks must pass before merging.
@@ -61,6 +68,7 @@ Backend and frontend workflows run **in parallel** on GitHub Actions. All requir
 | Deployment Check | `deployment-check.yml` | API Docker, packaging, import validation, Compose smoke |
 | Web Quality | `web-quality.yml` | Frontend typecheck, lint, unit tests |
 | Web Deployment Check | `web-deployment-check.yml` | Next.js production build and Docker validation |
+| Web E2E | `web-e2e.yml` | Playwright dashboard tests (Compose API + seeded fixtures) |
 
 ## quality.yml
 
