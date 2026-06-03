@@ -1,5 +1,8 @@
 """Orchestrates market intelligence research for opportunities."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.agents.market_research.graph import GRAPH_NAME, MarketResearchAgent
@@ -18,6 +21,9 @@ from app.schemas.filters import MarketBriefListFilter
 from app.schemas.market_brief import MarketBriefCreate, MarketBriefRead
 from app.schemas.pagination import PaginatedResponse, PaginationParams
 
+if TYPE_CHECKING:
+    from app.services.llm_budget import LLMBudgetService
+
 logger = get_logger(__name__)
 
 
@@ -29,16 +35,22 @@ class MarketResearchService:
         repos: RepositoryContainer,
         settings: Settings | None = None,
         llm_client: MarketResearchLLMClient | None = None,
+        budget_service: LLMBudgetService | None = None,
     ) -> None:
         self._repos = repos
         self._settings = settings or get_settings()
         self._llm_client = llm_client
+        self._budget = budget_service
         self._agent: MarketResearchAgent | None = None
 
     def _get_agent(self) -> MarketResearchAgent:
         if self._agent is None:
             client = self._llm_client or OpenAIMarketResearchClient(self._settings)
-            self._agent = MarketResearchAgent(client, self._settings)
+            self._agent = MarketResearchAgent(
+                client,
+                self._settings,
+                budget_service=self._budget,
+            )
         return self._agent
 
     async def research_pending(
@@ -168,30 +180,22 @@ class MarketResearchService:
         opportunity_id: UUID,
         agent_result: MarketResearchResult,
     ) -> None:
-        for log in agent_result.eval_logs:
-            status = "success" if log.get("error") is None else "error"
-            await self._repos.llm_calls.log_agent_call(
-                entity_type="opportunity",
-                entity_id=opportunity_id,
-                graph_name=GRAPH_NAME,
-                model=log.get("model", self._settings.research_model),
-                attempt=int(log.get("attempt", 1)),
-                prompt_tokens=int(log.get("prompt_tokens", 0)),
-                completion_tokens=int(log.get("completion_tokens", 0)),
-                latency_ms=log.get("latency_ms"),
-                cost_usd=log.get("cost_usd"),
-                status=status,
-                error_detail=log.get("error"),
-                eval_metadata={
-                    "parsed": log.get("parsed"),
-                    "raw_text": log.get("raw_text"),
-                    "agent_status": agent_result.status,
-                    "attempts": agent_result.attempts,
-                    "market_brief_id": str(agent_result.market_brief_id)
-                    if agent_result.market_brief_id
-                    else None,
-                },
-            )
+        from app.agents.eval_logging import persist_agent_eval_logs
+
+        await persist_agent_eval_logs(
+            self._repos,
+            budget=self._budget,
+            entity_type="opportunity",
+            entity_id=opportunity_id,
+            graph_name=GRAPH_NAME,
+            default_model=self._settings.research_model,
+            agent_result=agent_result,
+            eval_metadata_extra={
+                "market_brief_id": str(agent_result.market_brief_id)
+                if agent_result.market_brief_id
+                else None,
+            },
+        )
 
     @staticmethod
     def _build_context(opportunity) -> OpportunityResearchContext:

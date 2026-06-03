@@ -30,6 +30,13 @@ class ValidationError(AppError):
         super().__init__(message)
 
 
+class BudgetExceededError(AppError):
+    def __init__(self, message: str, *, spent_usd: float, budget_usd: float) -> None:
+        self.spent_usd = spent_usd
+        self.budget_usd = budget_usd
+        super().__init__(message)
+
+
 class ForbiddenError(AppError):
     def __init__(self, message: str) -> None:
         super().__init__(message)

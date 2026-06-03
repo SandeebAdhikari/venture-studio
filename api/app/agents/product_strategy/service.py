@@ -1,5 +1,8 @@
 """Orchestrates product strategy planning for opportunities."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.agents.product_strategy.graph import GRAPH_NAME, ProductStrategyAgent
@@ -24,6 +27,9 @@ from app.schemas.product_strategy import (
     ProductStrategyRead,
 )
 
+if TYPE_CHECKING:
+    from app.services.llm_budget import LLMBudgetService
+
 logger = get_logger(__name__)
 
 
@@ -35,16 +41,22 @@ class ProductStrategyService:
         repos: RepositoryContainer,
         settings: Settings | None = None,
         llm_client: ProductStrategyLLMClient | None = None,
+        budget_service: LLMBudgetService | None = None,
     ) -> None:
         self._repos = repos
         self._settings = settings or get_settings()
         self._llm_client = llm_client
+        self._budget = budget_service
         self._agent: ProductStrategyAgent | None = None
 
     def _get_agent(self) -> ProductStrategyAgent:
         if self._agent is None:
             client = self._llm_client or OpenAIProductStrategyClient(self._settings)
-            self._agent = ProductStrategyAgent(client, self._settings)
+            self._agent = ProductStrategyAgent(
+                client,
+                self._settings,
+                budget_service=self._budget,
+            )
         return self._agent
 
     async def plan_pending(
@@ -238,31 +250,18 @@ class ProductStrategyService:
         agent_result: ProductStrategyResult,
         strategy_id: UUID,
     ) -> None:
-        for log in agent_result.eval_logs:
-            status = "success" if log.get("error") is None else "error"
-            await self._repos.llm_calls.log_agent_call(
-                entity_type="opportunity",
-                entity_id=opportunity_id,
-                graph_name=GRAPH_NAME,
-                model=log.get("model", self._settings.product_strategy_model),
-                attempt=int(log.get("attempt", 1)),
-                prompt_tokens=int(log.get("prompt_tokens", 0)),
-                completion_tokens=int(log.get("completion_tokens", 0)),
-                latency_ms=log.get("latency_ms"),
-                cost_usd=log.get("cost_usd"),
-                status=status,
-                error_detail=log.get("error"),
-                eval_metadata={
-                    "parsed": log.get("parsed"),
-                    "raw_text": log.get("raw_text"),
-                    "agent_status": agent_result.status,
-                    "attempts": agent_result.attempts,
-                    "product_strategy_id": str(strategy_id),
-                    "planning_metrics": agent_result.draft.planning_metrics
-                    if agent_result.draft
-                    else None,
-                },
-            )
+        from app.agents.eval_logging import persist_agent_eval_logs
+
+        await persist_agent_eval_logs(
+            self._repos,
+            budget=self._budget,
+            entity_type="opportunity",
+            entity_id=opportunity_id,
+            graph_name=GRAPH_NAME,
+            default_model=self._settings.product_strategy_model,
+            agent_result=agent_result,
+            eval_metadata_extra={"product_strategy_id": str(strategy_id)},
+        )
 
     @staticmethod
     def _last_model(agent_result: ProductStrategyResult) -> str | None:

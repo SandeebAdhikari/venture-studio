@@ -24,6 +24,7 @@ from app.services.opportunity import OpportunityService
 from app.services.report import ReportService
 from app.services.approval import ApprovalService
 from app.services.dashboard import DashboardService
+from app.services.llm_budget import LLMBudgetService
 from app.services.scheduler import SchedulerService
 from app.services.rss_feed import RssFeedService
 from app.services.source import SourceService
@@ -32,11 +33,12 @@ from app.services.source import SourceService
 class ServiceContainer:
     def __init__(self, repos: RepositoryContainer) -> None:
         self._repos = repos
+        self.llm_budget = LLMBudgetService(repos)
         self.approval = ApprovalService(repos)
         self.sources = SourceService(repos)
         self.collection = ComplaintCollectionService(repos)
-        self.classification = ComplaintClassificationService(repos)
-        self.generation = OpportunityGeneratorService(repos)
+        self.classification = ComplaintClassificationService(repos, budget_service=self.llm_budget)
+        self.generation = OpportunityGeneratorService(repos, budget_service=self.llm_budget)
         self.categories = CategoryService(repos)
         self.complaints = ComplaintService(repos)
         self.opportunities = OpportunityService(repos)
@@ -45,14 +47,14 @@ class ServiceContainer:
         self.executive_reports = ExecutiveReportService(repos)
         self.executive_ranking = ExecutiveRankingService(repos, approval_service=self.approval)
         self.venture_reports = VentureReportService(repos, approval_service=self.approval)
-        self.market_research = MarketResearchService(repos)
-        self.competitor_intelligence = CompetitorIntelligenceService(repos)
-        self.customer_research = CustomerResearchService(repos)
-        self.revenue_validation = RevenueValidationService(repos)
-        self.product_strategy = ProductStrategyService(repos)
-        self.go_to_market = GoToMarketService(repos)
-        self.growth_strategy = GrowthStrategyService(repos)
-        self.human_proxy = HumanProxyService(repos)
+        self.market_research = MarketResearchService(repos, budget_service=self.llm_budget)
+        self.competitor_intelligence = CompetitorIntelligenceService(repos, budget_service=self.llm_budget)
+        self.customer_research = CustomerResearchService(repos, budget_service=self.llm_budget)
+        self.revenue_validation = RevenueValidationService(repos, budget_service=self.llm_budget)
+        self.product_strategy = ProductStrategyService(repos, budget_service=self.llm_budget)
+        self.go_to_market = GoToMarketService(repos, budget_service=self.llm_budget)
+        self.growth_strategy = GrowthStrategyService(repos, budget_service=self.llm_budget)
+        self.human_proxy = HumanProxyService(repos, budget_service=self.llm_budget)
         self.rss_feeds = RssFeedService(repos)
         self.scheduler = SchedulerService(repos)
         self.dashboard = DashboardService(repos)

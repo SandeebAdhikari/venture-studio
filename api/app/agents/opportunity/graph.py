@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from langgraph.graph import END, StateGraph
 
+from app.agents.budget_guard import serialize_llm_invocation
 from app.agents.opportunity.llm_client import OpportunityLLMClient
 from app.agents.opportunity.schemas import (
     ComplaintEvidence,
@@ -18,6 +19,9 @@ from app.agents.opportunity.schemas import (
 from app.agents.opportunity.validator import OpportunityValidationError, OpportunityValidator
 from app.config import Settings
 from app.logging import get_logger
+
+if TYPE_CHECKING:
+    from app.services.llm_budget import LLMBudgetService
 
 logger = get_logger(__name__)
 
@@ -46,10 +50,12 @@ class OpportunityGeneratorAgent:
         llm_client: OpportunityLLMClient,
         settings: Settings,
         validator: OpportunityValidator | None = None,
+        budget_service: LLMBudgetService | None = None,
     ) -> None:
         self._llm = llm_client
         self._settings = settings
         self._validator = validator or OpportunityValidator()
+        self._budget = budget_service
         self._graph = self._build_graph()
 
     async def run(
@@ -107,13 +113,46 @@ class OpportunityGeneratorAgent:
         if state.get("status") == "failed":
             return {}
 
+        model = self._settings.generation_model
+        estimated_cost = 0.0
+        if self._budget is not None:
+            estimated_cost, block_reason = await self._budget.try_prepare_call(GRAPH_NAME, model)
+            if block_reason:
+                invocation = LLMInvocationResult(model=model, error=block_reason)
+                invocations = list(state["invocations"])
+                invocations.append(
+                    serialize_llm_invocation(
+                        state["attempt"],
+                        invocation,
+                        estimated_cost_usd=estimated_cost,
+                    )
+                )
+                if state["attempt"] >= state["max_attempts"]:
+                    return {
+                        "invocations": invocations,
+                        "error": block_reason,
+                        "status": "failed",
+                    }
+                return {
+                    "invocations": invocations,
+                    "attempt": state["attempt"] + 1,
+                    "validation_errors": [block_reason],
+                    "llm_output": None,
+                }
+
         invocation = await self._llm.synthesize(
             pattern=state["pattern"],
             evidence=state["evidence"],
             attempt=state["attempt"],
         )
         invocations = list(state["invocations"])
-        invocations.append(self._serialize_invocation(state["attempt"], invocation))
+        invocations.append(
+            serialize_llm_invocation(
+                state["attempt"],
+                invocation,
+                estimated_cost_usd=estimated_cost,
+            )
+        )
 
         if invocation.error or invocation.parsed is None:
             if state["attempt"] >= state["max_attempts"]:
@@ -224,17 +263,3 @@ class OpportunityGeneratorAgent:
             attempts=state.get("attempt", 0),
             eval_logs=state.get("invocations", []),
         )
-
-    @staticmethod
-    def _serialize_invocation(attempt: int, invocation: LLMInvocationResult) -> dict[str, Any]:
-        return {
-            "attempt": attempt,
-            "model": invocation.model,
-            "prompt_tokens": invocation.prompt_tokens,
-            "completion_tokens": invocation.completion_tokens,
-            "latency_ms": invocation.latency_ms,
-            "cost_usd": invocation.cost_usd,
-            "error": invocation.error,
-            "parsed": invocation.parsed.model_dump() if invocation.parsed else None,
-            "raw_text": invocation.raw_text,
-        }

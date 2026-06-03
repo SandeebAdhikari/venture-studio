@@ -10,6 +10,7 @@ from app.db.models.competitor_profile import CompetitorProfile
 from app.db.models.customer_research import CustomerResearch
 from app.db.models.customer_research_evidence import CustomerResearchEvidence
 from app.db.models.complaint import Complaint
+from app.db.models.llm_budget_alert import LLMBudgetAlert
 from app.db.models.llm_call import LLMCall
 from app.db.models.market_brief import MarketBrief
 from app.db.models.opportunity import Opportunity
@@ -55,6 +56,7 @@ __all__ = [
     "GTMPlanEvidence",
     "HumanProxyEvaluation",
     "HumanProxyEvaluationEvidence",
+    "LLMBudgetAlert",
     "LLMCall",
     "MarketBrief",
     "Opportunity",
