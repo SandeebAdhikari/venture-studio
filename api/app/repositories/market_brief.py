@@ -39,7 +39,7 @@ class MarketBriefRepository(BaseRepository[MarketBrief]):
         result = await self.session.execute(
             select(MarketBrief)
             .where(MarketBrief.opportunity_id == opportunity_id)
-            .order_by(MarketBrief.created_at.desc())
+            .order_by(MarketBrief.version.desc(), MarketBrief.created_at.desc())
         )
         return list(result.scalars().all())
 

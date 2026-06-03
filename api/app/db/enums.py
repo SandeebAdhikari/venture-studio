@@ -81,3 +81,9 @@ class RevenueValidationStatus(str, enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
+
+
+class ProductStrategyStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"

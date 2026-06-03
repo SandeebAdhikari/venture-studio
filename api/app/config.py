@@ -107,6 +107,12 @@ class Settings(BaseSettings):
     revenue_validation_temperature: float = 0.2
     revenue_validation_batch_size: int = 20
 
+    # Product strategy agent
+    product_strategy_model: str = "gpt-4o-mini"
+    product_strategy_max_retries: int = 2
+    product_strategy_temperature: float = 0.2
+    product_strategy_batch_size: int = 20
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

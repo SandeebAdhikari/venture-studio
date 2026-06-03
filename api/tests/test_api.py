@@ -959,3 +959,132 @@ async def test_generate_and_retrieve_revenue_validation(
     assert detail["opportunity_id"] == str(opportunity.id)
     assert len(detail["evidence"]) == 3
     assert detail["evaluation_metrics"]["evaluation_readiness_score"] > 0
+
+
+@pytest.mark.asyncio
+async def test_generate_and_retrieve_product_strategy(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: AsyncSession,
+) -> None:
+    from app.agents.product_strategy.mock_client import (
+        MockProductStrategyLLMClient,
+        default_mock_product_strategy_output,
+    )
+    from app.agents.product_strategy.service import ProductStrategyService
+    from app.api.deps import get_service_container
+    from app.config import get_settings
+    from app.db.enums import CategoryKind, SourceType
+    from app.db.models.category import Category
+    from app.db.models.signal import Signal
+    from app.db.models.source import Source
+    from app.main import app
+    from app.repositories import get_repositories
+    from app.schemas.complaint import ComplaintCreate
+    from app.schemas.opportunity import OpportunityCreate
+    from app.services.container import ServiceContainer
+
+    quote = "Staff scheduling breaks every week when employees swap shifts without notice."
+
+    category = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.COMPLAINT_CATEGORY.value,
+            Category.code == "workflow",
+        )
+    )
+    domain = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value,
+            Category.code == "saas_b2b",
+        )
+    )
+    persona = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value,
+            Category.code == "ops_admin",
+        )
+    )
+    assert category is not None and domain is not None and persona is not None
+
+    source = Source(
+        name=f"api-product-strategy-source-{uuid4()}",
+        source_type=SourceType.REDDIT.value,
+        config={"subreddit": "SaaS"},
+        enabled=True,
+    )
+    db_session.add(source)
+    await db_session.flush()
+
+    signal = Signal(
+        source_id=source.id,
+        external_id=f"ext-{uuid4()}",
+        url="https://example.com/posts/product-strategy-test",
+        title="Scheduling pain",
+        body=quote,
+        processing_status="classified",
+    )
+    db_session.add(signal)
+    await db_session.flush()
+
+    repos = get_repositories(db_session)
+    complaint = await repos.complaints.create(
+        ComplaintCreate(
+            signal_id=signal.id,
+            category_id=category.id,
+            domain_id=domain.id,
+            persona_id=persona.id,
+            summary="Staff scheduling chaos from last-minute shift changes.",
+            verbatim_quote=quote,
+            severity=4,
+            product_mentions=["ShiftApp"],
+            llm_model="mock-classifier",
+            llm_confidence=0.9,
+        )
+    )
+    opportunity = await repos.opportunities.create(
+        OpportunityCreate(
+            title="Staff Scheduling SaaS",
+            problem_statement="Teams struggle with staff scheduling coordination.",
+            target_user="Ops admins managing hourly teams",
+            frequency_signal="Repeated staff scheduling complaints.",
+            existing_alternatives="ShiftApp mentioned in evidence.",
+            gap="No lightweight staff scheduling workflow.",
+            confidence_score=0.88,
+            llm_model="mock-generator",
+            complaint_ids=[complaint.id],
+        )
+    )
+
+    async def override_services() -> ServiceContainer:
+        container = ServiceContainer(repos)
+        settings = get_settings()
+        container.product_strategy = ProductStrategyService(
+            repos,
+            settings,
+            llm_client=MockProductStrategyLLMClient([default_mock_product_strategy_output()]),
+        )
+        return container
+
+    app.dependency_overrides[get_service_container] = override_services
+
+    generate_response = await client.post(
+        f"/api/v1/product-strategy/opportunities/{opportunity.id}/generate",
+        headers=auth_headers,
+    )
+    assert generate_response.status_code == 201
+    body = generate_response.json()
+    assert body["status"] == "completed"
+    assert len(body["draft"]["core_features"]) == 3
+    assert len(body["draft"]["roadmap"]) == 3
+
+    strategy_id = body["product_strategy_id"]
+    get_response = await client.get(
+        f"/api/v1/product-strategy/{strategy_id}",
+        headers=auth_headers,
+    )
+    assert get_response.status_code == 200
+    detail = get_response.json()
+    assert detail["opportunity_id"] == str(opportunity.id)
+    assert len(detail["evidence"]) == 3
+    assert detail["planning_metrics"]["planning_readiness_score"] > 0
+    assert detail["estimated_timeline"]["total_weeks"] == 13
