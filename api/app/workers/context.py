@@ -30,8 +30,10 @@ async def worker_startup(ctx: dict) -> None:
     ctx["worker_id"] = uuid4().hex
 
     from app.collectors.reddit import register_reddit_collector
+    from app.collectors.rss import register_rss_collector
 
     register_reddit_collector(redis=ctx["redis"])
+    register_rss_collector(redis=ctx["redis"])
     logger.info("ARQ worker started", extra={"worker_id": ctx["worker_id"]})
 
 

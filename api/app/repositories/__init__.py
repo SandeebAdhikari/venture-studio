@@ -19,6 +19,7 @@ from app.repositories.opportunity_score import OpportunityScoreRepository
 from app.repositories.product_strategy import ProductStrategyRepository
 from app.repositories.report import ReportRepository
 from app.repositories.revenue_validation import RevenueValidationRepository
+from app.repositories.rss_feed import RssFeedRepository
 from app.repositories.signal import SignalRepository
 from app.repositories.source import SourceRepository
 
@@ -47,6 +48,7 @@ class RepositoryContainer:
         self.product_strategies = ProductStrategyRepository(session)
         self.reports = ReportRepository(session)
         self.revenue_validations = RevenueValidationRepository(session)
+        self.rss_feeds = RssFeedRepository(session)
 
 
 def get_repositories(session: AsyncSession) -> RepositoryContainer:
@@ -71,6 +73,7 @@ __all__ = [
     "ProductStrategyRepository",
     "ReportRepository",
     "RevenueValidationRepository",
+    "RssFeedRepository",
     "RepositoryContainer",
     "SignalRepository",
     "SourceRepository",

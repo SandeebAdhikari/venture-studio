@@ -28,8 +28,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_redis(settings)
 
     from app.collectors.reddit import register_reddit_collector
+    from app.collectors.rss import register_rss_collector
 
     register_reddit_collector()
+    register_rss_collector()
 
     yield
 

@@ -13,6 +13,7 @@ from app.db.models.market_brief import MarketBrief
 from app.db.models.opportunity import Opportunity
 from app.db.models.opportunity_score import OpportunityScore
 from app.db.models.report import Report
+from app.db.models.rss_feed import RssFeed
 from app.db.models.executive_ranking_entry import ExecutiveRankingEntry
 from app.db.models.executive_ranking_run import ExecutiveRankingRun
 from app.db.models.founder_profile import FounderProfile
@@ -56,6 +57,7 @@ __all__ = [
     "ProductStrategy",
     "ProductStrategyEvidence",
     "Report",
+    "RssFeed",
     "RevenueValidation",
     "RevenueValidationEvidence",
     "Signal",

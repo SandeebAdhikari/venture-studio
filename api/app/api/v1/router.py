@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import verify_api_key
-from app.api.v1 import categories, complaints, competitor_intelligence, customer_research, executive_ranking, executive_reports, go_to_market, growth_strategy, health, human_proxy, jobs, market_research, opportunities, pipeline, product_strategy, reports, revenue_validation, sources
+from app.api.v1 import categories, complaints, competitor_intelligence, customer_research, executive_ranking, executive_reports, go_to_market, growth_strategy, health, human_proxy, jobs, market_research, opportunities, pipeline, product_strategy, reports, revenue_validation, rss_feeds, sources
 
 router = APIRouter()
 
@@ -13,6 +13,7 @@ router.include_router(health.router)
 # Authenticated resource APIs.
 protected_router = APIRouter(dependencies=[Depends(verify_api_key)])
 protected_router.include_router(sources.router)
+protected_router.include_router(rss_feeds.router)
 protected_router.include_router(categories.router)
 protected_router.include_router(complaints.router)
 protected_router.include_router(opportunities.router)

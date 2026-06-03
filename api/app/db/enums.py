@@ -9,6 +9,17 @@ class SourceType(str, enum.Enum):
     RSS = "rss"
 
 
+class RssFeedCategory(str, enum.Enum):
+    BUSINESS = "business"
+    INDUSTRY = "industry"
+    STARTUP = "startup"
+    TECH = "tech"
+    HEALTHCARE = "healthcare"
+    CONSTRUCTION = "construction"
+    LEGAL = "legal"
+    GENERAL = "general"
+
+
 class SignalProcessingStatus(str, enum.Enum):
     PENDING = "pending"
     PROCESSING = "processing"
