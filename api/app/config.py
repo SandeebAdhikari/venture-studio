@@ -95,6 +95,12 @@ class Settings(BaseSettings):
     competitor_temperature: float = 0.3
     competitor_batch_size: int = 20
 
+    # Customer research agent
+    customer_research_model: str = "gpt-4o-mini"
+    customer_research_max_retries: int = 2
+    customer_research_temperature: float = 0.2
+    customer_research_batch_size: int = 20
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

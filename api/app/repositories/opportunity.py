@@ -11,6 +11,7 @@ from app.db.enums import ReviewStatus
 from app.db.models.associations import opportunity_complaints
 from app.db.models.complaint import Complaint
 from app.db.models.opportunity import Opportunity
+from app.db.models.signal import Signal
 from app.repositories.base import BaseRepository
 from app.schemas.filters import OpportunityListFilter
 from app.schemas.opportunity import OpportunityCreate, OpportunityUpdate
@@ -54,7 +55,9 @@ class OpportunityRepository(BaseRepository[Opportunity]):
                 selectinload(Opportunity.complaints).selectinload(Complaint.category),
                 selectinload(Opportunity.complaints).selectinload(Complaint.domain),
                 selectinload(Opportunity.complaints).selectinload(Complaint.persona),
-                selectinload(Opportunity.complaints).selectinload(Complaint.signal),
+                selectinload(Opportunity.complaints).selectinload(Complaint.signal).selectinload(
+                    Signal.source
+                ),
                 selectinload(Opportunity.scores),
                 selectinload(Opportunity.reports),
             )

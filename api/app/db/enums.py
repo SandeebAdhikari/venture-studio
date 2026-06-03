@@ -61,3 +61,17 @@ class ReviewSentiment(str, enum.Enum):
     NEUTRAL = "neutral"
     NEGATIVE = "negative"
     MIXED = "mixed"
+
+
+class CustomerResearchStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class CustomerEvidenceType(str, enum.Enum):
+    COMPLAINT = "complaint"
+    DISCUSSION = "discussion"
+    REVIEW = "review"
+    FORUM = "forum"
+    SOCIAL = "social"

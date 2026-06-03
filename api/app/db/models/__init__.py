@@ -5,6 +5,8 @@ from app.db.models.associations import opportunity_complaints
 from app.db.models.category import Category
 from app.db.models.competitor_analysis import CompetitorAnalysis
 from app.db.models.competitor_profile import CompetitorProfile
+from app.db.models.customer_research import CustomerResearch
+from app.db.models.customer_research_evidence import CustomerResearchEvidence
 from app.db.models.complaint import Complaint
 from app.db.models.llm_call import LLMCall
 from app.db.models.market_brief import MarketBrief
@@ -19,6 +21,8 @@ __all__ = [
     "Category",
     "CompetitorAnalysis",
     "CompetitorProfile",
+    "CustomerResearch",
+    "CustomerResearchEvidence",
     "Complaint",
     "LLMCall",
     "MarketBrief",

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.db.enums import (
     CategoryKind,
     CompetitorAnalysisStatus,
+    CustomerResearchStatus,
     MarketResearchStatus,
     ReportStatus,
     ReportType,
@@ -54,3 +55,11 @@ class CompetitorAnalysisListFilter(BaseModel):
     opportunity_id: UUID | None = None
     status: CompetitorAnalysisStatus | None = None
     is_current: bool | None = None
+
+
+class CustomerResearchListFilter(BaseModel):
+    opportunity_id: UUID | None = None
+    status: CustomerResearchStatus | None = None
+    is_current: bool | None = None
+    min_pain_score: int | None = Field(default=None, ge=0, le=100)
+    cares_verdict: str | None = Field(default=None, max_length=20)

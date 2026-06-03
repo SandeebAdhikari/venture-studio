@@ -14,6 +14,7 @@ from app.db.models.associations import opportunity_complaints
 
 if TYPE_CHECKING:
     from app.db.models.competitor_analysis import CompetitorAnalysis
+    from app.db.models.customer_research import CustomerResearch
     from app.db.models.complaint import Complaint
     from app.db.models.market_brief import MarketBrief
     from app.db.models.opportunity_score import OpportunityScore
@@ -61,6 +62,11 @@ class Opportunity(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         back_populates="opportunity",
         cascade="all, delete-orphan",
         order_by="desc(CompetitorAnalysis.created_at)",
+    )
+    customer_research: Mapped[list[CustomerResearch]] = relationship(
+        back_populates="opportunity",
+        cascade="all, delete-orphan",
+        order_by="desc(CustomerResearch.created_at)",
     )
 
     __table_args__ = (
