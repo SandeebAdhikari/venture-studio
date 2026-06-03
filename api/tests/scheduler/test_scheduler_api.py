@@ -24,41 +24,34 @@ async def test_list_scheduler_jobs(
     response = await client.get("/api/v1/scheduler/jobs", headers=auth_headers)
     assert response.status_code == 200
     jobs = response.json()
-    assert len(jobs) == 7
-    names = {job["job_name"] for job in jobs}
-    assert names == {
-        "collect",
-        "classify",
-        "generate_opportunities",
-        "score",
-        "research_agents",
-        "executive_ranking",
-        "venture_report",
-    }
-    collect = next(job for job in jobs if job["job_name"] == "collect")
-    assert collect["schedule_hour"] == 2
-    assert collect["enabled"] is True
-    assert collect["schedule_cron"] == "0 2 * * *"
+    assert len(jobs) >= 1
+    nightly = next(job for job in jobs if job["job_name"] == "nightly_pipeline")
+    assert nightly["schedule_hour"] == 2
+    assert nightly["enabled"] is True
+    assert nightly["schedule_cron"] == "0 2 * * *"
 
 
 @pytest.mark.asyncio
-async def test_manual_trigger_scheduler_job(
+async def test_manual_trigger_nightly_pipeline(
     client: AsyncClient,
     auth_headers: dict[str, str],
     seeded_scheduler_jobs,
     db_session: AsyncSession,
 ):
-    response = await client.post("/api/v1/scheduler/run/collect", headers=auth_headers)
+    response = await client.post(
+        "/api/v1/scheduler/run/nightly_pipeline",
+        headers=auth_headers,
+    )
     assert response.status_code == 202
     body = response.json()
-    assert body["job_name"] == "collect"
+    assert body["job_name"] == "nightly_pipeline"
     assert body["status"] == "completed"
     assert len(body["arq_job_ids"]) == 1
 
     list_response = await client.get("/api/v1/scheduler/jobs", headers=auth_headers)
-    collect = next(job for job in list_response.json() if job["job_name"] == "collect")
-    assert collect["last_run"] is not None
-    assert collect["last_run"]["trigger"] == "manual"
+    nightly = next(job for job in list_response.json() if job["job_name"] == "nightly_pipeline")
+    assert nightly["last_run"] is not None
+    assert nightly["last_run"]["trigger"] == "manual"
 
 
 @pytest.mark.asyncio
@@ -68,18 +61,21 @@ async def test_disable_scheduler_job(
     seeded_scheduler_jobs,
 ):
     disable = await client.patch(
-        "/api/v1/scheduler/jobs/collect",
+        "/api/v1/scheduler/jobs/nightly_pipeline",
         headers=auth_headers,
         json={"enabled": False},
     )
     assert disable.status_code == 200
     assert disable.json()["enabled"] is False
 
-    blocked = await client.post("/api/v1/scheduler/run/collect", headers=auth_headers)
+    blocked = await client.post(
+        "/api/v1/scheduler/run/nightly_pipeline",
+        headers=auth_headers,
+    )
     assert blocked.status_code == 422
 
     enable = await client.patch(
-        "/api/v1/scheduler/jobs/collect",
+        "/api/v1/scheduler/jobs/nightly_pipeline",
         headers=auth_headers,
         json={"enabled": True},
     )
@@ -93,5 +89,5 @@ async def test_unknown_scheduler_job_returns_422(
     auth_headers: dict[str, str],
     seeded_scheduler_jobs,
 ):
-    response = await client.post("/api/v1/scheduler/run/not-a-job", headers=auth_headers)
+    response = await client.post("/api/v1/scheduler/run/collect", headers=auth_headers)
     assert response.status_code == 422

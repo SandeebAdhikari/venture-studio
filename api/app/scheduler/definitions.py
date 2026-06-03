@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# ARQ job enqueued for orchestrated nightly runs (PipelineOrchestrator).
+PIPELINE_ARQ_JOB = "run_pipeline"
+
+# Legacy stage job names retained for manual /api/v1/jobs/* execution only.
 RESEARCH_AGENT_JOBS = (
     "market_research",
     "competitor_analysis",
@@ -25,66 +29,22 @@ class SchedulerJobDefinition:
     schedule_minute: int
     arq_jobs: tuple[str, ...]
 
+    @property
+    def is_orchestrated(self) -> bool:
+        return self.arq_jobs == (PIPELINE_ARQ_JOB,)
+
 
 DEFAULT_SCHEDULER_JOBS: tuple[SchedulerJobDefinition, ...] = (
     SchedulerJobDefinition(
-        job_name="collect",
-        display_name="Collect",
-        description="Collect signals from enabled sources (Reddit, RSS, etc.)",
+        job_name="nightly_pipeline",
+        display_name="Nightly Venture Pipeline",
+        description=(
+            "Run the full Venture Studio lifecycle via the pipeline orchestrator "
+            "(collect through venture report)"
+        ),
         schedule_hour=2,
         schedule_minute=0,
-        arq_jobs=("collect",),
-    ),
-    SchedulerJobDefinition(
-        job_name="classify",
-        display_name="Classify",
-        description="Classify collected signals into complaint categories",
-        schedule_hour=3,
-        schedule_minute=0,
-        arq_jobs=("classify",),
-    ),
-    SchedulerJobDefinition(
-        job_name="generate_opportunities",
-        display_name="Generate Opportunities",
-        description="Generate venture opportunities from classified complaints",
-        schedule_hour=4,
-        schedule_minute=0,
-        arq_jobs=("generate_opportunities",),
-    ),
-    SchedulerJobDefinition(
-        job_name="score",
-        display_name="Score Opportunities",
-        description="Score opportunities using the deterministic scoring engine",
-        schedule_hour=5,
-        schedule_minute=0,
-        arq_jobs=("score",),
-    ),
-    SchedulerJobDefinition(
-        job_name="research_agents",
-        display_name="Research Agents",
-        description=(
-            "Run all research agents (market, competitor, customer, revenue, "
-            "product, GTM, growth, human proxy)"
-        ),
-        schedule_hour=6,
-        schedule_minute=0,
-        arq_jobs=RESEARCH_AGENT_JOBS,
-    ),
-    SchedulerJobDefinition(
-        job_name="executive_ranking",
-        display_name="Executive Ranking",
-        description="Rank opportunities using cross-agent executive scores",
-        schedule_hour=7,
-        schedule_minute=0,
-        arq_jobs=("executive_ranking",),
-    ),
-    SchedulerJobDefinition(
-        job_name="venture_report",
-        display_name="Venture Report",
-        description="Generate executive venture recommendation reports",
-        schedule_hour=8,
-        schedule_minute=0,
-        arq_jobs=("venture_report",),
+        arq_jobs=(PIPELINE_ARQ_JOB,),
     ),
 )
 

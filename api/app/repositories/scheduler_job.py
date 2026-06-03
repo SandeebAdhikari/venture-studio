@@ -44,6 +44,7 @@ class SchedulerJobRepository(BaseRepository[SchedulerJob]):
         return await self.add(entity)
 
     async def ensure_defaults(self) -> None:
+        known_names = {definition.job_name for definition in DEFAULT_SCHEDULER_JOBS}
         for definition in DEFAULT_SCHEDULER_JOBS:
             existing = await self.get_by_name(definition.job_name)
             if existing is None:
@@ -56,6 +57,11 @@ class SchedulerJobRepository(BaseRepository[SchedulerJob]):
             existing.schedule_minute = definition.schedule_minute
             await self.session.flush()
             await self.session.refresh(existing)
+
+        for job in await self.list_all():
+            if job.job_name not in known_names and job.enabled:
+                job.enabled = False
+                await self.session.flush()
 
     async def set_enabled(self, entity: SchedulerJob, enabled: bool) -> SchedulerJob:
         entity.enabled = enabled

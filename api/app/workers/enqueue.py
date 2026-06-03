@@ -94,11 +94,15 @@ class JobEnqueuer:
         *,
         trigger: PipelineTrigger = PipelineTrigger.API,
         options: PipelineRunOptions | None = None,
+        idempotency_key: str | None = None,
     ) -> JobEnqueueResult:
+        payload = (options or PipelineRunOptions()).model_dump(mode="json")
+        if idempotency_key:
+            payload["idempotency_key"] = idempotency_key
         return await self.enqueue(
             "run_pipeline",
             trigger=trigger.value,
-            options=(options or PipelineRunOptions()).model_dump(mode="json"),
+            options=payload,
         )
 
     async def enqueue_stage(
