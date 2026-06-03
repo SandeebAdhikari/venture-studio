@@ -3,6 +3,8 @@
 from app.db.base import Base
 from app.db.models.associations import opportunity_complaints
 from app.db.models.category import Category
+from app.db.models.competitor_analysis import CompetitorAnalysis
+from app.db.models.competitor_profile import CompetitorProfile
 from app.db.models.complaint import Complaint
 from app.db.models.llm_call import LLMCall
 from app.db.models.market_brief import MarketBrief
@@ -15,6 +17,8 @@ from app.db.models.source import Source
 __all__ = [
     "Base",
     "Category",
+    "CompetitorAnalysis",
+    "CompetitorProfile",
     "Complaint",
     "LLMCall",
     "MarketBrief",

@@ -4,7 +4,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.db.enums import CategoryKind, MarketResearchStatus, ReportStatus, ReportType, ReviewStatus, SourceType
+from app.db.enums import (
+    CategoryKind,
+    CompetitorAnalysisStatus,
+    MarketResearchStatus,
+    ReportStatus,
+    ReportType,
+    ReviewStatus,
+    SourceType,
+)
 
 
 class SourceListFilter(BaseModel):
@@ -39,4 +47,10 @@ class ReportListFilter(BaseModel):
 class MarketBriefListFilter(BaseModel):
     opportunity_id: UUID | None = None
     status: MarketResearchStatus | None = None
+    is_current: bool | None = None
+
+
+class CompetitorAnalysisListFilter(BaseModel):
+    opportunity_id: UUID | None = None
+    status: CompetitorAnalysisStatus | None = None
     is_current: bool | None = None

@@ -567,3 +567,137 @@ async def test_generate_and_retrieve_market_research(
     )
     assert history_response.status_code == 200
     assert len(history_response.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_and_retrieve_competitor_intelligence(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: AsyncSession,
+) -> None:
+    from app.agents.competitor_intelligence.mock_client import (
+        MockCompetitorIntelligenceLLMClient,
+        default_mock_competitor_output,
+    )
+    from app.agents.competitor_intelligence.service import CompetitorIntelligenceService
+    from app.api.deps import get_service_container
+    from app.config import get_settings
+    from app.db.enums import CategoryKind, SourceType
+    from app.db.models.category import Category
+    from app.db.models.signal import Signal
+    from app.db.models.source import Source
+    from app.main import app
+    from app.repositories import get_repositories
+    from app.schemas.complaint import ComplaintCreate
+    from app.schemas.opportunity import OpportunityCreate
+    from app.services.container import ServiceContainer
+
+    category = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.COMPLAINT_CATEGORY.value,
+            Category.code == "workflow",
+        )
+    )
+    domain = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value,
+            Category.code == "saas_b2b",
+        )
+    )
+    persona = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value,
+            Category.code == "ops_admin",
+        )
+    )
+    assert category is not None and domain is not None and persona is not None
+
+    source = Source(
+        name=f"api-competitor-source-{uuid4()}",
+        source_type=SourceType.REDDIT.value,
+        config={"subreddit": "SaaS"},
+        enabled=True,
+    )
+    db_session.add(source)
+    await db_session.flush()
+
+    signal = Signal(
+        source_id=source.id,
+        external_id=f"ext-{uuid4()}",
+        url="https://example.com/posts/competitor-test",
+        title="Scheduling pain",
+        body="Staff scheduling is broken.",
+        processing_status="classified",
+    )
+    db_session.add(signal)
+    await db_session.flush()
+
+    repos = get_repositories(db_session)
+    complaint = await repos.complaints.create(
+        ComplaintCreate(
+            signal_id=signal.id,
+            category_id=category.id,
+            domain_id=domain.id,
+            persona_id=persona.id,
+            summary="Staff scheduling breaks every week when using ShiftApp.",
+            verbatim_quote="Staff scheduling breaks every week when using ShiftApp.",
+            severity=5,
+            product_mentions=["ShiftApp"],
+            llm_model="mock-classifier",
+            llm_confidence=0.9,
+        )
+    )
+    opportunity = await repos.opportunities.create(
+        OpportunityCreate(
+            title="Staff Scheduling SaaS",
+            problem_statement="Teams struggle with staff scheduling coordination.",
+            target_user="Ops admins managing hourly teams",
+            frequency_signal="Repeated staff scheduling complaints.",
+            existing_alternatives="ShiftApp mentioned in evidence.",
+            gap="No lightweight staff scheduling workflow.",
+            confidence_score=0.88,
+            llm_model="mock-generator",
+            complaint_ids=[complaint.id],
+        )
+    )
+
+    async def override_services() -> ServiceContainer:
+        container = ServiceContainer(repos)
+        settings = get_settings()
+        container.competitor_intelligence = CompetitorIntelligenceService(
+            repos,
+            settings,
+            llm_client=MockCompetitorIntelligenceLLMClient([default_mock_competitor_output()]),
+        )
+        return container
+
+    app.dependency_overrides[get_service_container] = override_services
+
+    generate_response = await client.post(
+        f"/api/v1/competitor-intelligence/opportunities/{opportunity.id}/generate",
+        headers=auth_headers,
+    )
+    assert generate_response.status_code == 201
+    body = generate_response.json()
+    assert body["status"] == "completed"
+    assert body["competitor_analysis_id"] is not None
+    assert len(body["draft"]["competitors"]) == 2
+    assert body["draft"]["evaluation_metrics"]["competitor_count"] == 2
+
+    analysis_id = body["competitor_analysis_id"]
+    get_response = await client.get(
+        f"/api/v1/competitor-intelligence/{analysis_id}",
+        headers=auth_headers,
+    )
+    assert get_response.status_code == 200
+    detail = get_response.json()
+    assert detail["opportunity_id"] == str(opportunity.id)
+    assert len(detail["profiles"]) == 2
+    assert detail["profiles"][0]["pricing_model"]["model_type"] == "subscription"
+
+    current_response = await client.get(
+        f"/api/v1/competitor-intelligence/opportunities/{opportunity.id}/current",
+        headers=auth_headers,
+    )
+    assert current_response.status_code == 200
+    assert current_response.json()["id"] == analysis_id
