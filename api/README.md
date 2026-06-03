@@ -51,11 +51,27 @@ All `/api/v1/*` resource routes require the `X-API-Key` header.
 
 List endpoints support `limit` (1–100) and `offset` pagination.
 
+## Collection Service
+
+Raw complaint data is ingested via `ComplaintCollectionService` (no LLM). Items are
+normalized, deduplicated, and stored as `signals` with `processing_status=pending`
+for later classification.
+
+```python
+from app.collection.schemas import RawComplaintInput
+from app.repositories import get_repositories
+from app.collection.service import ComplaintCollectionService
+
+# services.collection.ingest(source_id, RawComplaintInput(...))
+```
+
+Dedup layers: `(source_id, external_id)`, canonical URL, normalized content hash.
+
 ## Tests
 
 ```bash
 cd api
-POSTGRES_PORT=5433 pytest tests/test_api.py -v
+POSTGRES_PORT=5433 pytest tests/ -v
 ```
 
 ## Docker (full stack)

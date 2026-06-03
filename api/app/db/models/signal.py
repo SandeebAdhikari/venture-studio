@@ -46,6 +46,7 @@ class Signal(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         server_default=SignalProcessingStatus.PENDING.value,
     )
     skip_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     collected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -63,4 +64,5 @@ class Signal(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         UniqueConstraint("source_id", "external_id", name="uq_signals_source_external"),
         Index("idx_signals_status_collected", "processing_status", "collected_at"),
         Index("idx_signals_published", "published_at"),
+        Index("idx_signals_source_content_hash", "source_id", "content_hash"),
     )

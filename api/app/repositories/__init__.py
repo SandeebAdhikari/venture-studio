@@ -7,6 +7,7 @@ from app.repositories.complaint import ComplaintRepository
 from app.repositories.opportunity import OpportunityRepository
 from app.repositories.opportunity_score import OpportunityScoreRepository
 from app.repositories.report import ReportRepository
+from app.repositories.signal import SignalRepository
 from app.repositories.source import SourceRepository
 
 
@@ -16,6 +17,7 @@ class RepositoryContainer:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.sources = SourceRepository(session)
+        self.signals = SignalRepository(session)
         self.categories = CategoryRepository(session)
         self.complaints = ComplaintRepository(session)
         self.opportunities = OpportunityRepository(session)
@@ -34,6 +36,7 @@ __all__ = [
     "OpportunityScoreRepository",
     "ReportRepository",
     "RepositoryContainer",
+    "SignalRepository",
     "SourceRepository",
     "get_repositories",
 ]
