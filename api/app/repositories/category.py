@@ -1,17 +1,43 @@
 """Category repository."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.enums import CategoryKind
 from app.db.models.category import Category
 from app.repositories.base import BaseRepository
 from app.schemas.category import CategoryCreate, CategoryUpdate
+from app.schemas.filters import CategoryListFilter
 
 
 class CategoryRepository(BaseRepository[Category]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Category)
+
+    def _apply_filters(self, query, filters: CategoryListFilter):
+        if filters.kind is not None:
+            query = query.where(Category.kind == filters.kind.value)
+        if filters.code is not None:
+            query = query.where(Category.code == filters.code)
+        return query
+
+    async def list_filtered(
+        self,
+        filters: CategoryListFilter,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Category]:
+        query = self._apply_filters(select(Category), filters)
+        result = await self.session.execute(
+            query.order_by(Category.kind, Category.label).limit(limit).offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def count_filtered(self, filters: CategoryListFilter) -> int:
+        query = self._apply_filters(select(func.count()).select_from(Category), filters)
+        result = await self.session.execute(query)
+        return int(result.scalar_one())
 
     async def get_by_code_and_kind(self, code: str, kind: CategoryKind) -> Category | None:
         result = await self.session.execute(

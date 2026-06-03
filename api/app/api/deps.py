@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.db.session import get_async_session
 from app.redis.client import get_redis_client
+from app.services.container import ServiceContainer, get_services
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -28,15 +29,18 @@ def get_app_settings() -> Settings:
     return get_settings()
 
 
+async def get_service_container(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ServiceContainer:
+    """Provide the service layer for the current request."""
+    return get_services(session)
+
+
 async def verify_api_key(
     settings: Annotated[Settings, Depends(get_app_settings)],
     x_api_key: Annotated[str | None, Header()] = None,
 ) -> None:
-    """Validate the shared API key for protected routes.
-
-    Health endpoints are mounted outside the authenticated router and do not
-    use this dependency.
-    """
+    """Validate the shared API key for protected routes."""
     if x_api_key is None or x_api_key != settings.api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -49,4 +53,5 @@ async def verify_api_key(
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
 AppSettings = Annotated[Settings, Depends(get_app_settings)]
+Services = Annotated[ServiceContainer, Depends(get_service_container)]
 Authenticated = Annotated[None, Depends(verify_api_key)]

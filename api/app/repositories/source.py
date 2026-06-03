@@ -2,18 +2,44 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.enums import SourceType
 from app.db.models.source import Source
 from app.repositories.base import BaseRepository
+from app.schemas.filters import SourceListFilter
 from app.schemas.source import SourceCreate, SourceUpdate
 
 
 class SourceRepository(BaseRepository[Source]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Source)
+
+    def _apply_filters(self, query, filters: SourceListFilter):
+        if filters.enabled is not None:
+            query = query.where(Source.enabled.is_(filters.enabled))
+        if filters.source_type is not None:
+            query = query.where(Source.source_type == filters.source_type.value)
+        return query
+
+    async def list_filtered(
+        self,
+        filters: SourceListFilter,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Source]:
+        query = self._apply_filters(select(Source), filters)
+        result = await self.session.execute(
+            query.order_by(Source.name).limit(limit).offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def count_filtered(self, filters: SourceListFilter) -> int:
+        query = self._apply_filters(select(func.count()).select_from(Source), filters)
+        result = await self.session.execute(query)
+        return int(result.scalar_one())
 
     async def list_enabled(self) -> list[Source]:
         result = await self.session.execute(

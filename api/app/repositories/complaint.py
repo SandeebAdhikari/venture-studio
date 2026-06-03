@@ -2,19 +2,60 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models.category import Category
 from app.db.models.complaint import Complaint
+from app.db.models.signal import Signal
 from app.repositories.base import BaseRepository
 from app.schemas.complaint import ComplaintCreate, ComplaintUpdate
+from app.schemas.filters import ComplaintListFilter
 
 
 class ComplaintRepository(BaseRepository[Complaint]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Complaint)
+
+    def _apply_filters(self, query, filters: ComplaintListFilter):
+        if filters.category_id is not None:
+            query = query.where(Complaint.category_id == filters.category_id)
+        if filters.domain_id is not None:
+            query = query.where(Complaint.domain_id == filters.domain_id)
+        if filters.persona_id is not None:
+            query = query.where(Complaint.persona_id == filters.persona_id)
+        if filters.min_severity is not None:
+            query = query.where(Complaint.severity >= filters.min_severity)
+        if filters.signal_id is not None:
+            query = query.where(Complaint.signal_id == filters.signal_id)
+        return query
+
+    async def list_filtered(
+        self,
+        filters: ComplaintListFilter,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Complaint]:
+        query = self._apply_filters(select(Complaint), filters)
+        result = await self.session.execute(
+            query.order_by(Complaint.severity.desc(), Complaint.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def count_filtered(self, filters: ComplaintListFilter) -> int:
+        query = self._apply_filters(select(func.count()).select_from(Complaint), filters)
+        result = await self.session.execute(query)
+        return int(result.scalar_one())
+
+    async def signal_exists(self, signal_id: UUID) -> bool:
+        result = await self.session.execute(
+            select(func.count()).select_from(Signal).where(Signal.id == signal_id)
+        )
+        return int(result.scalar_one()) > 0
 
     async def get_by_id_with_relations(self, entity_id: UUID) -> Complaint | None:
         result = await self.session.execute(

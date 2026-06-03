@@ -1,12 +1,21 @@
 """API v1 router aggregation."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from app.api.v1 import health
+from app.api.deps import verify_api_key
+from app.api.v1 import categories, complaints, health, opportunities, reports, sources
 
 router = APIRouter()
 
-# Health routes are also mounted at root level in main.py for k8s/docker probes.
+# Public health probes (also mounted at app root).
 router.include_router(health.router)
 
-# Future routers (opportunities, signals, sources, pipeline) attach here.
+# Authenticated resource APIs.
+protected_router = APIRouter(dependencies=[Depends(verify_api_key)])
+protected_router.include_router(sources.router)
+protected_router.include_router(categories.router)
+protected_router.include_router(complaints.router)
+protected_router.include_router(opportunities.router)
+protected_router.include_router(reports.router)
+
+router.include_router(protected_router)

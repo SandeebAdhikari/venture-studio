@@ -2,20 +2,49 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.enums import ReviewStatus
+from app.db.models.associations import opportunity_complaints
 from app.db.models.complaint import Complaint
 from app.db.models.opportunity import Opportunity
 from app.repositories.base import BaseRepository
+from app.schemas.filters import OpportunityListFilter
 from app.schemas.opportunity import OpportunityCreate, OpportunityUpdate
 
 
 class OpportunityRepository(BaseRepository[Opportunity]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Opportunity)
+
+    def _apply_filters(self, query, filters: OpportunityListFilter):
+        if filters.review_status is not None:
+            query = query.where(Opportunity.review_status == filters.review_status.value)
+        if filters.min_confidence is not None:
+            query = query.where(Opportunity.confidence_score >= filters.min_confidence)
+        return query
+
+    async def list_filtered(
+        self,
+        filters: OpportunityListFilter,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Opportunity]:
+        query = self._apply_filters(select(Opportunity), filters)
+        result = await self.session.execute(
+            query.order_by(Opportunity.confidence_score.desc(), Opportunity.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def count_filtered(self, filters: OpportunityListFilter) -> int:
+        query = self._apply_filters(select(func.count()).select_from(Opportunity), filters)
+        result = await self.session.execute(query)
+        return int(result.scalar_one())
 
     async def get_by_id_with_relations(self, entity_id: UUID) -> Opportunity | None:
         result = await self.session.execute(
@@ -77,17 +106,33 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         self,
         entity: Opportunity,
         complaint_ids: list[UUID],
+        *,
+        replace: bool = False,
     ) -> Opportunity:
+        if replace:
+            await self.session.execute(
+                delete(opportunity_complaints).where(
+                    opportunity_complaints.c.opportunity_id == entity.id
+                )
+            )
+
         if not complaint_ids:
+            await self.session.flush()
             return entity
 
         result = await self.session.execute(
-            select(Complaint).where(Complaint.id.in_(complaint_ids))
+            select(Complaint.id).where(Complaint.id.in_(complaint_ids))
         )
-        complaints = list(result.scalars().all())
-        entity.complaints = complaints
+        valid_ids = [row[0] for row in result.all()]
+        if valid_ids:
+            await self.session.execute(
+                insert(opportunity_complaints),
+                [
+                    {"opportunity_id": entity.id, "complaint_id": complaint_id}
+                    for complaint_id in valid_ids
+                ],
+            )
         await self.session.flush()
-        await self.session.refresh(entity, attribute_names=["complaints"])
         return entity
 
     async def set_review_status(

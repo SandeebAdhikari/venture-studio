@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
+from app.api.error_handlers import register_exception_handlers
 from app.api.v1 import health
 from app.api.v1.router import router as v1_router
 from app.config import get_settings
@@ -18,7 +19,13 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
+    description=(
+        "AI Venture Studio API for discovering, classifying, and ranking software "
+        "business opportunities from public signals."
+    ),
 )
+
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
