@@ -143,6 +143,15 @@ class Settings(BaseSettings):
     pipeline_score_limit: int = 1000
     pipeline_lock_key: str = "lock:pipeline:run"
 
+    # ARQ worker
+    arq_max_jobs: int = 5
+    arq_job_timeout_sec: int = 600
+    arq_max_tries: int = 3
+    arq_job_result_ttl_sec: int = 604_800
+    arq_job_status_ttl_sec: int = 604_800
+    arq_queue_name: str = "arq:queue"
+    arq_job_lock_ttl_sec: int = 3600
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

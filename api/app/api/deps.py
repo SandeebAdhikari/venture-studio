@@ -11,6 +11,7 @@ from app.config import Settings, get_settings
 from app.db.session import get_async_session
 from app.redis.client import get_redis_client
 from app.services.container import ServiceContainer, get_services
+from app.workers.enqueue import JobEnqueuer, get_arq_pool
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -36,6 +37,12 @@ async def get_service_container(
     return get_services(session)
 
 
+async def get_job_enqueuer() -> JobEnqueuer:
+    """Provide ARQ job enqueuer backed by Redis."""
+    pool = await get_arq_pool()
+    return JobEnqueuer(pool)
+
+
 async def verify_api_key(
     settings: Annotated[Settings, Depends(get_app_settings)],
     x_api_key: Annotated[str | None, Header()] = None,
@@ -54,4 +61,5 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
 AppSettings = Annotated[Settings, Depends(get_app_settings)]
 Services = Annotated[ServiceContainer, Depends(get_service_container)]
+JobEnqueuerDep = Annotated[JobEnqueuer, Depends(get_job_enqueuer)]
 Authenticated = Annotated[None, Depends(verify_api_key)]

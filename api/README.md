@@ -27,6 +27,15 @@ alembic upgrade head
 
 # Start API
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Start background worker (separate terminal)
+arq app.workers.worker.WorkerSettings
+```
+
+Or run everything with Docker Compose (includes `worker` service):
+
+```bash
+docker compose up -d
 ```
 
 ## Endpoints

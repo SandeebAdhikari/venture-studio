@@ -1,32 +1,48 @@
 """Pipeline orchestration REST endpoints."""
 
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, Response, status
 
-from app.api.deps import Services
+from app.api.deps import JobEnqueuerDep, Services
 from app.api.pagination import Pagination
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.pipeline import PipelineRunDetail, PipelineRunRead, PipelineRunRequest, PipelineRunResult
+from app.workers.schemas import JobEnqueueResult
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 
 
 @router.post(
     "/run",
-    response_model=PipelineRunResult,
-    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_201_CREATED: {"model": PipelineRunResult},
+        status.HTTP_202_ACCEPTED: {"model": JobEnqueueResult},
+    },
     summary="Run the full Venture Studio pipeline",
     description=(
-        "Execute all pipeline stages sequentially: collect, classify, generate, score, "
-        "eight analysis agents, executive ranking, and venture report."
+        "Execute all pipeline stages sequentially. Set background=true to enqueue an ARQ worker job."
     ),
 )
 async def run_pipeline(
     services: Services,
+    enqueuer: JobEnqueuerDep,
+    response: Response,
     request: PipelineRunRequest | None = None,
-) -> PipelineRunResult:
+    background: Annotated[
+        bool,
+        Query(description="When true, enqueue pipeline run on ARQ worker instead of blocking"),
+    ] = False,
+) -> PipelineRunResult | JobEnqueueResult:
     body = request or PipelineRunRequest()
+    if background:
+        response.status_code = status.HTTP_202_ACCEPTED
+        return await enqueuer.enqueue_pipeline(
+            trigger=body.trigger,
+            options=body.options,
+        )
+    response.status_code = status.HTTP_201_CREATED
     return await services.pipeline.run_pipeline(
         trigger=body.trigger,
         options=body.options,

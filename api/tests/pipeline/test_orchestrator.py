@@ -151,7 +151,7 @@ async def test_stage_retry_then_success(
             raise RuntimeError("transient failure")
         return StageExecutionResult(items_out=1, records_processed=1)
 
-    monkeypatch.setattr(orchestrator, "_execute_stage", flaky_execute)
+    monkeypatch.setattr(orchestrator._executor, "execute", flaky_execute)
 
     result = await orchestrator.run_pipeline(
         options=PipelineRunOptions(stages_only=[PipelineStage.COLLECT]),
@@ -179,7 +179,7 @@ async def test_stop_on_failure_produces_partial_run(
             return StageExecutionResult(failed=True, error="classify boom")
         return StageExecutionResult(items_out=0)
 
-    monkeypatch.setattr(orchestrator, "_execute_stage", failing_execute)
+    monkeypatch.setattr(orchestrator._executor, "execute", failing_execute)
 
     result = await orchestrator.run_pipeline(
         options=PipelineRunOptions(
