@@ -138,6 +138,9 @@ cd api
 POSTGRES_PORT=5433 pytest tests/ -v
 ```
 
+CI runs Ruff, pytest, migration validation, and build checks on every push/PR to `main`.
+See [docs/ci.md](../docs/ci.md) for workflow details.
+
 ## Docker (full stack)
 
 ```bash
