@@ -1,6 +1,6 @@
 # Observability documentation
 
-Production observability for the AI Venture Studio API covers metrics, tracing, error tracking, expanded health checks, and production alerting. See [observability-alerting.md](./observability-alerting.md) for alert routing and configuration.
+Production observability for the AI Venture Studio API covers metrics, tracing, error tracking, expanded health checks, and production alerting. See [observability-alerting.md](./observability-alerting.md) for alert architecture, [alert-routing.md](./alert-routing.md) for routing, and [alert-runbook.md](./alert-runbook.md) for operations.
 
 ## Architecture
 

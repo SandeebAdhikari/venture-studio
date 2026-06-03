@@ -89,10 +89,17 @@ Pipeline failed — stage classify failed
 `GET /health/ready` includes an **`alerting`** check:
 
 - `ok` / `disabled` when alerting is off
-- `ok` / `providers=[logging,...]` when the engine initialized
-- `error` if initialization fails
+- `ok` / `providers=[logging,...]` when configured and healthy
+- `warn` when misconfigured (missing URLs, logging-only in production)
+- `error` if engine initialization fails
 
-This check is **informational** and does not fail readiness when alerting is misconfigured (only reports status).
+This check is **informational** and does not fail overall readiness.
+
+Authenticated detail: `GET /api/v1/observability/alerts/status`
+
+Test delivery: `POST /api/v1/observability/alerts/test` or `python -m app.observability.alerting.cli test`
+
+See [alert-routing.md](./alert-routing.md) and [alert-runbook.md](./alert-runbook.md).
 
 ## Configuration reference
 
