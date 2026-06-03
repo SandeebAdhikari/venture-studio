@@ -230,6 +230,33 @@ alembic upgrade head
 
 ---
 
+## Alerting
+
+Production alerting routes operational events (worker offline, pipeline failures, LLM budget, etc.) to Slack, generic webhooks, or logs.
+
+**Verify configuration**
+
+```bash
+cd api && PYTHONPATH=. python -m app.observability.alerting.cli validate
+```
+
+**Send test alert**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/observability/alerts/test \
+  -H "X-API-Key: $API_KEY"
+```
+
+**Check status**
+
+```bash
+curl http://localhost:8000/health/ready | jq '.checks[] | select(.name=="alerting")'
+```
+
+See [alert-runbook.md](./alert-runbook.md) and [alert-routing.md](./alert-routing.md).
+
+---
+
 ## Testing
 
 ```bash
@@ -246,6 +273,8 @@ PYTHONPATH=. pytest tests/ -q
 
 ## Related Documentation
 
+- [alert-runbook.md](./alert-runbook.md) — alerting operations
+- [alert-routing.md](./alert-routing.md) — alert routing configuration
 - [deployment.md](./deployment.md) — deployment guide
 - [pipeline-orchestration.md](./pipeline-orchestration.md) — orchestration details
 - [workers.md](./workers.md) — ARQ reference
