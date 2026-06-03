@@ -5,10 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.api.error_handlers import register_exception_handlers
+from app.api.metrics import router as metrics_router
 from app.api.v1 import health
 from app.api.v1.router import router as v1_router
 from app.config import get_settings
 from app.core.lifespan import lifespan
+from app.observability.middleware import ObservabilityMiddleware
 
 settings = get_settings()
 
@@ -27,6 +29,8 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
+app.add_middleware(ObservabilityMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.environment == "local" else [],
@@ -35,8 +39,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Liveness/readiness at root (no auth, no /api/v1 prefix) for load balancers
+# Liveness/readiness and metrics at root (no auth, no /api/v1 prefix)
 app.include_router(health.router)
+app.include_router(metrics_router)
 
 # Versioned API surface
 app.include_router(v1_router, prefix=settings.api_v1_prefix)

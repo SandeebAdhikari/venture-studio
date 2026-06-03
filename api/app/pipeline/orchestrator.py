@@ -16,6 +16,8 @@ from app.db.enums import (
 )
 from app.exceptions import ConflictError, NotFoundError
 from app.logging import get_logger
+from app.observability.metrics import record_metrics
+from app.observability.tracing import trace_span
 from app.pipeline.constants import PIPELINE_STAGE_ORDER
 from app.pipeline.executor import PipelineStageExecutor
 from app.pipeline.schemas import StageExecutionResult
@@ -72,6 +74,8 @@ class PipelineOrchestrator:
             )
         )
 
+        record_metrics().set_pipeline_running(True)
+
         stages_to_run = self._resolve_stages(opts)
         stage_plans = [
             PipelineStageRunCreate(
@@ -92,62 +96,80 @@ class PipelineOrchestrator:
         stop = False
 
         try:
-            for stage in stages_to_run:
-                if stop:
+            with trace_span(
+                "pipeline.run",
+                attributes={
+                    "pipeline_run_id": str(run.id),
+                    "trigger": trigger.value,
+                    "stage_count": len(stages_to_run),
+                },
+            ):
+                for stage in stages_to_run:
+                    if stop:
+                        stage_run = await self._repos.pipelines.get_stage_run(run.id, stage.value)
+                        if stage_run is not None:
+                            await self._repos.pipelines.mark_stage_skipped(
+                                stage_run,
+                                reason="prior_stage_failure",
+                            )
+                            skipped += 1
+                            await self._audit(run, "stage_skipped", {"stage": stage.value})
+                        continue
+
+                    if stage in opts.skip_stages:
+                        stage_run = await self._repos.pipelines.get_stage_run(run.id, stage.value)
+                        if stage_run is not None:
+                            await self._repos.pipelines.mark_stage_started(stage_run)
+                            await self._repos.pipelines.mark_stage_skipped(
+                                stage_run,
+                                reason="explicitly_skipped",
+                            )
+                            skipped += 1
+                            await self._audit(run, "stage_skipped", {"stage": stage.value})
+                        continue
+
                     stage_run = await self._repos.pipelines.get_stage_run(run.id, stage.value)
-                    if stage_run is not None:
-                        await self._repos.pipelines.mark_stage_skipped(
-                            stage_run,
-                            reason="prior_stage_failure",
+                    if stage_run is None:
+                        continue
+
+                    outcome = await self._run_stage_with_retries(run, stage_run, stage, opts)
+                    stage_status = PipelineStageStatus(stage_run.status)
+                    if stage_status == PipelineStageStatus.COMPLETED:
+                        completed += 1
+                        record_metrics().record_stage_duration(
+                            stage=stage.value,
+                            status=stage_status.value,
+                            duration_ms=stage_run.duration_ms,
                         )
-                        skipped += 1
-                        await self._audit(run, "stage_skipped", {"stage": stage.value})
-                    continue
-
-                if stage in opts.skip_stages:
-                    stage_run = await self._repos.pipelines.get_stage_run(run.id, stage.value)
-                    if stage_run is not None:
-                        await self._repos.pipelines.mark_stage_started(stage_run)
-                        await self._repos.pipelines.mark_stage_skipped(
-                            stage_run,
-                            reason="explicitly_skipped",
+                        await self._audit(
+                            run,
+                            "stage_completed",
+                            {
+                                "stage": stage.value,
+                                "items_in": outcome.items_in,
+                                "items_out": outcome.items_out,
+                                "items_failed": outcome.items_failed,
+                                "duration_ms": stage_run.duration_ms,
+                            },
                         )
-                        skipped += 1
-                        await self._audit(run, "stage_skipped", {"stage": stage.value})
-                    continue
-
-                stage_run = await self._repos.pipelines.get_stage_run(run.id, stage.value)
-                if stage_run is None:
-                    continue
-
-                outcome = await self._run_stage_with_retries(run, stage_run, stage, opts)
-                stage_status = PipelineStageStatus(stage_run.status)
-                if stage_status == PipelineStageStatus.COMPLETED:
-                    completed += 1
-                    await self._audit(
-                        run,
-                        "stage_completed",
-                        {
-                            "stage": stage.value,
-                            "items_in": outcome.items_in,
-                            "items_out": outcome.items_out,
-                            "items_failed": outcome.items_failed,
-                            "duration_ms": stage_run.duration_ms,
-                        },
-                    )
-                elif stage_status == PipelineStageStatus.FAILED:
-                    failed += 1
-                    first_error = first_error or stage_run.error_detail
-                    await self._audit(
-                        run,
-                        "stage_failed",
-                        {
-                            "stage": stage.value,
-                            "error": stage_run.error_detail,
-                        },
-                    )
-                    if opts.stop_on_failure:
-                        stop = True
+                    elif stage_status == PipelineStageStatus.FAILED:
+                        failed += 1
+                        record_metrics().record_stage_duration(
+                            stage=stage.value,
+                            status=stage_status.value,
+                            duration_ms=stage_run.duration_ms,
+                        )
+                        first_error = first_error or stage_run.error_detail
+                        await self._audit(
+                            run,
+                            "stage_failed",
+                            {
+                                "stage": stage.value,
+                                "error": stage_run.error_detail,
+                            },
+                        )
+                        if opts.stop_on_failure:
+                            stop = True
 
             final_status = self._resolve_final_status(
                 completed=completed,
@@ -168,6 +190,11 @@ class PipelineOrchestrator:
                 error_summary=first_error,
             )
             await self._audit(run, "pipeline_finished", {"status": final_status.value})
+
+            record_metrics().record_pipeline_run(
+                status=final_status.value,
+                trigger=trigger.value,
+            )
 
             refreshed = await self._repos.pipelines.get_by_id_with_stages(run.id)
             assert refreshed is not None
@@ -191,6 +218,7 @@ class PipelineOrchestrator:
                 duration_ms=refreshed.duration_ms,
             )
         finally:
+            record_metrics().set_pipeline_running(False)
             await self._release_lock(lock_token)
 
     async def get_run(self, run_id: UUID) -> PipelineRunDetail:
@@ -226,62 +254,63 @@ class PipelineOrchestrator:
         last_error: str | None = None
         metrics = StageExecutionResult()
 
-        for attempt in range(1, max_attempts + 1):
-            if attempt > 1:
-                await self._repos.pipelines.mark_stage_retrying(stage_run)
-                await self._audit(
-                    run,
-                    "stage_retry",
-                    {"stage": stage.value, "attempt": attempt},
-                )
-                await asyncio.sleep(
-                    self._settings.pipeline_retry_backoff_sec * (2 ** (attempt - 2))
-                )
-            else:
-                await self._repos.pipelines.mark_stage_started(stage_run)
+        with trace_span("pipeline.stage", attributes={"stage": stage.value}):
+            for attempt in range(1, max_attempts + 1):
+                if attempt > 1:
+                    await self._repos.pipelines.mark_stage_retrying(stage_run)
+                    await self._audit(
+                        run,
+                        "stage_retry",
+                        {"stage": stage.value, "attempt": attempt},
+                    )
+                    await asyncio.sleep(
+                        self._settings.pipeline_retry_backoff_sec * (2 ** (attempt - 2))
+                    )
+                else:
+                    await self._repos.pipelines.mark_stage_started(stage_run)
 
-            try:
-                metrics = await self._executor.execute(stage, opts)
-                if metrics.failed:
-                    last_error = metrics.error or "Stage reported failure"
-                    if attempt < max_attempts:
-                        continue
-                    await self._repos.pipelines.mark_stage_failed(
+                try:
+                    metrics = await self._executor.execute(stage, opts)
+                    if metrics.failed:
+                        last_error = metrics.error or "Stage reported failure"
+                        if attempt < max_attempts:
+                            continue
+                        await self._repos.pipelines.mark_stage_failed(
+                            stage_run,
+                            error_detail=last_error,
+                            items_in=metrics.items_in,
+                            items_out=metrics.items_out,
+                            items_failed=metrics.items_failed,
+                            records_processed=metrics.records_processed,
+                        )
+                        return stage_run
+
+                    await self._repos.pipelines.mark_stage_completed(
                         stage_run,
-                        error_detail=last_error,
                         items_in=metrics.items_in,
                         items_out=metrics.items_out,
                         items_failed=metrics.items_failed,
                         records_processed=metrics.records_processed,
+                        stage_metadata=metrics.metadata,
                     )
                     return stage_run
+                except Exception as exc:
+                    last_error = str(exc)
+                    logger.exception(
+                        "Pipeline stage error",
+                        extra={"stage": stage.value, "attempt": attempt},
+                    )
+                    if attempt < max_attempts:
+                        continue
 
-                await self._repos.pipelines.mark_stage_completed(
-                    stage_run,
-                    items_in=metrics.items_in,
-                    items_out=metrics.items_out,
-                    items_failed=metrics.items_failed,
-                    records_processed=metrics.records_processed,
-                    stage_metadata=metrics.metadata,
-                )
-                return stage_run
-            except Exception as exc:
-                last_error = str(exc)
-                logger.exception(
-                    "Pipeline stage error",
-                    extra={"stage": stage.value, "attempt": attempt},
-                )
-                if attempt < max_attempts:
-                    continue
-
-        await self._repos.pipelines.mark_stage_failed(
-            stage_run,
-            error_detail=last_error or "Unknown stage failure",
-            items_in=metrics.items_in,
-            items_out=metrics.items_out,
-            items_failed=metrics.items_failed,
-            records_processed=metrics.records_processed,
-        )
+            await self._repos.pipelines.mark_stage_failed(
+                stage_run,
+                error_detail=last_error or "Unknown stage failure",
+                items_in=metrics.items_in,
+                items_out=metrics.items_out,
+                items_failed=metrics.items_failed,
+                records_processed=metrics.records_processed,
+            )
         return stage_run
 
     @staticmethod

@@ -21,6 +21,7 @@ dependencies = [
     "apscheduler>=3.10.0,<4",
     "sqlalchemy[asyncio]>=2.0.36,<3",
     "uvicorn[standard]>=0.32.0,<1",
+    "prometheus-client>=0.21.0,<1",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +30,12 @@ dev = [
     "pytest>=8.3.0,<9",
     "pytest-asyncio>=0.24.0,<1",
     "ruff>=0.8.0,<0.9",
+]
+observability-sentry = ["sentry-sdk>=2.0.0,<3"]
+observability-opentelemetry = [
+    "opentelemetry-api>=1.28.0,<2",
+    "opentelemetry-sdk>=1.28.0,<2",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.28.0,<2",
 ]
 
 [build-system]

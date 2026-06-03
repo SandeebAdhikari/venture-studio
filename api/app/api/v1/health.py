@@ -4,13 +4,10 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel, Field
-from sqlalchemy import text
 
 from app import __version__
 from app.api.deps import AppSettings, DbSession, RedisClient
-from app.logging import get_logger
-
-logger = get_logger(__name__)
+from app.observability.readiness import run_readiness_checks
 
 router = APIRouter(tags=["health"])
 
@@ -47,7 +44,10 @@ async def liveness() -> HealthResponse:
     "/health/ready",
     response_model=ReadinessResponse,
     summary="Readiness probe",
-    description="Verifies PostgreSQL and Redis connectivity.",
+    description=(
+        "Verifies PostgreSQL, Redis, worker availability (when required), "
+        "and scheduler availability (when enabled)."
+    ),
     responses={
         status.HTTP_503_SERVICE_UNAVAILABLE: {
             "description": "One or more dependencies unavailable"
@@ -60,28 +60,11 @@ async def readiness(
     redis: RedisClient,
     settings: AppSettings,
 ) -> ReadinessResponse:
-    del settings  # reserved for future environment-specific checks
-    checks: list[ReadinessCheck] = []
-
-    try:
-        result = await db.execute(text("SELECT 1"))
-        result.scalar_one()
-        checks.append(ReadinessCheck(name="postgresql", status="ok"))
-    except Exception as exc:
-        logger.warning("PostgreSQL readiness check failed", exc_info=exc)
-        checks.append(ReadinessCheck(name="postgresql", status="error", detail=str(exc)))
-
-    try:
-        pong = await redis.ping()
-        if pong:
-            checks.append(ReadinessCheck(name="redis", status="ok"))
-        else:
-            checks.append(
-                ReadinessCheck(name="redis", status="error", detail="PING did not return True"),
-            )
-    except Exception as exc:
-        logger.warning("Redis readiness check failed", exc_info=exc)
-        checks.append(ReadinessCheck(name="redis", status="error", detail=str(exc)))
+    results = await run_readiness_checks(db=db, redis=redis, settings=settings)
+    checks = [
+        ReadinessCheck(name=item.name, status=item.status, detail=item.detail)
+        for item in results
+    ]
 
     all_ok = all(check.status == "ok" for check in checks)
     if not all_ok:

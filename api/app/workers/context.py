@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
@@ -10,6 +11,8 @@ from uuid import uuid4
 from app.config import Settings, get_settings
 from app.db.session import close_db, get_session_factory, init_db
 from app.logging import get_logger
+from app.observability.setup import init_observability
+from app.observability.worker_heartbeat import clear_worker_heartbeat, refresh_worker_heartbeat
 from app.redis.client import close_redis, get_redis_client, init_redis
 from app.repositories import RepositoryContainer, get_repositories
 from app.services.container import ServiceContainer
@@ -23,6 +26,7 @@ logger = get_logger(__name__)
 async def worker_startup(ctx: dict) -> None:
     """Initialize shared resources when an ARQ worker starts."""
     settings = get_settings()
+    init_observability(settings)
     init_db(settings)
     init_redis(settings)
     ctx["settings"] = settings
@@ -34,11 +38,33 @@ async def worker_startup(ctx: dict) -> None:
 
     register_reddit_collector(redis=ctx["redis"])
     register_rss_collector(redis=ctx["redis"])
+
+    await refresh_worker_heartbeat(ctx["redis"], ctx["worker_id"], settings=settings)
+
+    async def heartbeat_loop() -> None:
+        while True:
+            await asyncio.sleep(max(settings.worker_heartbeat_ttl_sec // 3, 10))
+            await refresh_worker_heartbeat(ctx["redis"], ctx["worker_id"], settings=settings)
+
+    ctx["heartbeat_task"] = asyncio.create_task(heartbeat_loop())
     logger.info("ARQ worker started", extra={"worker_id": ctx["worker_id"]})
 
 
 async def worker_shutdown(ctx: dict) -> None:
     """Release resources when an ARQ worker stops."""
+    heartbeat_task = ctx.get("heartbeat_task")
+    if heartbeat_task is not None:
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
+
+    redis = ctx.get("redis")
+    worker_id = ctx.get("worker_id")
+    if redis is not None and worker_id:
+        await clear_worker_heartbeat(redis, worker_id, settings=ctx.get("settings"))
+
     await close_db()
     await close_redis()
     logger.info("ARQ worker stopped", extra={"worker_id": ctx.get("worker_id")})

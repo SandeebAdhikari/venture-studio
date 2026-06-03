@@ -159,6 +159,19 @@ class Settings(BaseSettings):
     # Founder approval workflow
     require_founder_approval: bool = True
 
+    # Observability
+    observability_metrics_enabled: bool = True
+    observability_tracing_enabled: bool = True
+    observability_tracing_provider: Literal["logging", "opentelemetry"] = "logging"
+    observability_error_tracking_provider: Literal["noop", "sentry", "opentelemetry"] = "noop"
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.1
+    otel_exporter_endpoint: str = ""
+    otel_service_name: str = "ai-venture-studio-api"
+    worker_readiness_required: bool = False
+    worker_heartbeat_ttl_sec: int = 90
+    worker_heartbeat_key_prefix: str = "observability:worker:"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

@@ -76,6 +76,14 @@ class ApprovalRequestRepository(BaseRepository[ApprovalRequest]):
         result = await self.session.scalar(query)
         return int(result or 0)
 
+    async def count_by_status(self) -> dict[str, int]:
+        result = await self.session.execute(
+            select(ApprovalRequest.status, func.count())
+            .select_from(ApprovalRequest)
+            .group_by(ApprovalRequest.status)
+        )
+        return {str(status): int(count) for status, count in result.all()}
+
     async def create(
         self,
         *,

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from app.db.enums import PipelineStage, PipelineTrigger
 from app.logging import get_logger
+from app.observability.metrics import record_metrics
 from app.pipeline.executor import PipelineStageExecutor
 from app.schemas.pipeline import PipelineRunOptions
 from app.workers.context import get_worker_redis, get_worker_settings, worker_session
@@ -106,6 +107,7 @@ async def _run_tracked_job(
             "reason": "duplicate_job_in_progress",
             "job_name": job_name,
         }
+        record_metrics().record_worker_job(job_name=job_name, status="skipped")
         await monitor.record_completed(job_id=job_id, result=skipped)
         logger.info(
             "Job skipped — lock held",
@@ -117,6 +119,7 @@ async def _run_tracked_job(
         result = await runner(job_options)
         if isinstance(result, dict) and result.get("status") == "failed":
             raise RuntimeError(str(result.get("error") or f"{job_name} failed"))
+        record_metrics().record_worker_job(job_name=job_name, status="completed")
         await monitor.record_completed(job_id=job_id, result=result)
         logger.info(
             "Job completed",
@@ -124,6 +127,7 @@ async def _run_tracked_job(
         )
         return result
     except Exception as exc:
+        record_metrics().record_worker_job(job_name=job_name, status="failed")
         await monitor.record_failed(
             job_id=job_id,
             error=str(exc),

@@ -19,6 +19,7 @@ from app.collection.schemas import (
 from app.collection.settings import CollectionSettings
 from app.exceptions import NotFoundError, ValidationError
 from app.logging import get_logger
+from app.observability.metrics import record_metrics
 from app.repositories import RepositoryContainer
 from app.repositories.signal import SignalCreateData
 
@@ -78,6 +79,10 @@ class ComplaintCollectionService:
         for source in sources:
             collector = get_collector(source.source_type)
             if collector is None:
+                record_metrics().record_collector_run(
+                    source_type=source.source_type,
+                    status="skipped",
+                )
                 batch_result.add(
                     SourceCollectionResult(
                         source_id=source.id,
@@ -91,6 +96,10 @@ class ComplaintCollectionService:
             try:
                 items = await collector.fetch(source)
                 if not items:
+                    record_metrics().record_collector_run(
+                        source_type=source.source_type,
+                        status="completed",
+                    )
                     batch_result.add(
                         SourceCollectionResult(
                             source_id=source.id,
@@ -104,6 +113,16 @@ class ComplaintCollectionService:
                 result = await self.ingest_batch(
                     RawComplaintBatch(source_id=source.id, items=items)
                 )
+                record_metrics().record_collector_run(
+                    source_type=source.source_type,
+                    status="completed",
+                )
+                record_metrics().record_collector_items(
+                    source_type=source.source_type,
+                    inserted=result.inserted,
+                    duplicates=result.duplicates,
+                    skipped=result.skipped,
+                )
                 batch_result.add(
                     SourceCollectionResult(
                         source_id=source.id,
@@ -115,6 +134,10 @@ class ComplaintCollectionService:
                     )
                 )
             except Exception as exc:
+                record_metrics().record_collector_run(
+                    source_type=source.source_type,
+                    status="failed",
+                )
                 await self._repos.sources.record_collection_error(source.id, str(exc))
                 logger.exception(
                     "Source collection failed",

@@ -13,6 +13,7 @@ from app.db.enums import (
     ApprovalSubjectType,
 )
 from app.exceptions import NotFoundError, ValidationError
+from app.observability.metrics import record_metrics
 from app.repositories import RepositoryContainer
 from app.schemas.approval import (
     ApprovalActionRequest,
@@ -117,6 +118,9 @@ class ApprovalService:
             title=title,
             executive_ranking_run_id=run_id,
         )
+        record_metrics().record_approval_created(
+            subject_type=ApprovalSubjectType.EXECUTIVE_RANKING.value,
+        )
         await self._repos.approval_requests.append_audit_event(
             entity,
             {
@@ -161,6 +165,9 @@ class ApprovalService:
             subject_type=ApprovalSubjectType.VENTURE_REPORT,
             title=title,
             report_id=report_id,
+        )
+        record_metrics().record_approval_created(
+            subject_type=ApprovalSubjectType.VENTURE_REPORT.value,
         )
         await self._repos.approval_requests.append_audit_event(
             entity,
@@ -216,6 +223,7 @@ class ApprovalService:
                 comment=data.comment,
             ),
         )
+        record_metrics().record_approval_decision(decision_type=decision_type.value)
         entity = await self._repos.approval_requests.set_status(entity, new_status)
         await self._repos.approval_requests.append_audit_event(
             entity,

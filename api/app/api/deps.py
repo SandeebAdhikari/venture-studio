@@ -11,6 +11,7 @@ from app.config import Settings, get_settings
 from app.db.session import get_async_session
 from app.redis.client import get_redis_client
 from app.services.container import ServiceContainer, get_services
+from app.services.observability_metrics import ObservabilityMetricsService
 from app.workers.enqueue import JobEnqueuer, get_arq_pool
 
 
@@ -43,6 +44,16 @@ async def get_job_enqueuer() -> JobEnqueuer:
     return JobEnqueuer(pool)
 
 
+async def get_observability_metrics_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+) -> ObservabilityMetricsService:
+    from app.repositories import get_repositories
+
+    return ObservabilityMetricsService(get_repositories(session), redis=redis, settings=settings)
+
+
 async def verify_api_key(
     settings: Annotated[Settings, Depends(get_app_settings)],
     x_api_key: Annotated[str | None, Header()] = None,
@@ -61,5 +72,9 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
 AppSettings = Annotated[Settings, Depends(get_app_settings)]
 Services = Annotated[ServiceContainer, Depends(get_service_container)]
+ObservabilityMetrics = Annotated[
+    ObservabilityMetricsService,
+    Depends(get_observability_metrics_service),
+]
 JobEnqueuerDep = Annotated[JobEnqueuer, Depends(get_job_enqueuer)]
 Authenticated = Annotated[None, Depends(verify_api_key)]

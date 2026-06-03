@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 from uuid import UUID
 
+from app.observability.metrics import record_metrics
 from app.repositories import RepositoryContainer
 from app.services.llm_budget import LLMBudgetService
 
@@ -29,6 +30,12 @@ async def persist_agent_eval_logs(
     extra = eval_metadata_extra or {}
     for log in agent_result.eval_logs:
         status = "success" if log.get("error") is None else "error"
+        cost_usd = log.get("cost_usd") or log.get("estimated_cost_usd")
+        record_metrics().record_llm_request(
+            graph_name=graph_name,
+            status=status,
+            cost_usd=float(cost_usd) if cost_usd else None,
+        )
         await repos.llm_calls.log_agent_call(
             entity_type=entity_type,
             entity_id=entity_id,

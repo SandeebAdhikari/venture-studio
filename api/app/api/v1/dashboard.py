@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from app.api.deps import JobEnqueuerDep, Services
+from app.api.deps import JobEnqueuerDep, ObservabilityMetrics, Services
 from app.api.pagination import Pagination
 from app.schemas.dashboard import (
     DashboardJobSummary,
@@ -14,6 +14,7 @@ from app.schemas.dashboard import (
     DashboardSchedulerSummary,
     DashboardSummaryResponse,
 )
+from app.schemas.observability import DashboardObservabilityMetricsResponse
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -54,6 +55,20 @@ async def get_dashboard_summary(
             for job in scheduler_jobs
         ],
     )
+
+
+@router.get(
+    "/metrics",
+    response_model=DashboardObservabilityMetricsResponse,
+    summary="Observability metrics snapshot",
+    description=(
+        "Pipeline, worker, scheduler, LLM, and approval metrics for dashboard monitoring."
+    ),
+)
+async def get_dashboard_observability_metrics(
+    observability: ObservabilityMetrics,
+) -> DashboardObservabilityMetricsResponse:
+    return await observability.get_dashboard_metrics()
 
 
 @router.get(

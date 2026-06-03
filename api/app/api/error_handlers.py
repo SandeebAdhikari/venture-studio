@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from app.exceptions import AppError, ConflictError, ForbiddenError, NotFoundError
 from app.exceptions import ValidationError as ServiceValidationError
 from app.logging import get_logger
+from app.observability.errors import capture_exception
 
 logger = get_logger(__name__)
 
@@ -52,6 +53,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
         logger.error("Unhandled application error", extra={"message": exc.message})
+        capture_exception(exc, context={"error_type": "app_error"})
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"error": "internal_error", "message": exc.message},
@@ -73,6 +75,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         exc: ValidationError,
     ) -> JSONResponse:
         logger.error("Response validation failed", exc_info=exc)
+        capture_exception(exc, context={"error_type": "response_validation_error"})
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
