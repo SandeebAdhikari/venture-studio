@@ -2,6 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.classification.service import ComplaintClassificationService
 from app.collection.service import ComplaintCollectionService
 from app.repositories import RepositoryContainer, get_repositories
 from app.services.category import CategoryService
@@ -15,6 +16,7 @@ class ServiceContainer:
     def __init__(self, repos: RepositoryContainer) -> None:
         self.sources = SourceService(repos)
         self.collection = ComplaintCollectionService(repos)
+        self.classification = ComplaintClassificationService(repos)
         self.categories = CategoryService(repos)
         self.complaints = ComplaintService(repos)
         self.opportunities = OpportunityService(repos)

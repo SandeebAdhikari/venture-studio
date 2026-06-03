@@ -67,6 +67,24 @@ from app.collection.service import ComplaintCollectionService
 
 Dedup layers: `(source_id, external_id)`, canonical URL, normalized content hash.
 
+## Classification Agent
+
+Pending signals are classified via `ComplaintClassificationService` using a LangGraph
+workflow (`classify_complaint`) with OpenAI structured output.
+
+```python
+from app.repositories import get_repositories
+from app.services.container import get_services
+
+# services.classification.classify_signal(signal_id)
+# services.classification.classify_pending(limit=50)
+```
+
+Output fields: `industry`, `customer_type`, `problem_category`, `severity_score`, `summary`.
+Results are stored in `complaints`; each LLM attempt is logged in `llm_calls`.
+
+Set `OPENAI_API_KEY` in `.env` for live classification. Tests use a mock LLM client.
+
 ## Tests
 
 ```bash

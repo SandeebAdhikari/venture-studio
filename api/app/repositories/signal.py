@@ -115,3 +115,25 @@ class SignalRepository(BaseRepository[Signal]):
             return None
 
         return await self.get_by_id(signal_id)
+
+    async def list_pending(self, *, limit: int = 50) -> list[Signal]:
+        result = await self.session.execute(
+            select(Signal)
+            .where(Signal.processing_status == SignalProcessingStatus.PENDING.value)
+            .order_by(Signal.collected_at.asc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def set_processing_status(
+        self,
+        signal: Signal,
+        status: SignalProcessingStatus,
+        *,
+        skip_reason: str | None = None,
+    ) -> Signal:
+        signal.processing_status = status.value
+        signal.skip_reason = skip_reason
+        await self.session.flush()
+        await self.session.refresh(signal)
+        return signal

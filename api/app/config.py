@@ -62,6 +62,12 @@ class Settings(BaseSettings):
     min_cluster_size: int = 3
     cluster_window_days: int = 30
 
+    # LLM / classification
+    openai_api_key: str = Field(default="", description="OpenAI API key for classification agent")
+    classification_model: str = "gpt-4o-mini"
+    classification_max_retries: int = 2
+    classification_temperature: float = 0.0
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
