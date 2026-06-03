@@ -161,7 +161,7 @@ Or run backend via Docker:
 
 ```bash
 docker compose up --build
-docker compose exec api alembic upgrade head
+# Migrations run automatically on API container start (see docs/deployment.md)
 ```
 
 - API: http://localhost:8000

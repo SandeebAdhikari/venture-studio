@@ -17,7 +17,11 @@ RUN pip install .
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY scripts ./scripts
+
+RUN chmod +x scripts/docker-entrypoint.sh scripts/verify-deployment.sh
 
 EXPOSE 8000
 
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -42,6 +42,7 @@ flowchart LR
     DockerBuild[API Docker build]
     PkgBuild[python -m build]
     ImportCheck[Import smoke tests]
+    ComposeSmoke[Compose up + verify-deployment]
   end
 
   subgraph webDeploy [web-deployment-check.yml]
@@ -57,7 +58,7 @@ Backend and frontend workflows run **in parallel** on GitHub Actions. All requir
 |----------|------|---------|
 | Quality | `quality.yml` | Static analysis with Ruff |
 | Test | `test.yml` | Database migrations and pytest |
-| Deployment Check | `deployment-check.yml` | API Docker, packaging, and import validation |
+| Deployment Check | `deployment-check.yml` | API Docker, packaging, import validation, Compose smoke |
 | Web Quality | `web-quality.yml` | Frontend typecheck, lint, unit tests |
 | Web Deployment Check | `web-deployment-check.yml` | Next.js production build and Docker validation |
 
@@ -145,6 +146,7 @@ Validates that the API can be built and imported without a live database.
 | Package build | `python -m build` | Hatchling wheel/sdist build failure |
 | App import | `from app.main import app` | Application startup import errors |
 | Worker import | `from app.workers.worker import WorkerSettings` | Worker module import errors |
+| Compose smoke | `docker compose up` + `api/scripts/verify-deployment.sh` | Migration marker missing or `/health/ready` not HTTP 200 |
 
 Run locally:
 

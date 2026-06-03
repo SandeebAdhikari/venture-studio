@@ -26,7 +26,7 @@ docker compose up -d postgres redis
 
 cd api
 pip install -e ".[dev]"
-alembic upgrade head
+python -m app.deployment.bootstrap --mode api
 
 # API
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -39,7 +39,8 @@ Or run API + worker via Docker Compose:
 
 ```bash
 docker compose up -d
-docker compose exec api alembic upgrade head
+# Migrations run automatically on API start; verify with:
+../api/scripts/verify-deployment.sh
 ```
 
 ---
