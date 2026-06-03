@@ -112,3 +112,8 @@ class FounderRecommendation(str, enum.Enum):
     EXPLORE = "explore"
     DEFER = "defer"
     PASS = "pass"
+
+
+class ExecutiveRankingStatus(str, enum.Enum):
+    COMPLETED = "completed"
+    FAILED = "failed"

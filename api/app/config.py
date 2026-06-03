@@ -131,6 +131,9 @@ class Settings(BaseSettings):
     human_proxy_temperature: float = 0.2
     human_proxy_batch_size: int = 20
 
+    # Executive ranking engine
+    executive_ranking_top_n: int = 5
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

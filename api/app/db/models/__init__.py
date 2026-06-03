@@ -13,6 +13,8 @@ from app.db.models.market_brief import MarketBrief
 from app.db.models.opportunity import Opportunity
 from app.db.models.opportunity_score import OpportunityScore
 from app.db.models.report import Report
+from app.db.models.executive_ranking_entry import ExecutiveRankingEntry
+from app.db.models.executive_ranking_run import ExecutiveRankingRun
 from app.db.models.founder_profile import FounderProfile
 from app.db.models.growth_evaluation import GrowthEvaluation
 from app.db.models.growth_evaluation_evidence import GrowthEvaluationEvidence
@@ -35,6 +37,8 @@ __all__ = [
     "CustomerResearch",
     "CustomerResearchEvidence",
     "Complaint",
+    "ExecutiveRankingEntry",
+    "ExecutiveRankingRun",
     "FounderProfile",
     "GrowthEvaluation",
     "GrowthEvaluationEvidence",

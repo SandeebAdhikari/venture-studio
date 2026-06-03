@@ -1490,3 +1490,73 @@ async def test_generate_and_retrieve_human_proxy_evaluation(
     )
     assert history_response.status_code == 200
     assert len(history_response.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_executive_ranking_api(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: AsyncSession,
+) -> None:
+    from app.repositories import get_repositories
+    from tests.ranking.test_executive_ranking_service import (
+        AgentScoreProfile,
+        _create_opportunity,
+        _seed_agent_outputs,
+    )
+
+    repos = get_repositories(db_session)
+    default_profile = await repos.founder_profiles.get_default()
+    assert default_profile is not None
+
+    category = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.COMPLAINT_CATEGORY.value,
+            Category.code == "workflow",
+        )
+    )
+    domain = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.DOMAIN.value,
+            Category.code == "saas_b2b",
+        )
+    )
+    persona = await db_session.scalar(
+        select(Category).where(
+            Category.kind == CategoryKind.PERSONA.value,
+            Category.code == "ops_admin",
+        )
+    )
+    assert category is not None and domain is not None and persona is not None
+
+    opportunity = await _create_opportunity(
+        db_session,
+        (category.id, domain.id, persona.id),
+        title="Executive Ranking API Opportunity",
+    )
+    await _seed_agent_outputs(
+        repos,
+        opportunity.id,
+        default_profile.id,
+        AgentScoreProfile(pain=85, founder_fit=88),
+    )
+
+    generate_response = await client.post(
+        "/api/v1/executive-ranking/generate?top_n=5",
+        headers=auth_headers,
+    )
+    assert generate_response.status_code == 201
+    body = generate_response.json()
+    assert body["ranked_opportunity_count"] >= 1
+    assert len(body["top_opportunities"]) >= 1
+    assert body["top_opportunities"][0]["final_opportunity_score"] > 0
+    assert body["top_opportunities"][0]["pain_score"] is not None
+
+    current_response = await client.get(
+        "/api/v1/executive-ranking/current",
+        headers=auth_headers,
+    )
+    assert current_response.status_code == 200
+    current = current_response.json()
+    assert current["is_current"] is True
+    assert len(current["top_opportunities"]) >= 1
