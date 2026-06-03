@@ -17,6 +17,10 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/layout/user-menu";
+import type { DashboardRole } from "@/lib/auth/types";
+
+const VIEWER_NAV_HREFS = new Set(["/dashboard", "/reports", "/budget", "/opportunities"]);
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,8 +32,19 @@ const navItems = [
   { href: "/agents", label: "Agent Activity", icon: Activity },
 ];
 
-export function Sidebar() {
+function navItemsForRole(role: DashboardRole | null) {
+  if (!role || role === "founder") {
+    return navItems;
+  }
+  if (role === "admin") {
+    return navItems;
+  }
+  return navItems.filter((item) => VIEWER_NAV_HREFS.has(item.href));
+}
+
+export function Sidebar({ role }: { role?: DashboardRole | null }) {
   const pathname = usePathname();
+  const items = navItemsForRole(role ?? null);
 
   return (
     <aside className="hidden h-full w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
@@ -43,7 +58,7 @@ export function Sidebar() {
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -62,13 +77,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <UserMenu />
     </aside>
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ role }: { role?: DashboardRole | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const items = navItemsForRole(role ?? null);
 
   return (
     <div className="border-b border-border bg-card md:hidden">
@@ -83,7 +100,7 @@ export function MobileNav() {
       </div>
       {open && (
         <nav className="space-y-1 border-t border-border px-2 py-2">
-          {navItems.map(({ href, label, icon: Icon }) => {
+          {items.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link

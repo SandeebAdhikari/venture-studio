@@ -17,6 +17,7 @@ export async function clientApiFetch<T>(
   const normalized = path.startsWith("/") ? path.slice(1) : path;
   const response = await fetch(`/api/v1/${normalized}`, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),

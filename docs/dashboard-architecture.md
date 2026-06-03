@@ -47,6 +47,8 @@ It **only**:
 
 `API_KEY` is read from server environment variables in `src/app/api/v1/[...path]/route.ts`. Client components call `/api/v1/dashboard/summary`, not `http://localhost:8000` directly. This keeps secrets off the wire to the browser.
 
+**Dashboard auth:** Users must sign in at `/login`. The BFF verifies a session cookie and RBAC before injecting `X-API-Key`. See [dashboard-auth.md](./dashboard-auth.md).
+
 For SSR or future server components, `src/lib/api/server.ts` offers the same pattern.
 
 ### 3. Real-time via polling (not WebSockets)

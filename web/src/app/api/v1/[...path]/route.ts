@@ -1,9 +1,11 @@
 /**
- * BFF proxy — forwards authenticated requests to the FastAPI backend.
- * Keeps API_KEY server-side while enabling client polling and mutations.
+ * BFF proxy — verifies dashboard session + RBAC, then forwards to FastAPI.
+ * Injects X-API-Key server-side only for authorized requests.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+
+import { authorizeBffRequest } from "@/lib/auth/bff-guard";
 
 function getApiBaseUrl(): string {
   const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -11,12 +13,16 @@ function getApiBaseUrl(): string {
 }
 
 async function proxyRequest(request: NextRequest, pathSegments: string[]) {
+  const path = pathSegments.join("/");
+  const auth = await authorizeBffRequest(request, path);
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     return NextResponse.json({ detail: "API_KEY is not configured" }, { status: 500 });
   }
-
-  const path = pathSegments.join("/");
   const url = new URL(`${getApiBaseUrl()}/api/v1/${path}`);
   request.nextUrl.searchParams.forEach((value, key) => {
     url.searchParams.set(key, value);
