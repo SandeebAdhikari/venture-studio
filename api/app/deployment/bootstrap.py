@@ -16,8 +16,8 @@ from sqlalchemy import create_engine, text
 from app.config import Settings, get_settings
 from app.db.session import close_db, get_session_factory, init_db
 from app.logging import configure_logging, get_logger
+from app.observability.alerting.validation import enforce_alert_config
 from app.observability.readiness import check_postgresql, check_redis
-from app.observability.alerting.validation import enforce_alert_config, validate_alert_config
 from app.redis.client import close_redis, get_redis_client, init_redis
 
 MIGRATION_SUCCESS_MARKER = "avs_migrations_ok"

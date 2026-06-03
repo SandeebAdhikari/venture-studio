@@ -260,6 +260,7 @@ async def test_webhook_provider_sends_headers() -> None:
     mock_response.raise_for_status = MagicMock()
     mock_client = AsyncMock()
     mock_client.post = AsyncMock(return_value=mock_response)
+    provider = WebhookAlertProvider(settings, client=mock_client)
 
     await provider.send(alert)
 

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
-
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
 
 from app.api.deps import AppSettings
 from app.observability.alerting.checks import send_test_alert
