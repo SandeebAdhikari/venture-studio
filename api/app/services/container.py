@@ -22,6 +22,7 @@ from app.services.category import CategoryService
 from app.services.complaint import ComplaintService
 from app.services.opportunity import OpportunityService
 from app.services.report import ReportService
+from app.services.approval import ApprovalService
 from app.services.dashboard import DashboardService
 from app.services.scheduler import SchedulerService
 from app.services.rss_feed import RssFeedService
@@ -31,6 +32,7 @@ from app.services.source import SourceService
 class ServiceContainer:
     def __init__(self, repos: RepositoryContainer) -> None:
         self._repos = repos
+        self.approval = ApprovalService(repos)
         self.sources = SourceService(repos)
         self.collection = ComplaintCollectionService(repos)
         self.classification = ComplaintClassificationService(repos)
@@ -41,8 +43,8 @@ class ServiceContainer:
         self.scoring = OpportunityScoringService(repos)
         self.reports = ReportService(repos)
         self.executive_reports = ExecutiveReportService(repos)
-        self.venture_reports = VentureReportService(repos)
-        self.executive_ranking = ExecutiveRankingService(repos)
+        self.executive_ranking = ExecutiveRankingService(repos, approval_service=self.approval)
+        self.venture_reports = VentureReportService(repos, approval_service=self.approval)
         self.market_research = MarketResearchService(repos)
         self.competitor_intelligence = CompetitorIntelligenceService(repos)
         self.customer_research = CustomerResearchService(repos)

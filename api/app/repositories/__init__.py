@@ -2,6 +2,8 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.repositories.approval_decision import ApprovalDecisionRepository
+from app.repositories.approval_request import ApprovalRequestRepository
 from app.repositories.category import CategoryRepository
 from app.repositories.complaint import ComplaintRepository
 from app.repositories.competitor_analysis import CompetitorAnalysisRepository
@@ -53,6 +55,8 @@ class RepositoryContainer:
         self.rss_feeds = RssFeedRepository(session)
         self.scheduler_jobs = SchedulerJobRepository(session)
         self.scheduler_runs = SchedulerRunRepository(session)
+        self.approval_requests = ApprovalRequestRepository(session)
+        self.approval_decisions = ApprovalDecisionRepository(session)
 
 
 def get_repositories(session: AsyncSession) -> RepositoryContainer:
@@ -60,6 +64,8 @@ def get_repositories(session: AsyncSession) -> RepositoryContainer:
 
 
 __all__ = [
+    "ApprovalDecisionRepository",
+    "ApprovalRequestRepository",
     "CategoryRepository",
     "ComplaintRepository",
     "CompetitorAnalysisRepository",

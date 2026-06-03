@@ -28,12 +28,18 @@ class VentureReportService:
         settings: Settings | None = None,
         generator: VentureReportGenerator | None = None,
         ranking_service: ExecutiveRankingService | None = None,
+        approval_service: "ApprovalService | None" = None,
     ) -> None:
         self._repos = repos
         self._settings = settings or get_settings()
         self._generator = generator or VentureReportGenerator()
         self._collector = VentureReportCollector(repos)
-        self._ranking_service = ranking_service or ExecutiveRankingService(repos, self._settings)
+        self._approval = approval_service
+        self._ranking_service = ranking_service or ExecutiveRankingService(
+            repos,
+            self._settings,
+            approval_service=approval_service,
+        )
 
     async def generate_venture_report(
         self,
@@ -98,6 +104,9 @@ class VentureReportService:
             f"for founder decision-making."
         )
 
+        if self._approval is not None and self._approval.enabled:
+            publish = False
+
         entity = await self._repos.reports.create(
             ReportCreate(
                 opportunity_id=None,
@@ -122,6 +131,13 @@ class VentureReportService:
             "Venture recommendation report generated",
             extra={"report_id": str(entity.id), "opportunity_count": len(opportunity_reports)},
         )
+
+        if self._approval is not None:
+            await self._approval.create_for_venture_report(
+                report_id=entity.id,
+                title=entity.title,
+                executive_ranking_run_id=ranking.id,
+            )
 
         return VentureReportResult(
             report_id=entity.id,

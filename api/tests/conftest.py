@@ -21,6 +21,14 @@ def _disable_scheduler(monkeypatch):
     get_settings.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def _disable_founder_approval(monkeypatch):
+    monkeypatch.setenv("REQUIRE_FOUNDER_APPROVAL", "false")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 @pytest.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     settings = get_settings()

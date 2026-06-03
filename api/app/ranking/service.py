@@ -1,5 +1,8 @@
 """Orchestrates executive ranking across all agent outputs."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.config import Settings, get_settings
@@ -20,6 +23,9 @@ from app.schemas.executive_ranking import (
 from app.schemas.filters import OpportunityListFilter
 from app.schemas.pagination import PaginatedResponse, PaginationParams
 
+if TYPE_CHECKING:
+    from app.services.approval import ApprovalService
+
 logger = get_logger(__name__)
 
 
@@ -31,11 +37,13 @@ class ExecutiveRankingService:
         repos: RepositoryContainer,
         settings: Settings | None = None,
         engine: ExecutiveRankingEngine | None = None,
+        approval_service: ApprovalService | None = None,
     ) -> None:
         self._repos = repos
         self._settings = settings or get_settings()
         self._engine = engine or ExecutiveRankingEngine()
         self._collector = AgentEvaluationCollector(repos)
+        self._approval = approval_service
 
     async def generate_ranking(
         self,
@@ -122,6 +130,13 @@ class ExecutiveRankingService:
                 "top_n": top_limit,
             },
         )
+
+        if self._approval is not None:
+            await self._approval.create_for_executive_ranking(
+                run_id=loaded.id,
+                title=f"Executive Ranking v{loaded.version}",
+                version=loaded.version,
+            )
 
         return ExecutiveRankingResult(
             ranking_run_id=run.id,

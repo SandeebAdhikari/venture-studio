@@ -156,6 +156,9 @@ class Settings(BaseSettings):
     scheduler_enabled: bool = True
     scheduler_timezone: str = "UTC"
 
+    # Founder approval workflow
+    require_founder_approval: bool = True
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

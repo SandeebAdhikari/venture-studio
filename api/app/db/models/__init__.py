@@ -1,6 +1,8 @@
 """ORM model registry for Alembic autogenerate."""
 
 from app.db.base import Base
+from app.db.models.approval_decision import ApprovalDecision
+from app.db.models.approval_request import ApprovalRequest
 from app.db.models.associations import opportunity_complaints
 from app.db.models.category import Category
 from app.db.models.competitor_analysis import CompetitorAnalysis
@@ -35,6 +37,8 @@ from app.db.models.signal import Signal
 from app.db.models.source import Source
 
 __all__ = [
+    "ApprovalDecision",
+    "ApprovalRequest",
     "Base",
     "Category",
     "CompetitorAnalysis",

@@ -184,3 +184,21 @@ class SchedulerRunStatus(str, enum.Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class ApprovalStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    RESEARCH_REQUESTED = "research_requested"
+
+
+class ApprovalSubjectType(str, enum.Enum):
+    EXECUTIVE_RANKING = "executive_ranking"
+    VENTURE_REPORT = "venture_report"
+
+
+class ApprovalDecisionType(str, enum.Enum):
+    APPROVE = "approve"
+    REJECT = "reject"
+    REQUEST_RESEARCH = "request_research"
