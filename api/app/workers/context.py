@@ -33,11 +33,13 @@ async def worker_startup(ctx: dict) -> None:
     ctx["redis"] = get_redis_client()
     ctx["worker_id"] = uuid4().hex
 
+    from app.collectors.hn_algolia import register_hn_algolia_collector
     from app.collectors.reddit import register_reddit_collector
     from app.collectors.rss import register_rss_collector
 
     register_reddit_collector(redis=ctx["redis"])
     register_rss_collector(redis=ctx["redis"])
+    register_hn_algolia_collector(redis=ctx["redis"])
 
     await refresh_worker_heartbeat(ctx["redis"], ctx["worker_id"], settings=settings)
 
