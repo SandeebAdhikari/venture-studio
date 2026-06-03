@@ -48,6 +48,14 @@ class SchedulerJobRepository(BaseRepository[SchedulerJob]):
             existing = await self.get_by_name(definition.job_name)
             if existing is None:
                 await self.create_from_definition(definition)
+                continue
+
+            existing.display_name = definition.display_name
+            existing.description = definition.description
+            existing.schedule_hour = definition.schedule_hour
+            existing.schedule_minute = definition.schedule_minute
+            await self.session.flush()
+            await self.session.refresh(existing)
 
     async def set_enabled(self, entity: SchedulerJob, enabled: bool) -> SchedulerJob:
         entity.enabled = enabled

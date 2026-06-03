@@ -52,13 +52,21 @@ DEFAULT_SCHEDULER_JOBS: tuple[SchedulerJobDefinition, ...] = (
         arq_jobs=("generate_opportunities",),
     ),
     SchedulerJobDefinition(
+        job_name="score",
+        display_name="Score Opportunities",
+        description="Score opportunities using the deterministic scoring engine",
+        schedule_hour=5,
+        schedule_minute=0,
+        arq_jobs=("score",),
+    ),
+    SchedulerJobDefinition(
         job_name="research_agents",
         display_name="Research Agents",
         description=(
             "Run all research agents (market, competitor, customer, revenue, "
             "product, GTM, growth, human proxy)"
         ),
-        schedule_hour=5,
+        schedule_hour=6,
         schedule_minute=0,
         arq_jobs=RESEARCH_AGENT_JOBS,
     ),
@@ -66,7 +74,7 @@ DEFAULT_SCHEDULER_JOBS: tuple[SchedulerJobDefinition, ...] = (
         job_name="executive_ranking",
         display_name="Executive Ranking",
         description="Rank opportunities using cross-agent executive scores",
-        schedule_hour=6,
+        schedule_hour=7,
         schedule_minute=0,
         arq_jobs=("executive_ranking",),
     ),
@@ -74,7 +82,7 @@ DEFAULT_SCHEDULER_JOBS: tuple[SchedulerJobDefinition, ...] = (
         job_name="venture_report",
         display_name="Venture Report",
         description="Generate executive venture recommendation reports",
-        schedule_hour=7,
+        schedule_hour=8,
         schedule_minute=0,
         arq_jobs=("venture_report",),
     ),

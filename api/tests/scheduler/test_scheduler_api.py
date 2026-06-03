@@ -24,12 +24,13 @@ async def test_list_scheduler_jobs(
     response = await client.get("/api/v1/scheduler/jobs", headers=auth_headers)
     assert response.status_code == 200
     jobs = response.json()
-    assert len(jobs) == 6
+    assert len(jobs) == 7
     names = {job["job_name"] for job in jobs}
     assert names == {
         "collect",
         "classify",
         "generate_opportunities",
+        "score",
         "research_agents",
         "executive_ranking",
         "venture_report",

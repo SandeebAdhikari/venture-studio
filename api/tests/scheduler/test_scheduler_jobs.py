@@ -44,6 +44,31 @@ async def test_execute_scheduler_job_enqueues_arq_work(
 
 
 @pytest.mark.asyncio
+async def test_execute_score_enqueues_arq_work(
+    db_session: AsyncSession,
+    job_enqueuer: JobEnqueuer,
+):
+    repos = get_repositories(db_session)
+    await repos.scheduler_jobs.ensure_defaults()
+
+    run_id = await execute_scheduler_job(
+        "score",
+        trigger=SchedulerTrigger.MANUAL,
+        repos=repos,
+        enqueuer=job_enqueuer,
+    )
+
+    run = await repos.scheduler_runs.get_by_id(run_id)
+    assert run is not None
+    assert run.status == SchedulerRunStatus.COMPLETED.value
+    assert len(run.arq_job_ids) == 1
+
+    record = await job_enqueuer.get_job(run.arq_job_ids[0])
+    assert record is not None
+    assert record.job_name == "score"
+
+
+@pytest.mark.asyncio
 async def test_execute_research_agents_enqueues_all_agent_jobs(
     db_session: AsyncSession,
     job_enqueuer: JobEnqueuer,
