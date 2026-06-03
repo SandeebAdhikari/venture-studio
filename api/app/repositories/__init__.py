@@ -6,6 +6,7 @@ from app.repositories.category import CategoryRepository
 from app.repositories.complaint import ComplaintRepository
 from app.repositories.competitor_analysis import CompetitorAnalysisRepository
 from app.repositories.customer_research import CustomerResearchRepository
+from app.repositories.growth_evaluation import GrowthEvaluationRepository
 from app.repositories.gtm_plan import GTMPlanRepository
 from app.repositories.llm_call import LLMCallRepository
 from app.repositories.market_brief import MarketBriefRepository
@@ -28,6 +29,7 @@ class RepositoryContainer:
         self.categories = CategoryRepository(session)
         self.complaints = ComplaintRepository(session)
         self.competitor_analyses = CompetitorAnalysisRepository(session)
+        self.growth_evaluations = GrowthEvaluationRepository(session)
         self.customer_research = CustomerResearchRepository(session)
         self.gtm_plans = GTMPlanRepository(session)
         self.llm_calls = LLMCallRepository(session)
@@ -47,6 +49,7 @@ __all__ = [
     "CategoryRepository",
     "ComplaintRepository",
     "CompetitorAnalysisRepository",
+    "GrowthEvaluationRepository",
     "CustomerResearchRepository",
     "GTMPlanRepository",
     "LLMCallRepository",

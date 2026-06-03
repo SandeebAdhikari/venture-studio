@@ -9,6 +9,7 @@ from app.db.enums import (
     CompetitorAnalysisStatus,
     CustomerResearchStatus,
     GTMPlanStatus,
+    GrowthEvaluationStatus,
     MarketResearchStatus,
     ProductStrategyStatus,
     ReportStatus,
@@ -89,3 +90,13 @@ class GTMPlanListFilter(BaseModel):
     min_confidence_score: int | None = Field(default=None, ge=0, le=100)
     max_estimated_cac_usd: float | None = Field(default=None, ge=0)
     min_gtm_readiness_score: int | None = Field(default=None, ge=0, le=100)
+
+
+class GrowthEvaluationListFilter(BaseModel):
+    opportunity_id: UUID | None = None
+    status: GrowthEvaluationStatus | None = None
+    is_current: bool | None = None
+    min_growth_score: int | None = Field(default=None, ge=0, le=100)
+    min_scalability_score: int | None = Field(default=None, ge=0, le=100)
+    max_risk_score: int | None = Field(default=None, ge=0, le=100)
+    min_growth_readiness_score: int | None = Field(default=None, ge=0, le=100)

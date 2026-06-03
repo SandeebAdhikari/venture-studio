@@ -119,6 +119,12 @@ class Settings(BaseSettings):
     go_to_market_temperature: float = 0.2
     go_to_market_batch_size: int = 20
 
+    # Growth strategy agent
+    growth_strategy_model: str = "gpt-4o-mini"
+    growth_strategy_max_retries: int = 2
+    growth_strategy_temperature: float = 0.2
+    growth_strategy_batch_size: int = 20
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
