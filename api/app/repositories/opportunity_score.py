@@ -73,6 +73,15 @@ class OpportunityScoreRepository(BaseRepository[OpportunityScore]):
         await self.session.refresh(entity)
         return entity
 
+    async def list_top_by_score(self, *, limit: int = 20) -> list[OpportunityScore]:
+        result = await self.session.execute(
+            select(OpportunityScore)
+            .where(OpportunityScore.is_current.is_(True))
+            .order_by(OpportunityScore.score.desc(), OpportunityScore.created_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def list_top_ranked(self, *, limit: int = 20) -> list[OpportunityScore]:
         result = await self.session.execute(
             select(OpportunityScore)

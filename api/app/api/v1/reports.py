@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, status
 from app.api.deps import Services
 from app.api.pagination import Pagination
 from app.db.enums import ReportStatus, ReportType
+from app.reports.executive.schemas import ExecutiveReportResult, ReportMarkdownRead
 from app.schemas.filters import ReportListFilter
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.report import ReportCreate, ReportRead, ReportUpdate
@@ -97,3 +98,35 @@ async def publish_report(report_id: UUID, services: Services) -> ReportRead:
 )
 async def delete_report(report_id: UUID, services: Services) -> None:
     await services.reports.delete_report(report_id)
+
+
+@router.post(
+    "/top-opportunities/generate",
+    response_model=ExecutiveReportResult,
+    status_code=status.HTTP_201_CREATED,
+    summary="Generate Top Opportunities report",
+    description="Build a markdown executive report from top-scored opportunities and store it.",
+)
+async def generate_top_opportunities_report(
+    services: Services,
+    limit: Annotated[int, Query(ge=1, le=50, description="Max opportunities to include")] = 10,
+    publish: Annotated[bool, Query(description="Publish report immediately")] = True,
+) -> ExecutiveReportResult:
+    return await services.executive_reports.generate_top_opportunities_report(
+        limit=limit,
+        publish=publish,
+    )
+
+
+@router.get(
+    "/{report_id}/markdown",
+    response_model=ReportMarkdownRead,
+    summary="Get report markdown",
+    description="Retrieve the markdown body of a stored report.",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Report not found"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Report has no markdown content"},
+    },
+)
+async def get_report_markdown(report_id: UUID, services: Services) -> ReportMarkdownRead:
+    return await services.executive_reports.get_report_markdown(report_id)

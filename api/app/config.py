@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     # Opportunity scoring engine
     scoring_volume_target: int = 50
 
+    # Executive reports
+    executive_report_top_n: int = 10
+    executive_report_key_complaints_limit: int = 5
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

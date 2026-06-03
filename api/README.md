@@ -47,6 +47,8 @@ All `/api/v1/*` resource routes require the `X-API-Key` header.
 | GET | `/api/v1/opportunities` | List opportunities (filter: `review_status`, `min_confidence`) |
 | POST | `/api/v1/opportunities/{id}/review` | Set review status |
 | GET | `/api/v1/reports` | List reports (filter: `opportunity_id`, `report_type`, `status`) |
+| POST | `/api/v1/reports/top-opportunities/generate` | Generate Top Opportunities markdown report |
+| GET | `/api/v1/reports/{id}/markdown` | Retrieve report markdown body |
 | GET | `/docs` | OpenAPI UI (local/staging only) |
 
 List endpoints support `limit` (1–100) and `offset` pagination.
@@ -89,6 +91,17 @@ Each rescore appends to `opportunity_scores` history (one `is_current` row per o
 ```python
 # services.scoring.score_opportunity(opportunity_id)
 # services.scoring.get_score_history(opportunity_id)
+```
+
+## Executive Report Engine
+
+Generates a **Top Opportunities Report** in markdown from highest-scored opportunities.
+Each entry includes title, score, confidence, supporting evidence, key complaints,
+and a recommendation. Reports are stored in `reports` with full structured content.
+
+```python
+# services.executive_reports.generate_top_opportunities_report(limit=10)
+# services.executive_reports.get_report_markdown(report_id)
 ```
 
 ## Classification Agent

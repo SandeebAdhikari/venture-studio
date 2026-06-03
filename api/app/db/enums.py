@@ -32,6 +32,7 @@ class ReviewStatus(str, enum.Enum):
 
 class ReportType(str, enum.Enum):
     OPPORTUNITY_BRIEF = "opportunity_brief"
+    TOP_OPPORTUNITIES = "top_opportunities"
     DAILY_DIGEST = "daily_digest"
     PIPELINE_SUMMARY = "pipeline_summary"
     CUSTOM = "custom"
