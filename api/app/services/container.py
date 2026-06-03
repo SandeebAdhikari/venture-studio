@@ -22,6 +22,7 @@ from app.services.category import CategoryService
 from app.services.complaint import ComplaintService
 from app.services.opportunity import OpportunityService
 from app.services.report import ReportService
+from app.services.dashboard import DashboardService
 from app.services.scheduler import SchedulerService
 from app.services.rss_feed import RssFeedService
 from app.services.source import SourceService
@@ -52,6 +53,7 @@ class ServiceContainer:
         self.human_proxy = HumanProxyService(repos)
         self.rss_feeds = RssFeedService(repos)
         self.scheduler = SchedulerService(repos)
+        self.dashboard = DashboardService(repos)
 
     @property
     def pipeline(self) -> "PipelineOrchestrator":
