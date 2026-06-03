@@ -80,6 +80,17 @@ score, and explanation (stored in `problem_statement` and `opportunity_scores.sc
 Pattern detection groups complaints by repeated phrases in summaries (min cluster size 3).
 No market research — synthesis uses complaint evidence only.
 
+## Opportunity Scoring Engine
+
+Opportunities are ranked 0–100 via `OpportunityScoringService` using complaint volume,
+severity, evidence-based market indicators, implementation ease, and founder fit.
+Each rescore appends to `opportunity_scores` history (one `is_current` row per opportunity).
+
+```python
+# services.scoring.score_opportunity(opportunity_id)
+# services.scoring.get_score_history(opportunity_id)
+```
+
 ## Classification Agent
 
 Pending signals are classified via `ComplaintClassificationService` using a LangGraph

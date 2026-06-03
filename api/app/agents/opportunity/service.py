@@ -11,12 +11,11 @@ from app.agents.opportunity.schemas import (
     GenerationBatchResult,
     OpportunityGenerationResult,
 )
-from app.agents.opportunity.scoring import compute_opportunity_scores
 from app.config import Settings, get_settings
 from app.logging import get_logger
 from app.repositories import RepositoryContainer
+from app.scoring.service import OpportunityScoringService
 from app.schemas.opportunity import OpportunityCreate
-from app.schemas.opportunity_score import OpportunityScoreCreate
 
 logger = get_logger(__name__)
 
@@ -124,23 +123,8 @@ class OpportunityGeneratorService:
             )
         )
 
-        scores = compute_opportunity_scores(
-            pattern,
-            confidence_score=draft.confidence_score,
-            min_cluster_size=self._settings.min_cluster_size,
-        )
-        await self._repos.opportunity_scores.create(
-            OpportunityScoreCreate(
-                opportunity_id=opportunity.id,
-                overall_score=scores["overall_score"],
-                confidence_score=scores["confidence_score"],
-                frequency_score=scores["frequency_score"],
-                severity_score=scores["severity_score"],
-                evidence_score=scores["evidence_score"],
-                scoring_model=f"{model}:pattern_v1",
-                scoring_notes=draft.explanation,
-            )
-        )
+        scoring_service = OpportunityScoringService(self._repos, self._settings)
+        await scoring_service.score_opportunity(opportunity.id, notes=draft.explanation)
 
         await self._persist_eval_logs(opportunity.id, agent_result)
         agent_result.opportunity_id = opportunity.id

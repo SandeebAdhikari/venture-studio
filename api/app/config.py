@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     min_opportunity_confidence: float = 0.4
     min_avg_severity: float = 2.0
 
+    # Opportunity scoring engine
+    scoring_volume_target: int = 50
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

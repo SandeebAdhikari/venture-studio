@@ -46,11 +46,16 @@ class OpportunityScoreRepository(BaseRepository[OpportunityScore]):
 
         entity = OpportunityScore(
             opportunity_id=data.opportunity_id,
+            score=data.score,
             overall_score=data.overall_score,
             confidence_score=data.confidence_score,
             frequency_score=data.frequency_score,
             severity_score=data.severity_score,
             evidence_score=data.evidence_score,
+            volume_score=data.volume_score,
+            market_indicator_score=data.market_indicator_score,
+            implementation_ease_score=data.implementation_ease_score,
+            founder_fit_score=data.founder_fit_score,
             scoring_model=data.scoring_model,
             scoring_notes=data.scoring_notes,
             is_current=True,

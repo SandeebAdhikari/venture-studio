@@ -51,7 +51,9 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self.session.execute(
             select(Opportunity)
             .options(
-                selectinload(Opportunity.complaints),
+                selectinload(Opportunity.complaints).selectinload(Complaint.category),
+                selectinload(Opportunity.complaints).selectinload(Complaint.domain),
+                selectinload(Opportunity.complaints).selectinload(Complaint.persona),
                 selectinload(Opportunity.scores),
                 selectinload(Opportunity.reports),
             )
