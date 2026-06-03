@@ -9,3 +9,5 @@ venv/
 .mypy_cache/
 dist/
 build/
+.coverage
+htmlcov/
