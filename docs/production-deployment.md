@@ -59,6 +59,11 @@ Do not expose the API key to browsers. See [dashboard-auth.md](./dashboard-auth.
 
 Keep `REQUIRE_FOUNDER_APPROVAL=true`. Pipeline completes nightly; venture reports stay `draft` until `/approvals` approve. See [autonomy-policy-recommendation.md](./autonomy-policy-recommendation.md).
 
+## RC5 full pipeline validation
+
+- [rc5-full-pipeline-validation-report.md](./rc5-full-pipeline-validation-report.md)
+- [rc5-production-confidence-score.md](./rc5-production-confidence-score.md)
+
 ## RC4 API authorization (analysis)
 
 - [rc4-security-report.md](./rc4-security-report.md)
