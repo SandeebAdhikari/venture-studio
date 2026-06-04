@@ -1,6 +1,8 @@
-# Alert validation report
+# Alert validation report (#11)
 
 Production Readiness Remediation **#11** — validation of operational alert delivery (code review + automated tests).
+
+**Superseded for RC3 by:** [rc3-alert-validation-report.md](./rc3-alert-validation-report.md) (monitor wiring, scenario matrix, 55-test suite).
 
 **Date:** 2026-06-03  
 **Scope:** `api/app/observability/alerting/*`, bootstrap, readiness, configuration docs

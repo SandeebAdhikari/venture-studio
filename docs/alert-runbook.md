@@ -2,6 +2,8 @@
 
 Operational procedures for AI Venture Studio production alerting.
 
+**RC3 (2026-06-03):** Per-alert response detail in [rc3-alert-operational-response-guide.md](./rc3-alert-operational-response-guide.md). Validation evidence in [rc3-alert-validation-report.md](./rc3-alert-validation-report.md).
+
 ## Quick checks
 
 1. **Is alerting configured?**
