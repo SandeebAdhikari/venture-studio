@@ -4,6 +4,8 @@
 **Scope:** Formal review of founder approval gates and operating models for autonomous venture publication.  
 **Constraint:** Analysis only — no behavior changes in this remediation.
 
+**Formal recommendation (#13):** [autonomy-policy-recommendation.md](./autonomy-policy-recommendation.md) — decision record, migration plan, implementation estimates, and risk analysis (awaiting approval; no code until accepted).
+
 **Primary blocker identified by audit:** `REQUIRE_FOUNDER_APPROVAL=true` (default) prevents venture reports from reaching `published` status without explicit founder action, which blocks fully autonomous venture publication even when the nightly pipeline completes successfully.
 
 ---
