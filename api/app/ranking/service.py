@@ -10,6 +10,7 @@ from app.db.enums import ExecutiveRankingStatus
 from app.exceptions import NotFoundError
 from app.logging import get_logger
 from app.discovery.validation import is_opportunity_validation_eligible
+from app.pipeline.lineage import merge_pipeline_run_lineage
 from app.ranking.collector import AgentEvaluationCollector
 from app.ranking.constants import MIN_AGENT_COVERAGE, RANKING_ENGINE
 from app.ranking.engine import ExecutiveRankingEngine
@@ -120,18 +121,18 @@ class ExecutiveRankingService:
                 opportunity_count=len(opportunities),
                 ranked_opportunity_count=len(entries),
                 ranking_engine=RANKING_ENGINE,
-                ranking_metadata={
-                    "founder_profile_name": profile.name if profile else None,
-                    "min_agent_coverage": MIN_AGENT_COVERAGE,
-                    **(
-                        {
-                            "discovery_validation_mode": True,
-                            "pipeline_run_id": str(pipeline_run_id),
-                        }
-                        if discovery_validation_mode and pipeline_run_id
-                        else {}
-                    ),
-                },
+                ranking_metadata=merge_pipeline_run_lineage(
+                    {
+                        "founder_profile_name": profile.name if profile else None,
+                        "min_agent_coverage": MIN_AGENT_COVERAGE,
+                        **(
+                            {"discovery_validation_mode": True}
+                            if discovery_validation_mode
+                            else {}
+                        ),
+                    },
+                    pipeline_run_id=pipeline_run_id,
+                ),
                 entries=entries,
             )
         )

@@ -98,8 +98,7 @@ class PipelineOrchestrator:
         ]
         await self._repos.pipelines.create_stage_runs(run.id, stage_plans)
         await self._repos.pipelines.mark_run_started(run)
-        if opts.discovery_validation_mode:
-            opts = opts.model_copy(update={"pipeline_run_id": run.id})
+        opts = opts.model_copy(update={"pipeline_run_id": run.id})
         await self._audit(run, "pipeline_started", {"stage_count": len(stages_to_run)})
 
         completed = 0
@@ -148,10 +147,7 @@ class PipelineOrchestrator:
                     await self._run_stage_with_retries(run, stage_run, stage, opts)
                     stage_status = PipelineStageStatus(stage_run.status)
                     if stage_status == PipelineStageStatus.COMPLETED:
-                        if (
-                            opts.discovery_validation_mode
-                            and stage == PipelineStage.EXECUTIVE_RANKING
-                        ):
+                        if stage == PipelineStage.EXECUTIVE_RANKING:
                             ranking_run_id = (stage_run.stage_metadata or {}).get(
                                 "ranking_run_id"
                             )

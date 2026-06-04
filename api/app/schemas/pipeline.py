@@ -46,11 +46,11 @@ class PipelineRunOptions(BaseModel):
     discovery_validation_mode: bool = False
     pipeline_run_id: UUID | None = Field(
         default=None,
-        description="Set by orchestrator during validation runs; ties ranking/report to run",
+        description="Set by orchestrator; stored in ranking_metadata and report_metadata",
     )
     validation_ranking_run_id: UUID | None = Field(
         default=None,
-        description="Executive ranking run produced in this validation pipeline run",
+        description="Executive ranking run produced in the current pipeline run",
     )
 
 

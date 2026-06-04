@@ -9,6 +9,7 @@ from uuid import UUID
 from app.config import Settings, get_settings
 from app.db.enums import ReportStatus, ReportType
 from app.discovery.validation import assert_ranking_bound_to_pipeline_run
+from app.pipeline.lineage import merge_pipeline_run_lineage, pipeline_run_id_from_metadata
 from app.exceptions import NotFoundError, ValidationError
 from app.logging import get_logger
 from app.ranking.service import ExecutiveRankingService
@@ -110,6 +111,10 @@ class VentureReportService:
                 "Executive ranking has no opportunities to include in the report."
             )
 
+        resolved_pipeline_run_id = pipeline_run_id or pipeline_run_id_from_metadata(
+            ranking.ranking_metadata
+        )
+
         profile_id = founder_profile_id or ranking.founder_profile_id
         opportunity_reports = []
         for entry in top_entries:
@@ -145,23 +150,23 @@ class VentureReportService:
                 summary=summary,
                 content=content.model_dump(mode="json"),
                 status=ReportStatus.PUBLISHED if publish else ReportStatus.DRAFT,
-                report_metadata={
-                    "engine": REPORT_ENGINE,
-                    "generated_at": generated_at.isoformat(),
-                    "executive_ranking_run_id": str(ranking.id),
-                    "executive_ranking_version": ranking.version,
-                    "founder_profile_id": str(profile_id) if profile_id else None,
-                    "top_n": top_limit,
-                    "opportunity_count": len(opportunity_reports),
-                    **(
-                        {
-                            "discovery_validation_mode": True,
-                            "pipeline_run_id": str(pipeline_run_id),
-                        }
-                        if discovery_validation_mode and pipeline_run_id
-                        else {}
-                    ),
-                },
+                report_metadata=merge_pipeline_run_lineage(
+                    {
+                        "engine": REPORT_ENGINE,
+                        "generated_at": generated_at.isoformat(),
+                        "executive_ranking_run_id": str(ranking.id),
+                        "executive_ranking_version": ranking.version,
+                        "founder_profile_id": str(profile_id) if profile_id else None,
+                        "top_n": top_limit,
+                        "opportunity_count": len(opportunity_reports),
+                        **(
+                            {"discovery_validation_mode": True}
+                            if discovery_validation_mode
+                            else {}
+                        ),
+                    },
+                    pipeline_run_id=resolved_pipeline_run_id,
+                ),
             )
         )
 
