@@ -9,6 +9,7 @@ from typing import Protocol
 from openai import AsyncOpenAI
 from pydantic import ValidationError
 
+from app.agents.openai_schema import openai_strict_json_schema
 from app.agents.market_research.schemas import (
     LLMInvocationResult,
     MarketResearchLLMOutput,
@@ -72,7 +73,7 @@ class OpenAIMarketResearchClient:
                     "json_schema": {
                         "name": "market_intelligence_brief",
                         "strict": True,
-                        "schema": MarketResearchLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(MarketResearchLLMOutput),
                     },
                 },
                 messages=[

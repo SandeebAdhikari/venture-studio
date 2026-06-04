@@ -14,6 +14,7 @@ from app.agents.customer_research.schemas import (
     LLMInvocationResult,
     OpportunityCustomerContext,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -73,7 +74,7 @@ class OpenAICustomerResearchClient:
                     "json_schema": {
                         "name": "customer_research_brief",
                         "strict": True,
-                        "schema": CustomerResearchLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(CustomerResearchLLMOutput),
                     },
                 },
                 messages=[

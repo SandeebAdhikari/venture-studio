@@ -10,6 +10,7 @@ from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from app.agents.classification.schemas import ClassificationLLMOutput, LLMInvocationResult
+from app.agents.openai_schema import openai_strict_json_schema
 from app.agents.classification.taxonomy import taxonomy_prompt_block
 from app.config import Settings
 
@@ -68,7 +69,7 @@ class OpenAIClassificationClient:
                     "json_schema": {
                         "name": "complaint_classification",
                         "strict": True,
-                        "schema": ClassificationLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(ClassificationLLMOutput),
                     },
                 },
                 messages=[

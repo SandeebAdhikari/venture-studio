@@ -14,6 +14,7 @@ from app.agents.go_to_market.schemas import (
     LLMInvocationResult,
     OpportunityGTMContext,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -69,7 +70,7 @@ class OpenAIGoToMarketClient:
                     "json_schema": {
                         "name": "go_to_market_plan",
                         "strict": True,
-                        "schema": GoToMarketLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(GoToMarketLLMOutput),
                     },
                 },
                 messages=[

@@ -9,6 +9,7 @@ from typing import Protocol
 from openai import AsyncOpenAI
 from pydantic import ValidationError
 
+from app.agents.openai_schema import openai_strict_json_schema
 from app.agents.opportunity.schemas import (
     ComplaintEvidence,
     ComplaintPattern,
@@ -71,7 +72,7 @@ class OpenAIOpportunityClient:
                     "json_schema": {
                         "name": "opportunity_brief",
                         "strict": True,
-                        "schema": OpportunityLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(OpportunityLLMOutput),
                     },
                 },
                 messages=[

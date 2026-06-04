@@ -14,6 +14,7 @@ from app.agents.competitor_intelligence.schemas import (
     LLMInvocationResult,
     OpportunityCompetitorContext,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -71,7 +72,7 @@ class OpenAICompetitorIntelligenceClient:
                     "json_schema": {
                         "name": "competitor_intelligence",
                         "strict": True,
-                        "schema": CompetitorAnalysisLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(CompetitorAnalysisLLMOutput),
                     },
                 },
                 messages=[

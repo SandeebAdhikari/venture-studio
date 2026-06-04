@@ -14,6 +14,7 @@ from app.agents.growth_strategy.schemas import (
     LLMInvocationResult,
     OpportunityGrowthContext,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -70,7 +71,7 @@ class OpenAIGrowthStrategyClient:
                     "json_schema": {
                         "name": "growth_strategy_evaluation",
                         "strict": True,
-                        "schema": GrowthStrategyLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(GrowthStrategyLLMOutput),
                     },
                 },
                 messages=[

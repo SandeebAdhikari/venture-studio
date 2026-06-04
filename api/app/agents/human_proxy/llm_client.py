@@ -14,6 +14,7 @@ from app.agents.human_proxy.schemas import (
     LLMInvocationResult,
     OpportunityProxyContext,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -69,7 +70,7 @@ class OpenAIHumanProxyClient:
                     "json_schema": {
                         "name": "human_proxy_evaluation",
                         "strict": True,
-                        "schema": HumanProxyLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(HumanProxyLLMOutput),
                     },
                 },
                 messages=[

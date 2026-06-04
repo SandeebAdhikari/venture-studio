@@ -14,6 +14,7 @@ from app.agents.revenue_validation.schemas import (
     OpportunityRevenueContext,
     RevenueValidationLLMOutput,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -69,7 +70,7 @@ class OpenAIRevenueValidationClient:
                     "json_schema": {
                         "name": "revenue_validation_brief",
                         "strict": True,
-                        "schema": RevenueValidationLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(RevenueValidationLLMOutput),
                     },
                 },
                 messages=[

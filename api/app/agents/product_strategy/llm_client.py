@@ -14,6 +14,7 @@ from app.agents.product_strategy.schemas import (
     OpportunityPlanningContext,
     ProductStrategyLLMOutput,
 )
+from app.agents.openai_schema import openai_strict_json_schema
 from app.config import Settings
 
 
@@ -69,7 +70,7 @@ class OpenAIProductStrategyClient:
                     "json_schema": {
                         "name": "product_strategy_plan",
                         "strict": True,
-                        "schema": ProductStrategyLLMOutput.model_json_schema(),
+                        "schema": openai_strict_json_schema(ProductStrategyLLMOutput),
                     },
                 },
                 messages=[
