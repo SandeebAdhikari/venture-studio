@@ -69,6 +69,27 @@ def test_render_markdown_includes_all_sections() -> None:
     assert "### Recommendation" in markdown
     assert "Scheduling chaos every week." in markdown
     assert "https://example.com/post/1" in markdown
+    assert '""' not in markdown
+
+
+def test_evidence_deduplicates_identical_quote() -> None:
+    generator = VentureReportGenerator()
+    markdown = generator.render_markdown(
+        [
+            _report(
+                customer_evidence=[
+                    CustomerEvidenceItem(
+                        summary="Same text.",
+                        verbatim_quote="Same text.",
+                        severity=4,
+                        source_url="https://example.com/a",
+                    )
+                ]
+            )
+        ],
+        generated_at=datetime(2026, 6, 3, 12, 0, tzinfo=UTC),
+    )
+    assert markdown.count("Same text.") == 1
 
 
 def test_build_report_structures_content() -> None:

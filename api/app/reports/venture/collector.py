@@ -5,6 +5,15 @@ from __future__ import annotations
 from uuid import UUID
 
 from app.reports.venture.analysis import build_recommendation, build_risk_items
+from app.reports.venture.formatting import (
+    format_bullet_list,
+    format_competitor_profile,
+    format_differentiation_score,
+    format_score_display,
+    format_structured_bullet,
+    market_size_disclaimer,
+    normalize_century_score,
+)
 from app.reports.venture.schemas import CustomerEvidenceItem, VentureOpportunityReport
 from app.repositories import RepositoryContainer
 from app.schemas.executive_ranking import ExecutiveRankingEntryRead
@@ -124,7 +133,10 @@ class VentureReportCollector:
             mvp_plan=self._mvp_plan(product),
             go_to_market_strategy=self._gtm_strategy(gtm),
             growth_strategy=self._growth_strategy(growth),
-            founder_fit_analysis=self._founder_fit_analysis(human_proxy),
+            founder_fit_analysis=self._founder_fit_analysis(
+                human_proxy,
+                ranking_founder_fit_score=entry.founder_fit_score,
+            ),
             risk_analysis=risks,
             recommendation=recommendation,
         )
@@ -145,28 +157,42 @@ class VentureReportCollector:
         if market_brief is None:
             return "_Market research not yet completed for this opportunity._"
 
-        segments = [
-            segment.get("name") or segment.get("segment") or "Segment"
-            for segment in (market_brief.customer_segments or [])[:5]
-        ]
-        trends = [
-            trend.get("trend") or trend.get("title") or str(trend)
-            for trend in (market_brief.industry_trends or [])[:5]
-        ]
+        segments = (market_brief.customer_segments or [])[:5]
+        trends = (market_brief.industry_trends or [])[:5]
+        evidence = (market_brief.supporting_evidence or [])[:5]
 
         lines = [
             market_brief.executive_summary or "Market brief available.",
             "",
-            f"- **SAM:** {_format_usd(market_brief.sam_usd)}",
-            f"- **TAM:** {_format_usd(market_brief.tam_usd)}",
-            f"- **Industry growth:** {market_brief.industry_growth_rate_pct or 'N/A'}%",
+            market_size_disclaimer(has_evidence=bool(evidence)),
+            "",
+            f"- **Total market (model):** {_format_usd(market_brief.market_size_usd)}",
+            f"- **SAM (model):** {_format_usd(market_brief.sam_usd)}",
+            f"- **TAM (model):** {_format_usd(market_brief.tam_usd)}",
+            f"- **Industry growth (model):** {market_brief.industry_growth_rate_pct or 'N/A'}%",
             "",
             "**Customer segments**",
-            _bullet_lines(segments),
+            format_bullet_list(segments),
             "",
             "**Industry trends**",
-            _bullet_lines(trends),
+            format_bullet_list(trends),
         ]
+        if evidence:
+            lines.extend(
+                [
+                    "",
+                    "**Supporting evidence (agent-cited)**",
+                    format_bullet_list(
+                        [
+                            item.get("summary")
+                            or item.get("source")
+                            or item.get("citation")
+                            or format_structured_bullet(item)
+                            for item in evidence
+                        ]
+                    ),
+                ]
+            )
         return "\n".join(lines)
 
     @staticmethod
@@ -175,32 +201,69 @@ class VentureReportCollector:
             return "_Competitor analysis not yet completed for this opportunity._"
 
         metrics = competitor.evaluation_metrics or {}
-        profile_lines = []
+        profile_blocks = []
         for profile in (competitor.profiles or [])[:5]:
-            profile_lines.append(
-                f"{profile.name}: {profile.positioning} "
-                f"(sentiment {profile.sentiment_score:+.2f})"
+            profile_blocks.append(
+                format_competitor_profile(
+                    name=profile.name,
+                    positioning=profile.positioning,
+                    sentiment_score=profile.sentiment_score,
+                    strengths=list(profile.strengths or []),
+                    weaknesses=list(profile.weaknesses or []),
+                )
             )
 
-        gap_lines = [
-            gap.get("gap") or gap.get("description") or str(gap)
-            for gap in (competitor.competitive_gaps or [])[:5]
-        ]
+        gaps = (competitor.competitive_gaps or [])[:5]
+        diff_score = format_differentiation_score(metrics.get("differentiation_score"))
+        threat = metrics.get("threat_level", "N/A")
 
         lines = [
             competitor.executive_summary or "Competitor landscape analyzed.",
             "",
             f"- **Competitors tracked:** "
             f"{metrics.get('competitor_count', len(competitor.profiles or []))}",
-            f"- **Differentiation score:** {metrics.get('differentiation_score', 'N/A')}",
-            f"- **Threat level:** {metrics.get('threat_level', 'N/A')}",
-            "",
-            "**Key competitors**",
-            _bullet_lines(profile_lines),
-            "",
-            "**Competitive gaps**",
-            _bullet_lines(gap_lines),
+            f"- **Differentiation score:** {diff_score}",
+            f"- **Threat level:** {threat}",
         ]
+        if diff_score != "N/A":
+            try:
+                diff_numeric = int(diff_score.split("/")[0])
+            except ValueError:
+                diff_numeric = None
+            if diff_numeric is not None:
+                if diff_numeric >= 65:
+                    lines.append(
+                        "- **Differentiation read:** Clear whitespace vs. incumbents."
+                    )
+                elif diff_numeric >= 45:
+                    lines.append(
+                        "- **Differentiation read:** Moderate whitespace — "
+                        "sharpen positioning before build."
+                    )
+                else:
+                    lines.append(
+                        "- **Differentiation read:** Weak whitespace — "
+                        "expect heavy competition or niche focus."
+                    )
+
+        lines.extend(
+            [
+                "",
+                "**Key competitors**",
+            ]
+        )
+        if profile_blocks:
+            lines.append("\n\n".join(f"- {block}" for block in profile_blocks))
+        else:
+            lines.append("_No competitor profiles recorded._")
+
+        lines.extend(
+            [
+                "",
+                "**Where you can win (competitive gaps)**",
+                format_bullet_list(gaps, empty="_No explicit gaps captured — validate manually._"),
+            ]
+        )
         return "\n".join(lines)
 
     @staticmethod
@@ -264,14 +327,8 @@ class VentureReportCollector:
         if product is None:
             return "_Product strategy not yet completed for this opportunity._"
 
-        feature_lines = [
-            feature.get("name") or feature.get("feature") or str(feature)
-            for feature in (product.core_features or [])[:5]
-        ]
-        roadmap_lines = [
-            item.get("milestone") or item.get("phase") or item.get("title") or str(item)
-            for item in (product.roadmap or [])[:5]
-        ]
+        feature_lines = (product.core_features or [])[:5]
+        roadmap_items = (product.roadmap or product.development_phases or [])[:5]
         timeline = product.estimated_timeline or {}
         mvp_weeks = timeline.get("mvp_weeks") or timeline.get("total_weeks")
 
@@ -286,10 +343,10 @@ class VentureReportCollector:
             [
                 "",
                 "**Core features**",
-                _bullet_lines(feature_lines),
+                format_bullet_list(feature_lines),
                 "",
                 "**Roadmap highlights**",
-                _bullet_lines(roadmap_lines),
+                format_bullet_list(roadmap_items),
             ]
         )
         return "\n".join(lines)
@@ -299,26 +356,24 @@ class VentureReportCollector:
         if gtm is None:
             return "_Go-to-market plan not yet completed for this opportunity._"
 
-        channel_lines = [
-            channel.get("channel") or channel.get("name") or str(channel)
-            for channel in (gtm.acquisition_channels or [])[:5]
-        ]
-        persona_lines = [
-            persona.get("name") or persona.get("persona") or str(persona)
-            for persona in (gtm.customer_personas or [])[:3]
-        ]
+        channels = (gtm.acquisition_channels or [])[:5]
+        personas = (gtm.customer_personas or [])[:3]
+        report_text = gtm.gtm_report or "Go-to-market plan available."
+        summary = report_text[:800]
+        if len(report_text) > 800:
+            summary = summary.rstrip() + "..."
 
         lines = [
-            gtm.gtm_report[:500] + ("..." if len(gtm.gtm_report) > 500 else ""),
+            summary,
             "",
             f"- **GTM confidence:** {gtm.confidence_score}/100",
             f"- **Estimated CAC:** ${gtm.estimated_cac_usd:,.0f}",
             "",
             "**Target personas**",
-            _bullet_lines(persona_lines),
+            format_bullet_list(personas),
             "",
             "**Acquisition channels**",
-            _bullet_lines(channel_lines),
+            format_bullet_list(channels),
         ]
         return "\n".join(lines)
 
@@ -328,10 +383,7 @@ class VentureReportCollector:
             return "_Growth strategy not yet completed for this opportunity._"
 
         metrics = growth.evaluation_metrics or {}
-        roadmap_lines = [
-            item.get("phase") or item.get("title") or str(item)
-            for item in (growth.growth_roadmap or [])[:5]
-        ]
+        roadmap_items = (growth.growth_roadmap or [])[:5]
 
         lines = [
             growth.executive_summary or "Long-term growth path defined.",
@@ -342,12 +394,16 @@ class VentureReportCollector:
             f"- **Growth readiness:** {metrics.get('growth_readiness_score', 'N/A')}",
             "",
             "**Growth roadmap**",
-            _bullet_lines(roadmap_lines),
+            format_bullet_list(roadmap_items),
         ]
         return "\n".join(lines)
 
     @staticmethod
-    def _founder_fit_analysis(human_proxy) -> str:
+    def _founder_fit_analysis(
+        human_proxy,
+        *,
+        ranking_founder_fit_score: int | None,
+    ) -> str:
         if human_proxy is None:
             return "_Founder fit analysis not yet completed for this opportunity._"
 
@@ -358,21 +414,48 @@ class VentureReportCollector:
         skill_matches = fit.get("skill_matches") or []
         skill_gaps = fit.get("skill_gaps") or []
 
+        proxy_fit = normalize_century_score(human_proxy.founder_fit_score)
+        proxy_feasibility = normalize_century_score(human_proxy.feasibility_score)
+        raw_fit = human_proxy.founder_fit_score
+        scale_note = ""
+        if raw_fit is not None and raw_fit <= 10:
+            scale_note = (
+                f" (human proxy returned {raw_fit}/10; normalized to {proxy_fit}/100)"
+            )
+
         lines = [
             human_proxy.executive_summary or fit.get("rationale") or "Founder fit evaluated.",
             "",
-            f"- **Founder fit score:** {human_proxy.founder_fit_score}/100",
-            f"- **Feasibility score:** {human_proxy.feasibility_score}/100",
+            f"- **Founder fit (executive ranking):** "
+            f"{format_score_display(ranking_founder_fit_score)}",
+            f"- **Founder fit (human proxy):** "
+            f"{format_score_display(proxy_fit)}{scale_note}",
+            f"- **Feasibility (human proxy):** {format_score_display(proxy_feasibility)}",
             f"- **Recommendation:** {human_proxy.recommendation}",
             f"- **Build complexity:** {feasibility.get('build_complexity', 'N/A')}",
             f"- **Learning curve:** {learning.get('difficulty', 'N/A')}",
-            "",
-            "**Skill matches**",
-            _bullet_lines([str(item) for item in skill_matches]),
-            "",
-            "**Skill gaps**",
-            _bullet_lines(
-                [str(item) for item in skill_gaps], empty="_No major skill gaps identified._"
-            ),
         ]
+        if (
+            ranking_founder_fit_score is not None
+            and proxy_fit is not None
+            and abs(ranking_founder_fit_score - proxy_fit) >= 20
+        ):
+            lines.append(
+                "- **Score alignment:** Ranking uses a composite across agents; "
+                "human proxy is a single-founder assessment — read both before deciding."
+            )
+
+        lines.extend(
+            [
+                "",
+                "**Skill matches**",
+                _bullet_lines([str(item) for item in skill_matches]),
+                "",
+                "**Skill gaps**",
+                _bullet_lines(
+                    [str(item) for item in skill_gaps],
+                    empty="_No major skill gaps identified._",
+                ),
+            ]
+        )
         return "\n".join(lines)

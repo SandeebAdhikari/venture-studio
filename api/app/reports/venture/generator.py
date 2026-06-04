@@ -111,11 +111,7 @@ class VentureReportGenerator:
             lines.append("_No customer evidence linked._")
         else:
             for item in report.customer_evidence:
-                url = f" ([source]({item.source_url}))" if item.source_url else ""
-                lines.append(
-                    f"- **Severity {item.severity}/5** — {item.summary} "
-                    f'"{item.verbatim_quote}"{url}'
-                )
+                lines.append(self._format_evidence_item(item))
 
         lines.extend(
             [
@@ -143,3 +139,18 @@ class VentureReportGenerator:
             ]
         )
         return lines
+
+    @staticmethod
+    def _format_evidence_item(item) -> str:
+        summary = (item.summary or "").strip()
+        quote = (item.verbatim_quote or "").strip()
+        url_suffix = f" ([source]({item.source_url}))" if item.source_url else ""
+
+        if not quote or quote == summary or quote in summary:
+            body = summary or quote or "_No quote captured._"
+            return f"- **Severity {item.severity}/5** — {body}{url_suffix}"
+
+        return (
+            f"- **Severity {item.severity}/5** — {summary}  \n"
+            f'  > "{quote}"{url_suffix}'
+        )

@@ -55,9 +55,11 @@ def build_risk_items(
     if execution_complexity:
         level = str(execution_complexity.get("complexity_level") or "medium")
         burden = execution_complexity.get("operational_burden")
-        description = execution_complexity.get("rationale") or f"Execution complexity: {level}."
-        if burden:
-            description = f"{description} Operational burden: {burden}."
+        description = (
+            execution_complexity.get("rationale") or f"Execution complexity is {level}."
+        )
+        if burden and str(burden).lower() not in description.lower():
+            description = f"{description.rstrip('.')}. Operational burden: {burden}."
         items.append(
             RiskItem(
                 category="execution",
