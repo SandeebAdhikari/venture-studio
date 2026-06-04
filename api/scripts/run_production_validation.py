@@ -90,8 +90,9 @@ def main() -> int:
         try:
             latest = client.get("/api/v1/executive-reports/latest").json()
             report_meta = latest
-            rid = latest["id"]
-            report_md = client.get(f"/api/v1/executive-reports/{rid}/markdown").json()
+            rid = latest.get("id")
+            if rid is not None:
+                report_md = client.get(f"/api/v1/executive-reports/{rid}/markdown").json()
         except httpx.HTTPStatusError as exc:
             report_meta = {"error": str(exc.response.status_code)}
 
@@ -110,7 +111,8 @@ def main() -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2, default=str))
     print(json.dumps({"ok": True, "run_id": str(run_id), "status": run_summary.get("status"), "wall_seconds": wall_sec, "output": str(out_path)}, indent=2))
-    return 0 if run_summary.get("status") == "completed" else 2
+    status = run_summary.get("status")
+    return 0 if status in {"completed", "success"} else 2
 
 
 if __name__ == "__main__":
