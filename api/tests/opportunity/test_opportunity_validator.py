@@ -60,3 +60,63 @@ def test_validator_rejects_ungrounded_product() -> None:
             topic="Staff Scheduling",
         )
     assert any("ungrounded product" in err for err in exc.value.errors)
+
+
+def test_validator_ignores_none_mentioned_phrasing() -> None:
+    evidence = [_evidence(summary="Staff scheduling breaks when shifts change.")]
+    validated = OpportunityValidator().validate(
+        _output(existing_alternatives="None mentioned in the complaints."),
+        evidence=evidence,
+        topic="Staff Scheduling",
+    )
+    assert validated.title == "Staff Scheduling SaaS"
+
+
+def test_validator_ignores_na_product_tokens() -> None:
+    evidence = [_evidence(summary="Staff scheduling breaks when shifts change.")]
+    validated = OpportunityValidator().validate(
+        _output(existing_alternatives="No named products in evidence (N/A)."),
+        evidence=evidence,
+        topic="Staff Scheduling",
+    )
+    assert "N/A" not in OpportunityValidator._extract_product_candidates(
+        validated.existing_alternatives
+    )
+
+
+def test_validator_accepts_topic_via_taxonomy_when_display_topic_cosmetic() -> None:
+    evidence = [
+        _evidence(
+            summary="Developers struggle with deployment environment drift.",
+            products=[],
+        )
+    ]
+    validated = OpportunityValidator().validate(
+        _output(
+            title="Workflow Devtools Opportunity",
+            existing_alternatives="No named products in evidence",
+        ),
+        evidence=evidence,
+        topic="Don T",
+        anchor_phrase="don t",
+        domain_code="devtools",
+        category_code="workflow",
+    )
+    assert validated.title.startswith("Workflow")
+
+
+def test_validator_rejects_cosmetic_topic_without_taxonomy_or_anchor_match() -> None:
+    evidence = [_evidence(summary="Unrelated product pricing complaints only.")]
+    with pytest.raises(OpportunityValidationError) as exc:
+        OpportunityValidator().validate(
+            _output(
+                title="Generic SaaS Tool",
+                existing_alternatives="No named products in evidence",
+            ),
+            evidence=evidence,
+            topic="Don T",
+            anchor_phrase="don t",
+            domain_code="devtools",
+            category_code="workflow",
+        )
+    assert any("topic not reflected" in err for err in exc.value.errors)

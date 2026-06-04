@@ -26,6 +26,7 @@ class OpportunityLLMClient(Protocol):
         pattern: ComplaintPattern,
         evidence: list[ComplaintEvidence],
         attempt: int,
+        validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult: ...
 
 
@@ -52,6 +53,7 @@ class OpenAIOpportunityClient:
         pattern: ComplaintPattern,
         evidence: list[ComplaintEvidence],
         attempt: int,
+        validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult:
         started = time.perf_counter()
         system_prompt = (
@@ -62,6 +64,12 @@ class OpenAIOpportunityClient:
             "No market research — evidence only."
         )
         evidence_block = self._format_evidence(evidence)
+        retry_block = ""
+        if validation_errors:
+            retry_block = (
+                "\n\nPrevious validation errors (fix these in your response):\n"
+                + "\n".join(f"- {err}" for err in validation_errors)
+            )
 
         try:
             response = await self._client.chat.completions.create(
@@ -82,13 +90,18 @@ class OpenAIOpportunityClient:
                         "content": (
                             f"Attempt: {attempt}\n"
                             f"Topic pattern: {pattern.topic}\n"
+                            f"Anchor phrase: {pattern.anchor_phrase}\n"
                             f"Complaint count: {pattern.complaint_count}\n"
                             f"Average severity: {pattern.avg_severity:.1f}\n"
                             f"Dominant domain: {pattern.domain_code}\n"
                             f"Dominant category: {pattern.category_code}\n"
                             f"Dominant persona: {pattern.dominant_persona_code}\n\n"
                             f"Evidence:\n{evidence_block}\n\n"
-                            "Generate a specific SaaS wedge opportunity title and brief."
+                            "Generate a specific SaaS wedge opportunity title and brief. "
+                            "If no products appear in evidence, write "
+                            "'No named products in evidence' for existing_alternatives "
+                            "(do not use the word None as a product name)."
+                            f"{retry_block}"
                         ),
                     },
                 ],

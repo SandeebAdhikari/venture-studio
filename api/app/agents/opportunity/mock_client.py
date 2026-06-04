@@ -24,6 +24,7 @@ class MockOpportunityLLMClient:
         self._index = 0
         self._model = model
         self.call_count = 0
+        self.last_validation_errors: list[str] | None = None
 
     async def synthesize(
         self,
@@ -31,8 +32,10 @@ class MockOpportunityLLMClient:
         pattern: ComplaintPattern,
         evidence: list[ComplaintEvidence],
         attempt: int,
+        validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult:
         self.call_count += 1
+        self.last_validation_errors = validation_errors
         response: OpportunityLLMOutput | None = None
 
         topic_key = pattern.topic.lower()

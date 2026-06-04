@@ -9,7 +9,9 @@ from app.agents.opportunity.patterns import (
     clustering_source_text,
     derive_pattern_topic,
     is_boilerplate_phrase,
+    is_weak_anchor_phrase,
     passes_coherence_gate,
+    passes_semantic_overlap_gate,
 )
 from app.agents.opportunity.schemas import ComplaintEvidence
 
@@ -170,6 +172,92 @@ def test_pattern_naming_uses_business_language() -> None:
     topic = derive_pattern_topic("deployment environment", members)
     assert "Deployment Environment" in topic
     assert "User Expresses Frustration" != topic
+
+
+def test_weak_anchor_rejects_pronoun_bigram() -> None:
+    assert is_weak_anchor_phrase("i find")
+    assert is_weak_anchor_phrase("don t")
+
+
+def test_rejects_pronoun_anchor_clusters() -> None:
+    complaints = [
+        _complaint(
+            summary="Code coupling",
+            verbatim_quote="Often I find parts of code that affect unrelated modules.",
+        ),
+        _complaint(
+            summary="Search quality",
+            verbatim_quote="I find myself frustrated with google search omitting results.",
+        ),
+        _complaint(
+            summary="Hiring trust",
+            verbatim_quote="I find it baffling they hired me if they will not trust my work.",
+        ),
+    ]
+    patterns = TopicPatternDetector().detect(complaints, min_cluster_size=3)
+    assert patterns == []
+
+
+def test_rejects_contraction_fragment_clusters() -> None:
+    complaints = [
+        _complaint(
+            summary="Slow process",
+            verbatim_quote="I am frustrated, I don&#x27;t understand why everything takes so long.",
+            domain_code="devtools",
+            category_code="other",
+        ),
+        _complaint(
+            summary="Apple notifications",
+            verbatim_quote="Please add purchase notifications Apple, I don&#x27;t want RevenueCat.",
+            domain_code="saas_b2c",
+            category_code="ux_ui",
+        ),
+        _complaint(
+            summary="Lost tooling",
+            verbatim_quote="We had a nice ecosystem of tools. Now we don&#x27;t anymore.",
+            domain_code="devtools",
+            category_code="missing_feature",
+        ),
+    ]
+    patterns = TopicPatternDetector().detect(complaints, min_cluster_size=3)
+    assert patterns == []
+
+
+def test_semantic_overlap_gate_requires_shared_substance() -> None:
+    members = [
+        _complaint(
+            summary="One",
+            verbatim_quote="I find parts of code that break unrelated modules daily.",
+        ),
+        _complaint(
+            summary="Two",
+            verbatim_quote="I find google search frustrating when it hides the best answers.",
+        ),
+        _complaint(
+            summary="Three",
+            verbatim_quote="I find hiring decisions baffling when leadership ignores engineers.",
+        ),
+    ]
+    assert not passes_semantic_overlap_gate("i find", members)
+
+
+def test_derive_topic_falls_back_to_taxonomy_for_weak_anchors() -> None:
+    members = [
+        _complaint(
+            summary="Frustration",
+            verbatim_quote="Deployment pipelines fail when node versions drift between machines.",
+            domain_code="saas_b2b",
+            category_code="workflow",
+        ),
+        _complaint(
+            summary="Frustration two",
+            verbatim_quote="Our deployment environments never match between staging and production.",
+            domain_code="saas_b2b",
+            category_code="workflow",
+        ),
+    ]
+    topic = derive_pattern_topic("deployment environment", members)
+    assert "Deployment" in topic and "Environment" in topic
 
 
 def test_returns_empty_when_below_min_cluster_size() -> None:

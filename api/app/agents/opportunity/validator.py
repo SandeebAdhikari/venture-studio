@@ -28,6 +28,8 @@ COMMON_WORDS = frozenset(
     }
 )
 
+IGNORED_PRODUCT_CANDIDATES = frozenset({"None", "N/A", "NA"})
+
 
 class OpportunityValidationError(Exception):
     def __init__(self, errors: list[str]) -> None:
@@ -44,6 +46,9 @@ class OpportunityValidator:
         *,
         evidence: list[ComplaintEvidence],
         topic: str,
+        anchor_phrase: str | None = None,
+        domain_code: str | None = None,
+        category_code: str | None = None,
     ) -> OpportunityLLMOutput:
         errors: list[str] = []
 
@@ -78,7 +83,14 @@ class OpportunityValidator:
                 continue
             errors.append(f"existing_alternatives mentions ungrounded product: {product}")
 
-        if topic.lower() not in evidence_text and topic.lower() not in output.title.lower():
+        if not self._topic_reflected_in_output(
+            topic=topic,
+            anchor_phrase=anchor_phrase,
+            domain_code=domain_code,
+            category_code=category_code,
+            evidence_text=evidence_text,
+            title=output.title,
+        ):
             errors.append("topic not reflected in evidence or title")
 
         if errors:
@@ -87,6 +99,48 @@ class OpportunityValidator:
         return output
 
     @staticmethod
+    def _topic_reflected_in_output(
+        *,
+        topic: str,
+        anchor_phrase: str | None,
+        domain_code: str | None,
+        category_code: str | None,
+        evidence_text: str,
+        title: str,
+    ) -> bool:
+        """B2: Match display topic, anchor phrase, or taxonomy labels — not cosmetic M4 tokens only."""
+        title_lower = title.lower()
+        references: list[str] = []
+
+        if topic.strip():
+            references.append(topic.lower())
+        if anchor_phrase and anchor_phrase.strip():
+            references.append(anchor_phrase.lower())
+        if domain_code:
+            references.append(domain_code.replace("_", " ").lower())
+            references.append(domain_code.lower())
+        if category_code:
+            references.append(category_code.replace("_", " ").lower())
+            references.append(category_code.lower())
+
+        for reference in references:
+            if not reference:
+                continue
+            if reference in evidence_text or reference in title_lower:
+                return True
+
+        return False
+
+    @staticmethod
     def _extract_product_candidates(text: str) -> list[str]:
+        if re.search(r"\bno\s+named\s+products\b", text, flags=re.IGNORECASE):
+            return []
+        if re.search(r"\bnone\s+mentioned\b", text, flags=re.IGNORECASE):
+            return []
+
         candidates = re.findall(r"\b[A-Z][A-Za-z0-9+\-_.]{3,}\b", text)
-        return [candidate for candidate in candidates if candidate not in COMMON_WORDS]
+        return [
+            candidate
+            for candidate in candidates
+            if candidate not in COMMON_WORDS and candidate not in IGNORED_PRODUCT_CANDIDATES
+        ]

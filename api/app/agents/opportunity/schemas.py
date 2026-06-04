@@ -23,6 +23,9 @@ class ComplaintPattern(BaseModel):
     """Recurring topic identified across multiple complaints."""
 
     topic: str
+    anchor_phrase: str = Field(
+        description="Normalized phrase that formed the cluster (used for grounding checks).",
+    )
     complaint_ids: list[UUID]
     domain_code: str
     category_code: str

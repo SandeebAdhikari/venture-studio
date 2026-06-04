@@ -140,10 +140,12 @@ class OpportunityGeneratorAgent:
                     "llm_output": None,
                 }
 
+        prior_errors = state.get("validation_errors") or []
         invocation = await self._llm.synthesize(
             pattern=state["pattern"],
             evidence=state["evidence"],
             attempt=state["attempt"],
+            validation_errors=prior_errors if prior_errors else None,
         )
         invocations = list(state["invocations"])
         invocations.append(
@@ -192,6 +194,9 @@ class OpportunityGeneratorAgent:
                 llm_output,
                 evidence=state["evidence"],
                 topic=state["pattern"].topic,
+                anchor_phrase=state["pattern"].anchor_phrase,
+                domain_code=state["pattern"].domain_code,
+                category_code=state["pattern"].category_code,
             )
         except OpportunityValidationError as exc:
             errors = list(state.get("validation_errors", []))

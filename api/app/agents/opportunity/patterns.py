@@ -47,6 +47,29 @@ STOPWORDS = frozenset(
     }
 )
 
+# A1: pronouns / contraction debris that must not form cluster anchors.
+WEAK_ANCHOR_TOKENS: frozenset[str] = frozenset(
+    {
+        "i",
+        "me",
+        "my",
+        "we",
+        "us",
+        "he",
+        "she",
+        "it",
+        "its",
+        "don",
+        "t",
+        "ve",
+        "re",
+        "ll",
+        "d",
+        "m",
+        "s",
+    }
+)
+
 # L1: classifier / clustering boilerplate phrases (normalized substring match).
 BLOCKED_CLUSTER_PHRASES: frozenset[str] = frozenset(
     {
@@ -99,6 +122,11 @@ MAX_TAXONOMY_LABELS_FOR_STRICT_GATE = 2
 
 MIN_VERBATIM_WORDS_FOR_CLUSTERING = 4
 
+# A3: substantive token overlap required across all cluster members.
+MIN_SHARED_CONTENT_TOKENS = 2
+MIN_SUBSTANTIVE_TOKEN_LEN = 4
+MIN_ANCHOR_SUBSTANTIVE_TOKENS = 2
+
 
 def _normalize_text(text: str) -> str:
     return " ".join(TOKEN_PATTERN.findall(text.lower()))
@@ -131,6 +159,30 @@ def is_boilerplate_phrase(phrase: str) -> bool:
     return False
 
 
+def is_weak_anchor_phrase(phrase: str) -> bool:
+    """A1: Reject incidental bigrams (pronouns, contraction fragments, short tokens)."""
+    if is_boilerplate_phrase(phrase):
+        return True
+
+    tokens = _normalize_text(phrase).split()
+    if len(tokens) < 2:
+        return True
+
+    if any(len(token) < 3 for token in tokens):
+        return True
+
+    if any(token in WEAK_ANCHOR_TOKENS for token in tokens):
+        return True
+
+    if all(
+        token in STOPWORDS or token in WEAK_ANCHOR_TOKENS or token in BOILERPLATE_TOPIC_TOKENS
+        for token in tokens
+    ):
+        return True
+
+    return False
+
+
 def _is_classifier_boilerplate_summary(summary: str) -> bool:
     normalized = _normalize_text(normalize_for_verbatim_grounding(summary))
     return any(normalized.startswith(prefix) for prefix in CLASSIFIER_SUMMARY_PREFIXES)
@@ -155,9 +207,63 @@ def clustering_source_text(complaint: ComplaintEvidence) -> str:
     return summary_normalized
 
 
+def _content_tokens(text: str) -> set[str]:
+    return {
+        token
+        for token in TOKEN_PATTERN.findall(text.lower())
+        if len(token) >= MIN_SUBSTANTIVE_TOKEN_LEN
+        and token not in STOPWORDS
+        and token not in BOILERPLATE_TOPIC_TOKENS
+        and token not in WEAK_ANCHOR_TOKENS
+    }
+
+
+def _phrases_for_complaint(complaint: ComplaintEvidence) -> set[str]:
+    text = clustering_source_text(complaint)
+    phrases: set[str] = set()
+    for n in (2, 3):
+        phrases |= _extract_phrases(text, n=n)
+    return {
+        phrase
+        for phrase in phrases
+        if not is_boilerplate_phrase(phrase) and not is_weak_anchor_phrase(phrase)
+    }
+
+
+def passes_semantic_overlap_gate(anchor_phrase: str, members: list[ComplaintEvidence]) -> bool:
+    """A3: Members must share substantive language beyond the anchor phrase."""
+    if not members:
+        return False
+
+    anchor_tokens = set(_normalize_text(anchor_phrase).split())
+    token_sets = [_content_tokens(clustering_source_text(member)) for member in members]
+    if not all(token_sets):
+        return False
+
+    shared_all = set.intersection(*token_sets)
+    beyond_anchor = shared_all - anchor_tokens
+
+    # Substantive anchors may fully explain the overlap (e.g. staff + scheduling).
+    if (
+        not is_weak_anchor_phrase(anchor_phrase)
+        and len(shared_all) >= MIN_SHARED_CONTENT_TOKENS
+    ):
+        return True
+
+    if len(beyond_anchor) >= MIN_SHARED_CONTENT_TOKENS:
+        return True
+
+    phrase_sets = [_phrases_for_complaint(member) for member in members]
+    if not all(phrase_sets):
+        return False
+
+    shared_phrases = set.intersection(*phrase_sets) - {anchor_phrase}
+    return bool(shared_phrases)
+
+
 def passes_coherence_gate(anchor_phrase: str, members: list[ComplaintEvidence]) -> bool:
     """L4: Reject heterogeneous or taxonomy-scattered clusters (deterministic)."""
-    if is_boilerplate_phrase(anchor_phrase):
+    if is_boilerplate_phrase(anchor_phrase) or is_weak_anchor_phrase(anchor_phrase):
         return False
 
     count = len(members)
@@ -183,35 +289,58 @@ def passes_coherence_gate(anchor_phrase: str, members: list[ComplaintEvidence]) 
         ):
             return False
 
+    if not passes_semantic_overlap_gate(anchor_phrase, members):
+        return False
+
     return True
+
+
+def _format_taxonomy_code(code: str) -> str:
+    return " ".join(part.capitalize() for part in code.split("_"))
+
+
+def _taxonomy_fallback_topic(members: list[ComplaintEvidence]) -> str:
+    domain_counts = Counter(member.domain_code for member in members)
+    category_counts = Counter(member.category_code for member in members)
+    domain = domain_counts.most_common(1)[0][0]
+    category = category_counts.most_common(1)[0][0]
+    return f"{_format_taxonomy_code(category)} — {_format_taxonomy_code(domain)}"
 
 
 def derive_pattern_topic(anchor_phrase: str, members: list[ComplaintEvidence]) -> str:
     """M4: Name patterns from substantive grounded language, not classifier boilerplate."""
-    if not is_boilerplate_phrase(anchor_phrase):
+    if not is_boilerplate_phrase(anchor_phrase) and not is_weak_anchor_phrase(anchor_phrase):
         anchor_tokens = [
             token
             for token in anchor_phrase.split()
-            if token not in STOPWORDS and token not in BOILERPLATE_TOPIC_TOKENS
+            if token not in STOPWORDS
+            and token not in BOILERPLATE_TOPIC_TOKENS
+            and token not in WEAK_ANCHOR_TOKENS
         ]
-        if len(anchor_tokens) >= 2:
-            return " ".join(token.capitalize() for token in anchor_tokens[:4])
+        substantive = [token for token in anchor_tokens if len(token) >= MIN_SUBSTANTIVE_TOKEN_LEN]
+        if len(substantive) >= MIN_ANCHOR_SUBSTANTIVE_TOKENS:
+            return " ".join(token.capitalize() for token in substantive[:4])
 
     token_counts = Counter()
     for member in members:
         for token in TOKEN_PATTERN.findall(clustering_source_text(member)):
-            if token in STOPWORDS or token in BOILERPLATE_TOPIC_TOKENS or len(token) < 3:
+            if (
+                token in STOPWORDS
+                or token in BOILERPLATE_TOPIC_TOKENS
+                or token in WEAK_ANCHOR_TOKENS
+                or len(token) < MIN_SUBSTANTIVE_TOKEN_LEN
+            ):
                 continue
             token_counts[token] += 1
 
     ranked = [token for token, _ in token_counts.most_common(6)]
-    if len(ranked) >= 2:
+    if len(ranked) >= MIN_ANCHOR_SUBSTANTIVE_TOKENS:
         return " ".join(token.capitalize() for token in ranked[:3])
 
     if len(ranked) == 1:
         return f"{ranked[0].capitalize()} Workflow Pain"
 
-    return "Recurring Customer Pain"
+    return _taxonomy_fallback_topic(members)
 
 
 class TopicPatternDetector:
@@ -235,14 +364,16 @@ class TopicPatternDetector:
                 continue
             phrases = _extract_phrases(source_text, n=2) | _extract_phrases(source_text, n=3)
             for phrase in phrases:
-                if is_boilerplate_phrase(phrase):
+                if is_boilerplate_phrase(phrase) or is_weak_anchor_phrase(phrase):
                     continue
                 phrase_to_ids[phrase].add(complaint.id)
 
         eligible_phrases = [
             phrase
             for phrase, member_ids in phrase_to_ids.items()
-            if len(member_ids) >= min_cluster_size and not is_boilerplate_phrase(phrase)
+            if len(member_ids) >= min_cluster_size
+            and not is_boilerplate_phrase(phrase)
+            and not is_weak_anchor_phrase(phrase)
         ]
         eligible_phrases.sort(
             key=lambda phrase: (len(phrase_to_ids[phrase]), len(phrase)),
@@ -281,6 +412,7 @@ class TopicPatternDetector:
 
         return ComplaintPattern(
             topic=derive_pattern_topic(anchor_phrase, members),
+            anchor_phrase=anchor_phrase,
             complaint_ids=[member.id for member in members],
             domain_code=domain_counts.most_common(1)[0][0],
             category_code=category_counts.most_common(1)[0][0],
