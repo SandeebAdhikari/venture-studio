@@ -223,6 +223,19 @@ Entrypoint behavior matches Compose: API runs migrations; worker waits for depen
 | `WORKER_READINESS_REQUIRED` | Optional | `true` to require worker in `/health/ready` |
 | `LOG_JSON` | Recommended | Structured logs |
 
+### Alerting (production)
+
+| Variable | Required in prod | Notes |
+|----------|------------------|-------|
+| `ALERTING_ENABLED` | When alerting used | `true` in production |
+| `ALERT_PROVIDERS` | Yes | Include `slack` and/or `webhook` (not logging-only) |
+| `ALERT_SLACK_WEBHOOK_URL` | If `slack` listed | Slack incoming webhook |
+| `ALERT_WEBHOOK_URL` | If `webhook` listed | Generic JSON POST target |
+| `ALERT_WEBHOOK_HEADERS` | Optional | JSON object for auth headers |
+| `ALERT_VALIDATION_STRICT` | Recommended | `true`; redundant with production enforcement |
+
+Misconfiguration causes bootstrap **exit 14** before Uvicorn serves traffic. See [alert-deployment.md](./alert-deployment.md) and [alert-configuration-guide.md](./alert-configuration-guide.md).
+
 ---
 
 ## Health checks

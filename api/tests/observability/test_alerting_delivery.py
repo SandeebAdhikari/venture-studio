@@ -11,9 +11,11 @@ from app.config import Settings
 from app.observability.alerting.checks import (
     alert_collector_repeated_failure,
     alert_llm_budget_exhausted,
+    alert_pipeline_failure,
     alert_pipeline_stall,
     alert_queue_backlog_growth,
     alert_scheduler_offline,
+    alert_worker_offline,
     send_test_alert,
 )
 from app.observability.alerting.cooldown import InMemoryCooldownStore
@@ -26,6 +28,7 @@ from app.observability.alerting.status import check_alerting_status
 from app.observability.alerting.validation import (
     enforce_alert_config,
     parse_webhook_headers,
+    should_fail_on_alert_errors,
     validate_alert_config,
 )
 
@@ -67,6 +70,47 @@ def test_validate_alert_config_provider_urls(
     )
     result = validate_alert_config(settings)
     assert (len(result.errors) > 0) is expect_error
+
+
+def test_production_requires_external_delivery() -> None:
+    settings = Settings(
+        environment="production",
+        alerting_enabled=True,
+        alert_providers="logging",
+    )
+    result = validate_alert_config(settings)
+    assert len(result.errors) > 0
+    assert "external" in result.errors[0].lower()
+
+
+def test_should_fail_on_alert_errors_strict_or_production() -> None:
+    assert should_fail_on_alert_errors(
+        Settings(alert_validation_strict=True, environment="local")
+    )
+    assert should_fail_on_alert_errors(
+        Settings(
+            environment="production",
+            alerting_enabled=True,
+            alert_validation_strict=False,
+        )
+    )
+    assert not should_fail_on_alert_errors(
+        Settings(environment="local", alerting_enabled=True)
+    )
+    assert not should_fail_on_alert_errors(
+        Settings(environment="production", alerting_enabled=False)
+    )
+
+
+def test_enforce_production_exits_without_external() -> None:
+    settings = Settings(
+        environment="production",
+        alerting_enabled=True,
+        alert_providers="logging",
+    )
+    with pytest.raises(SystemExit) as exc:
+        enforce_alert_config(settings)
+    assert exc.value.code == 14
 
 
 def test_parse_webhook_headers_invalid_json() -> None:
@@ -167,7 +211,9 @@ async def test_send_test_alert_bypasses_cooldown() -> None:
 @pytest.mark.parametrize(
     ("helper", "expected_type"),
     [
+        (alert_worker_offline, AlertType.WORKER_OFFLINE),
         (alert_scheduler_offline, AlertType.SCHEDULER_OFFLINE),
+        (alert_pipeline_failure, AlertType.PIPELINE_FAILURE),
         (alert_queue_backlog_growth, AlertType.QUEUE_BACKLOG_GROWTH),
         (alert_llm_budget_exhausted, AlertType.LLM_BUDGET_EXHAUSTED),
         (alert_collector_repeated_failure, AlertType.COLLECTOR_REPEATED_FAILURE),
@@ -203,10 +249,38 @@ async def test_alert_category_helpers(helper, expected_type) -> None:
             started_at="2026-06-03T12:00:00+00:00",
             engine=engine,
         )
+    elif helper is alert_pipeline_failure:
+        await helper(
+            pipeline_run_id=uuid4(),
+            status="failed",
+            trigger="manual",
+            error_summary="stage timeout",
+            engine=engine,
+        )
     else:
         await helper(engine=engine)
 
     assert provider.sent[0].alert_type == expected_type
+
+
+def test_check_alerting_status_production_errors() -> None:
+    init_alerting(
+        Settings(
+            environment="production",
+            alerting_enabled=True,
+            alert_providers="logging",
+        ),
+        cooldown=InMemoryCooldownStore(),
+    )
+    result = check_alerting_status(
+        Settings(
+            environment="production",
+            alerting_enabled=True,
+            alert_providers="logging",
+        )
+    )
+    assert result.status == "error"
+    assert "errors=" in (result.detail or "")
 
 
 def test_check_alerting_status_warns_on_misconfiguration() -> None:

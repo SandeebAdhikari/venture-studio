@@ -19,10 +19,14 @@ Operational procedures for AI Venture Studio production alerting.
 
 2. **Send test alert**
 
+   Authenticated endpoint (bypasses cooldown; `severity=info`, `dedup_key=test-delivery`):
+
    ```bash
    curl -X POST http://localhost:8000/api/v1/observability/alerts/test \
      -H "X-API-Key: $API_KEY"
    ```
+
+   Expect `200` and delivery to all active providers (Slack text message or webhook JSON). Repeat safely — cooldown does not apply to test delivery.
 
    CLI equivalent:
 
@@ -50,9 +54,9 @@ Operational procedures for AI Venture Studio production alerting.
 
 ## Misconfiguration
 
-### Symptom: `alerting` check shows `warn` with `errors=...`
+### Symptom: `alerting` check shows `error` or `warn` with `errors=...`
 
-Common fixes:
+In **production**, validation errors (including logging-only providers) surface as **`error`**. Common fixes:
 
 | Error | Fix |
 |-------|-----|
@@ -61,11 +65,13 @@ Common fixes:
 | `must be a valid http(s) URL` | Fix URL scheme/host |
 | `ALERT_WEBHOOK_HEADERS must be valid JSON` | Fix JSON object string |
 
-Enable strict validation in production to catch these at deploy time:
+Production startup already fails on validation errors when `ALERTING_ENABLED=true`. Optionally set:
 
 ```env
 ALERT_VALIDATION_STRICT=true
 ```
+
+to enforce the same rules in staging/non-production environments.
 
 ### Symptom: alerts only in logs
 
@@ -94,5 +100,7 @@ Test cooldown behavior does not block verification: the test endpoint uses `skip
 ## Related docs
 
 - [alert-routing.md](./alert-routing.md) — configuration and routing
+- [alert-deployment.md](./alert-deployment.md) — bootstrap exit 14
+- [alert-examples.md](./alert-examples.md) — webhook payload shapes
 - [operations.md](./operations.md) — day-to-day operations
 - [alerting-readiness.md](./alerting-readiness.md) — production readiness assessment

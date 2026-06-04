@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from app.config import Settings
 from app.observability.alerting.engine import get_alert_engine
-from app.observability.alerting.validation import validate_alert_config
+from app.observability.alerting.validation import (
+    should_fail_on_alert_errors,
+    validate_alert_config,
+)
 
 
 class AlertingStatusResult:
@@ -36,9 +39,10 @@ def check_alerting_status(settings: Settings) -> AlertingStatusResult:
             detail_parts.append(f"errors={' | '.join(validation.errors)}")
 
         if validation.errors:
+            status = "error" if should_fail_on_alert_errors(settings) else "warn"
             return AlertingStatusResult(
                 name="alerting",
-                status="warn",
+                status=status,
                 detail="; ".join(detail_parts),
             )
         if validation.warnings:

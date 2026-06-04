@@ -58,6 +58,13 @@ def parse_webhook_headers(raw: str) -> tuple[dict[str, str], str | None]:
     return headers, None
 
 
+def should_fail_on_alert_errors(settings: Settings) -> bool:
+    """Return True when invalid alert config must block API startup."""
+    if not settings.alerting_enabled:
+        return False
+    return settings.alert_validation_strict or settings.environment == "production"
+
+
 def validate_alert_config(settings: Settings) -> AlertConfigValidationResult:
     """Validate alert provider configuration for startup and health checks."""
     if not settings.alerting_enabled:
@@ -116,10 +123,10 @@ def validate_alert_config(settings: Settings) -> AlertConfigValidationResult:
             warnings.append("No usable providers configured; falling back to logging")
 
     external = [name for name in active if name in {"webhook", "slack"}]
-    if settings.environment == "production" and not external:
-        warnings.append(
-            "Production alerting has no external delivery (webhook/slack); "
-            "only logging will receive alerts"
+    if settings.environment == "production" and settings.alerting_enabled and not external:
+        errors.append(
+            "Production requires external alert delivery (webhook or slack in "
+            "ALERT_PROVIDERS with valid URLs); logging-only is not permitted"
         )
 
     return AlertConfigValidationResult(
@@ -132,16 +139,18 @@ def validate_alert_config(settings: Settings) -> AlertConfigValidationResult:
 
 
 def enforce_alert_config(settings: Settings) -> AlertConfigValidationResult:
-    """Validate alert config and raise SystemExit when strict mode fails."""
+    """Validate alert config; exit 14 when errors and startup must fail."""
+    import sys
+
     result = validate_alert_config(settings)
+    for warning in result.warnings:
+        print(f"WARN: Alert configuration: {warning}", file=sys.stderr)
     if result.valid:
         return result
 
-    if settings.alert_validation_strict:
-        import sys
-
-        for error in result.errors:
-            print(f"ERROR: Alert configuration invalid: {error}", file=sys.stderr)
+    for error in result.errors:
+        print(f"ERROR: Alert configuration invalid: {error}", file=sys.stderr)
+    if should_fail_on_alert_errors(settings):
         raise SystemExit(14)
 
     return result

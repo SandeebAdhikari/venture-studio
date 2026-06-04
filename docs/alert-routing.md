@@ -86,16 +86,17 @@ PYTHONPATH=. python -m app.observability.alerting.cli test
 
 ### Readiness
 
-`GET /health/ready` includes an `alerting` check with provider list and configuration warnings. Alerting status does **not** fail overall readiness (informational for ops).
+`GET /health/ready` includes an `alerting` check with provider list, warnings, and errors. In **production**, validation errors (including missing external delivery) return status **`error`** so misconfig is visible to probes.
 
 ## Startup validation
 
 | Mode | Behavior |
 |------|----------|
-| Default | Log errors/warnings; misconfigured providers are skipped; logging fallback used |
-| `ALERT_VALIDATION_STRICT=true` | Bootstrap and lifespan fail fast on invalid config |
+| Development (`ENVIRONMENT=local`) | Log errors/warnings; API starts unless `ALERT_VALIDATION_STRICT=true` |
+| `ALERT_VALIDATION_STRICT=true` | Bootstrap exit **14** and lifespan failure on validation errors |
+| Production + `ALERTING_ENABLED=true` | Same fail-fast as strict mode when errors exist (external delivery required) |
 
-Recommended for production: set strict mode and fix config before deploy.
+See [alert-deployment.md](./alert-deployment.md) and [alert-configuration-guide.md](./alert-configuration-guide.md).
 
 ## Cooldown and deduplication
 
@@ -104,5 +105,9 @@ Cooldown keys: `{alert_type}:{dedup_key}` in Redis. Suppressed alerts increment 
 ## Related docs
 
 - [observability-alerting.md](./observability-alerting.md) — architecture and metrics
+- [alert-configuration-guide.md](./alert-configuration-guide.md) — environment variables
+- [alert-deployment.md](./alert-deployment.md) — bootstrap exit 14 and secrets
+- [alert-matrix.md](./alert-matrix.md) — severities, cooldowns, dedup keys
+- [alert-examples.md](./alert-examples.md) — webhook JSON payloads
 - [alert-runbook.md](./alert-runbook.md) — operational response
-- [alerting-readiness.md](./alerting-readiness.md) — remediation summary
+- [alerting-readiness.md](./alerting-readiness.md) — readiness assessment
