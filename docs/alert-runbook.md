@@ -44,7 +44,7 @@ Operational procedures for AI Venture Studio production alerting.
 
 | Alert | Likely cause | First actions |
 |-------|--------------|---------------|
-| `worker_offline` | ARQ worker down or not heartbeating | Check worker process / `docker compose ps worker`; restart worker |
+| `worker_offline` | ARQ worker down or not heartbeating | Check `docker compose ps worker` (health status), `python -m app.workers.healthcheck`; restart worker |
 | `scheduler_offline` | APScheduler not running in API | Restart API; check `SCHEDULER_ENABLED` and logs |
 | `pipeline_failure` | Stage error during run | Inspect pipeline run in DB/API; check stage logs and LLM budget |
 | `pipeline_stall` | Long-running or stuck pipeline | Check lock holder, running stage, external API latency |

@@ -80,7 +80,7 @@ flowchart TB
 Residual risks (unchanged by design):
 
 - **Multi-replica API**: APScheduler runs in-process; run one scheduler-enabled replica or use external cron. See [Scheduler considerations](#scheduler-considerations).
-- **Worker readiness**: `WORKER_READINESS_REQUIRED` defaults to `false`; enable in production if you require worker heartbeats in `/health/ready`.
+- **Worker readiness**: Set `WORKER_READINESS_REQUIRED=true` on the API in production when workers are co-deployed. The `worker` service includes a Redis heartbeat healthcheck (`python -m app.workers.healthcheck`). See [worker-reliability-report.md](./worker-reliability-report.md).
 
 ---
 

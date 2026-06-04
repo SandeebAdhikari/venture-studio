@@ -281,7 +281,7 @@ Core platform is functional: full 14-stage pipeline, 8 research agents, founder 
 - Web service not in default docker-compose (intentional — see [docs/deployment.md](docs/deployment.md))
 - Dashboard BFF has no user authentication (solo-founder / network-restricted deployment)
 - Multi-replica APScheduler requires external cron or single scheduler-enabled API instance
-- Default ARQ job timeout (600s) may be tight for full nightly pipeline runs
+- Full nightly pipeline runs may need `ARQ_JOB_TIMEOUT_SEC=7200` under heavy LLM load (default 3600)
 
 ### Future Phases
 

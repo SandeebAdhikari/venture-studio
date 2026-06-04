@@ -92,7 +92,7 @@ Job status stored in Redis (`job:status:{id}`, 7-day TTL).
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ARQ_MAX_JOBS` | 5 | Concurrent jobs per worker |
-| `ARQ_JOB_TIMEOUT_SEC` | 600 | Per-job timeout |
+| `ARQ_JOB_TIMEOUT_SEC` | 3600 | Per-job timeout (use 7200 for heavy prod nightly runs) |
 | `ARQ_MAX_TRIES` | 3 | Retry attempts |
 
 See [workers.md](./workers.md).

@@ -140,4 +140,4 @@ All endpoints require `X-API-Key`.
 3. List jobs: `curl -H "X-API-Key: $API_KEY" http://localhost:8000/api/v1/scheduler/jobs`
 4. Manual run: `curl -X POST -H "X-API-Key: $API_KEY" http://localhost:8000/api/v1/scheduler/run/nightly_pipeline`
 
-Ensure at least one ARQ worker is running. Full pipeline runs may exceed default `ARQ_JOB_TIMEOUT_SEC=600` — increase for production nightly runs.
+Ensure at least one ARQ worker is running. See [worker-timeout-assessment.md](./worker-timeout-assessment.md) for `ARQ_JOB_TIMEOUT_SEC` guidance (default 3600, production often 7200).

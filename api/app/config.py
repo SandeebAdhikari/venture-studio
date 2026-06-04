@@ -145,7 +145,7 @@ class Settings(BaseSettings):
 
     # ARQ worker
     arq_max_jobs: int = 5
-    arq_job_timeout_sec: int = 600
+    arq_job_timeout_sec: int = 3600
     arq_max_tries: int = 3
     arq_job_result_ttl_sec: int = 604_800
     arq_job_status_ttl_sec: int = 604_800

@@ -75,4 +75,4 @@ Scheduled runs set `idempotency_key=scheduler:nightly_pipeline:{YYYY-MM-DD}` on 
 
 ## Worker timeout note
 
-Default `arq_job_timeout_sec=600` may be insufficient for a full 14-stage pipeline. For production nightly runs, increase timeout or run pipeline in a dedicated worker profile.
+Default `arq_job_timeout_sec=3600` aligns with pipeline lock and stall alerts. For heavy nightly runs, set `ARQ_JOB_TIMEOUT_SEC=7200` in production. See [worker-timeout-assessment.md](./worker-timeout-assessment.md).

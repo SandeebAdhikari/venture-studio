@@ -12,7 +12,8 @@ Long-running Venture Studio work runs outside the FastAPI request cycle on **ARQ
 | `app/workers/jobs.py` | Job functions for each pipeline stage |
 | `app/workers/enqueue.py` | API-side job publishing |
 | `app/workers/monitoring.py` | Redis job status tracking |
-| `app/workers/context.py` | Worker startup/shutdown and DB sessions |
+| `app/workers/context.py` | Worker startup/shutdown, heartbeats, and DB sessions |
+| `app/workers/healthcheck.py` | Docker health probe (Redis heartbeats) |
 | `app/pipeline/executor.py` | Shared stage logic (orchestrator + jobs) |
 
 ## Execution Flow
@@ -131,7 +132,7 @@ docker compose up -d postgres redis api worker
 | Env var | Default | Description |
 |---------|---------|-------------|
 | `ARQ_MAX_JOBS` | 5 | Concurrent jobs per worker |
-| `ARQ_JOB_TIMEOUT_SEC` | 600 | Per-job timeout |
+| `ARQ_JOB_TIMEOUT_SEC` | 3600 | Per-job timeout (`run_pipeline` needs ≥1h for full runs) |
 | `ARQ_MAX_TRIES` | 3 | ARQ retry attempts |
 | `ARQ_JOB_RESULT_TTL_SEC` | 604800 | ARQ result retention |
 | `ARQ_JOB_STATUS_TTL_SEC` | 604800 | Monitoring key TTL |
