@@ -75,7 +75,8 @@ async def verify(pipeline_run_id: UUID | None) -> dict:
         ranking = (
             await session.execute(
                 text(
-                    "SELECT id, created_at, ranking_metadata FROM executive_ranking_runs "
+                    "SELECT id, created_at, metadata AS ranking_metadata "
+                    "FROM executive_ranking_runs "
                     "WHERE is_current ORDER BY created_at DESC LIMIT 1"
                 )
             )
@@ -83,7 +84,8 @@ async def verify(pipeline_run_id: UUID | None) -> dict:
         report = (
             await session.execute(
                 text(
-                    "SELECT id, title, created_at, report_metadata FROM reports "
+                    "SELECT id, title, created_at, metadata AS report_metadata "
+                    "FROM reports "
                     "WHERE report_type = 'venture_recommendation' "
                     "ORDER BY created_at DESC LIMIT 1"
                 )
@@ -140,7 +142,7 @@ async def verify(pipeline_run_id: UUID | None) -> dict:
                     """
                     SELECT o.title, o.llm_model, e.rank, e.composite_score
                     FROM executive_ranking_entries e
-                    JOIN executive_ranking_runs r ON r.id = e.ranking_run_id AND r.is_current
+                    JOIN executive_ranking_runs r ON r.id = e.executive_ranking_run_id AND r.is_current
                     JOIN opportunities o ON o.id = e.opportunity_id
                     ORDER BY e.rank ASC
                     LIMIT 3

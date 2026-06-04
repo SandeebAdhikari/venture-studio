@@ -144,6 +144,8 @@ class PipelineStageExecutor:
             ranking = await services.executive_ranking.generate_ranking(
                 top_n=top_n,
                 founder_profile_id=options.founder_profile_id,
+                discovery_validation_mode=options.discovery_validation_mode,
+                pipeline_run_id=options.pipeline_run_id,
             )
             return StageExecutionResult(
                 items_out=ranking.ranked_opportunity_count,
@@ -155,11 +157,22 @@ class PipelineStageExecutor:
             )
 
         if stage == PipelineStage.VENTURE_REPORT:
+            from app.exceptions import ValidationError
+
             top_n = options.top_n or self._settings.executive_venture_report_top_n
+            ranking_run_id = options.validation_ranking_run_id
+            if options.discovery_validation_mode:
+                if ranking_run_id is None:
+                    raise ValidationError(
+                        "Validation run requires executive ranking from the same pipeline run"
+                    )
             report = await services.venture_reports.generate_venture_report(
                 top_n=top_n,
                 founder_profile_id=options.founder_profile_id,
+                ranking_run_id=ranking_run_id,
                 generate_ranking_if_missing=False,
+                discovery_validation_mode=options.discovery_validation_mode,
+                pipeline_run_id=options.pipeline_run_id,
                 publish=True,
             )
             ranking_run_id = report.content.executive_ranking_run_id

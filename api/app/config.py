@@ -135,6 +135,9 @@ class Settings(BaseSettings):
     # Executive ranking engine
     executive_ranking_top_n: int = 5
 
+    # Discovery validation runs (Phase 1 — no pipeline_run_id FK on artifacts)
+    discovery_validation_mode: bool = False
+
     # Pipeline orchestrator
     pipeline_max_retries: int = 3
     pipeline_retry_backoff_sec: float = 0.5

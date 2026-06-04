@@ -14,7 +14,11 @@ from app.db.enums import (
     PipelineStageStatus,
     PipelineTrigger,
 )
-from app.exceptions import ConflictError, NotFoundError
+from app.discovery.validation import (
+    DiscoveryValidationPreflight,
+    resolve_pipeline_options,
+)
+from app.exceptions import ConflictError, NotFoundError, ValidationError
 from app.logging import get_logger
 from app.observability.metrics import record_metrics
 from app.observability.tracing import trace_span
@@ -58,7 +62,14 @@ class PipelineOrchestrator:
         trigger: PipelineTrigger = PipelineTrigger.API,
         options: PipelineRunOptions | None = None,
     ) -> PipelineRunResult:
-        opts = options or PipelineRunOptions()
+        opts = resolve_pipeline_options(options, self._settings)
+        if opts.discovery_validation_mode:
+            preflight = await DiscoveryValidationPreflight(self._repos).check()
+            if not preflight.passed:
+                raise ValidationError(
+                    f"Discovery validation preflight failed: {preflight.detail}"
+                )
+
         max_retries = (
             opts.max_retries
             if opts.max_retries is not None
@@ -87,6 +98,8 @@ class PipelineOrchestrator:
         ]
         await self._repos.pipelines.create_stage_runs(run.id, stage_plans)
         await self._repos.pipelines.mark_run_started(run)
+        if opts.discovery_validation_mode:
+            opts = opts.model_copy(update={"pipeline_run_id": run.id})
         await self._audit(run, "pipeline_started", {"stage_count": len(stages_to_run)})
 
         completed = 0
@@ -132,9 +145,24 @@ class PipelineOrchestrator:
                     if stage_run is None:
                         continue
 
-                    outcome = await self._run_stage_with_retries(run, stage_run, stage, opts)
+                    await self._run_stage_with_retries(run, stage_run, stage, opts)
                     stage_status = PipelineStageStatus(stage_run.status)
                     if stage_status == PipelineStageStatus.COMPLETED:
+                        if (
+                            opts.discovery_validation_mode
+                            and stage == PipelineStage.EXECUTIVE_RANKING
+                        ):
+                            ranking_run_id = (stage_run.stage_metadata or {}).get(
+                                "ranking_run_id"
+                            )
+                            if ranking_run_id:
+                                opts = opts.model_copy(
+                                    update={
+                                        "validation_ranking_run_id": UUID(
+                                            str(ranking_run_id)
+                                        )
+                                    }
+                                )
                         completed += 1
                         record_metrics().record_stage_duration(
                             stage=stage.value,
@@ -146,9 +174,9 @@ class PipelineOrchestrator:
                             "stage_completed",
                             {
                                 "stage": stage.value,
-                                "items_in": outcome.items_in,
-                                "items_out": outcome.items_out,
-                                "items_failed": outcome.items_failed,
+                                "items_in": stage_run.items_in,
+                                "items_out": stage_run.items_out,
+                                "items_failed": stage_run.items_failed,
                                 "duration_ms": stage_run.duration_ms,
                             },
                         )

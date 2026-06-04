@@ -9,6 +9,7 @@ from app.config import Settings, get_settings
 from app.db.enums import ExecutiveRankingStatus
 from app.exceptions import NotFoundError
 from app.logging import get_logger
+from app.discovery.validation import is_opportunity_validation_eligible
 from app.ranking.collector import AgentEvaluationCollector
 from app.ranking.constants import MIN_AGENT_COVERAGE, RANKING_ENGINE
 from app.ranking.engine import ExecutiveRankingEngine
@@ -50,6 +51,8 @@ class ExecutiveRankingService:
         *,
         top_n: int | None = None,
         founder_profile_id: UUID | None = None,
+        discovery_validation_mode: bool = False,
+        pipeline_run_id: UUID | None = None,
     ) -> ExecutiveRankingResult:
         top_limit = top_n or self._settings.executive_ranking_top_n
         profile = await self._resolve_profile(founder_profile_id)
@@ -62,6 +65,15 @@ class ExecutiveRankingService:
 
         scored: list[tuple] = []
         for opportunity in opportunities:
+            if discovery_validation_mode:
+                eligible = await is_opportunity_validation_eligible(
+                    self._repos,
+                    opportunity.id,
+                    founder_profile_id=profile.id if profile else None,
+                )
+                if not eligible:
+                    continue
+
             agent_input = await self._collector.collect(
                 opportunity.id,
                 opportunity_title=opportunity.title,
@@ -111,6 +123,14 @@ class ExecutiveRankingService:
                 ranking_metadata={
                     "founder_profile_name": profile.name if profile else None,
                     "min_agent_coverage": MIN_AGENT_COVERAGE,
+                    **(
+                        {
+                            "discovery_validation_mode": True,
+                            "pipeline_run_id": str(pipeline_run_id),
+                        }
+                        if discovery_validation_mode and pipeline_run_id
+                        else {}
+                    ),
                 },
                 entries=entries,
             )

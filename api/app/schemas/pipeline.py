@@ -43,6 +43,15 @@ class PipelineRunOptions(BaseModel):
     classify_batch_size: int | None = Field(default=None, ge=1)
     classify_max_batches: int | None = Field(default=None, ge=1)
     score_limit: int | None = Field(default=None, ge=1)
+    discovery_validation_mode: bool = False
+    pipeline_run_id: UUID | None = Field(
+        default=None,
+        description="Set by orchestrator during validation runs; ties ranking/report to run",
+    )
+    validation_ranking_run_id: UUID | None = Field(
+        default=None,
+        description="Executive ranking run produced in this validation pipeline run",
+    )
 
 
 class PipelineStageRunRead(BaseModel):

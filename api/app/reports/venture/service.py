@@ -8,6 +8,7 @@ from uuid import UUID
 
 from app.config import Settings, get_settings
 from app.db.enums import ReportStatus, ReportType
+from app.discovery.validation import assert_ranking_bound_to_pipeline_run
 from app.exceptions import NotFoundError, ValidationError
 from app.logging import get_logger
 from app.ranking.service import ExecutiveRankingService
@@ -56,13 +57,32 @@ class VentureReportService:
         founder_profile_id: UUID | None = None,
         ranking_run_id: UUID | None = None,
         generate_ranking_if_missing: bool = True,
+        discovery_validation_mode: bool = False,
+        pipeline_run_id: UUID | None = None,
         publish: bool = True,
     ) -> VentureReportResult:
         top_limit = top_n or self._settings.executive_venture_report_top_n
 
+        if discovery_validation_mode:
+            if ranking_run_id is None:
+                raise ValidationError(
+                    "Validation run requires ranking_run_id from the same pipeline run; "
+                    "refusing stale current ranking"
+                )
+            generate_ranking_if_missing = False
+
         if ranking_run_id is not None:
             ranking = await self._ranking_service.get_ranking(ranking_run_id)
+            if discovery_validation_mode:
+                assert_ranking_bound_to_pipeline_run(
+                    ranking_metadata=ranking.ranking_metadata or {},
+                    pipeline_run_id=pipeline_run_id,
+                )
         else:
+            if discovery_validation_mode:
+                raise ValidationError(
+                    "Validation run cannot use current executive ranking (stale ranking risk)"
+                )
             try:
                 ranking = await self._ranking_service.get_current_ranking()
             except NotFoundError:
@@ -133,6 +153,14 @@ class VentureReportService:
                     "founder_profile_id": str(profile_id) if profile_id else None,
                     "top_n": top_limit,
                     "opportunity_count": len(opportunity_reports),
+                    **(
+                        {
+                            "discovery_validation_mode": True,
+                            "pipeline_run_id": str(pipeline_run_id),
+                        }
+                        if discovery_validation_mode and pipeline_run_id
+                        else {}
+                    ),
                 },
             )
         )
