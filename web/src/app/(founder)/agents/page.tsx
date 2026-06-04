@@ -124,12 +124,6 @@ export default function AgentsPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35 }}
           >
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Agent nodes
-              </h2>
-              <div className="h-px flex-1 bg-gradient-to-r from-[hsl(187_50%_40%)] to-transparent" />
-            </div>
             <AgentActivityGrid agents={agents} />
           </motion.div>
         </>

@@ -189,12 +189,63 @@ body {
   opacity: 1;
 }
 
+.jarvis-pipeline-panel {
+  box-shadow:
+    0 0 0 1px hsl(187 50% 40% / 0.08),
+    0 24px 80px hsl(0 0% 0% / 0.35),
+    inset 0 1px 0 hsl(187 80% 70% / 0.06);
+}
+
+.jarvis-schematic-track {
+  background: linear-gradient(
+    90deg,
+    hsl(187 60% 45% / 0.15),
+    hsl(187 90% 60% / 0.5),
+    hsl(187 60% 45% / 0.15)
+  );
+}
+
+.jarvis-schematic-pulse {
+  box-shadow: 0 0 16px hsl(187 90% 60% / 0.8);
+}
+
+.jarvis-node-connector {
+  background: linear-gradient(
+    180deg,
+    hsl(187 80% 55% / 0.7),
+    hsl(187 50% 40% / 0.15)
+  );
+}
+
+.jarvis-phase-column:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 4rem;
+  right: -0.75rem;
+  bottom: 2rem;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    hsl(187 50% 40% / 0.25) 20%,
+    hsl(187 50% 40% / 0.25) 80%,
+    transparent
+  );
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .jarvis-phase-column:not(:last-child)::after {
+    display: block;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .jarvis-core-canvas canvas {
     filter: none;
   }
 
-  .jarvis-card-scan {
+  .jarvis-schematic-pulse {
     display: none;
   }
 }

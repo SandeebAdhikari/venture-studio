@@ -1,7 +1,14 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Badge, statusVariant } from "@/components/ui/badge";
+import { AgentPipelineSchematic } from "@/components/agents/agent-pipeline-schematic";
+import { Badge } from "@/components/ui/badge";
+import {
+  agentsForPhase,
+  PIPELINE_PHASES,
+  sortAgentsByPipeline,
+  type PipelineAgent,
+} from "@/lib/agents/pipeline-order";
 import type { DashboardAgentStatus } from "@/types/api";
 
 function successRate(agent: DashboardAgentStatus): number {
@@ -9,66 +16,153 @@ function successRate(agent: DashboardAgentStatus): number {
   return Math.round((agent.current_completed / agent.current_total) * 100);
 }
 
-function AgentRing({ value, reduceMotion }: { value: number; reduceMotion: boolean }) {
-  const r = 36;
-  const c = 2 * Math.PI * r;
-  const offset = c - (value / 100) * c;
+function statusLabel(agent: PipelineAgent, rate: number): string {
+  if (agent.current_failed > 0) return "Needs attention";
+  if (rate >= 80) return "Optimal";
+  if (agent.current_total === 0) return "Awaiting runs";
+  return "Active";
+}
+
+function AgentNodeCard({
+  agent,
+  isLastInPhase,
+  reduceMotion,
+}: {
+  agent: PipelineAgent;
+  isLastInPhase: boolean;
+  reduceMotion: boolean;
+}) {
+  const rate = successRate(agent);
+  const status = statusLabel(agent, rate);
 
   return (
-    <div className="relative h-20 w-20 shrink-0">
-      <svg className="h-full w-full -rotate-90" viewBox="0 0 80 80" aria-hidden>
-        <circle
-          cx="40"
-          cy="40"
-          r={r}
-          fill="none"
-          stroke="hsl(var(--muted))"
-          strokeWidth="4"
-        />
-        <motion.circle
-          cx="40"
-          cy="40"
-          r={r}
-          fill="none"
-          stroke="hsl(187 90% 55%)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          initial={reduceMotion ? { strokeDashoffset: offset } : { strokeDashoffset: c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ type: "spring", stiffness: 60, damping: 14, delay: 0.2 }}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center font-mono text-sm font-semibold text-[hsl(187_85%_75%)]">
-        {value}%
-      </span>
+    <div className="jarvis-pipeline-node flex gap-4">
+      <div className="flex w-12 shrink-0 flex-col items-center">
+        <motion.div
+          className="jarvis-node-badge relative z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[hsl(187_70%_50%/0.55)] bg-card font-mono text-sm font-semibold text-[hsl(187_90%_75%)] shadow-[0_0_20px_hsl(187_80%_50%/0.2)]"
+          initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 22 }}
+        >
+          {String(agent.step).padStart(2, "0")}
+        </motion.div>
+        {!isLastInPhase && <div className="jarvis-node-connector mt-2 min-h-[2.5rem] w-px flex-1" />}
+      </div>
+
+      <motion.article
+        className="jarvis-agent-card mb-6 flex h-[11.5rem] min-h-[11.5rem] min-w-0 flex-1 flex-col rounded-2xl border border-[hsl(187_35%_30%/0.45)] bg-gradient-to-br from-card/95 to-card/70 p-5 backdrop-blur-md"
+        initial={reduceMotion ? false : { opacity: 0, x: 16 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 280, damping: 26, delay: agent.step * 0.04 }}
+        whileHover={
+          reduceMotion
+            ? undefined
+            : {
+                y: -4,
+                boxShadow: "0 12px 40px hsl(187 80% 45% / 0.12), 0 0 0 1px hsl(187 70% 55% / 0.25)",
+              }
+        }
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(187_65%_52%)]">
+              {status}
+            </p>
+            <h3 className="mt-1 line-clamp-2 text-lg font-semibold leading-snug tracking-tight text-foreground">
+              {agent.display_name}
+            </h3>
+          </div>
+          <div className="text-right">
+            <p className="font-mono text-2xl font-light tabular-nums text-[hsl(187_90%_78%)]">
+              {rate}%
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              success
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-auto flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={agent.current_failed > 0 ? "warning" : "success"}>
+            {agent.current_total} runs
+          </Badge>
+          <span className="font-mono text-xs text-muted-foreground">
+            {agent.current_completed} done · {agent.current_skipped} skip ·{" "}
+            {agent.current_failed} fail
+          </span>
+        </div>
+
+        <div className="h-1 overflow-hidden rounded-full bg-muted/80">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-[hsl(187_50%_38%)] via-[hsl(187_85%_62%)] to-[hsl(187_95%_78%)]"
+            initial={{ width: 0 }}
+            animate={{ width: `${rate}%` }}
+            transition={{ type: "spring", stiffness: 70, damping: 18, delay: 0.1 }}
+          />
+        </div>
+        </div>
+      </motion.article>
     </div>
   );
 }
 
-const listVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
-  },
-};
+function PhaseColumn({
+  phase,
+  agents,
+  reduceMotion,
+  index,
+}: {
+  phase: (typeof PIPELINE_PHASES)[number];
+  agents: PipelineAgent[];
+  reduceMotion: boolean;
+  index: number;
+}) {
+  return (
+    <motion.section
+      className="jarvis-phase-column relative flex flex-col"
+      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.12, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="jarvis-phase-header mb-6 rounded-xl border border-[hsl(187_40%_35%/0.35)] bg-[hsl(187_30%_12%/0.4)] px-4 py-3">
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[hsl(187_75%_58%)]">
+          Phase {index + 1}
+        </p>
+        <h3 className="mt-1 text-base font-semibold text-foreground">{phase.title}</h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">{phase.subtitle}</p>
+      </div>
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 28, scale: 0.94 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring" as const, stiffness: 320, damping: 26 },
-  },
-};
+      {agents.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No agents in this phase.</p>
+      ) : (
+        agents.map((agent, i) => (
+          <AgentNodeCard
+            key={agent.agent}
+            agent={agent}
+            isLastInPhase={i === agents.length - 1}
+            reduceMotion={reduceMotion}
+          />
+        ))
+      )}
+
+      {index < PIPELINE_PHASES.length - 1 && (
+        <div
+          className="jarvis-phase-arrow pointer-events-none absolute -right-4 top-1/2 hidden -translate-y-1/2 font-mono text-xl text-[hsl(187_80%_55%/0.7)] xl:block"
+          aria-hidden
+        >
+          →
+        </div>
+      )}
+    </motion.section>
+  );
+}
 
 export function AgentActivityGrid({ agents }: { agents: DashboardAgentStatus[] | null | undefined }) {
   const reduceMotion = useReducedMotion();
-  const list = agents ?? [];
+  const sorted = sortAgentsByPipeline(agents ?? []);
 
-  if (list.length === 0) {
+  if (sorted.length === 0) {
     return (
       <p className="font-mono text-sm text-muted-foreground">
         {"// No agent telemetry in current cycle."}
@@ -77,94 +171,42 @@ export function AgentActivityGrid({ agents }: { agents: DashboardAgentStatus[] |
   }
 
   return (
-    <motion.div
-      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-      variants={reduceMotion ? undefined : listVariants}
-      initial="hidden"
-      animate="show"
-    >
-      {list.map((agent) => {
-        const rate = successRate(agent);
-        const status =
-          agent.current_failed > 0 ? "degraded" : rate >= 80 ? "optimal" : "active";
+    <div className="jarvis-pipeline-panel rounded-2xl border border-[hsl(187_35%_28%/0.4)] bg-[hsl(var(--card)/0.6)] p-6 sm:p-8 lg:p-10">
+      <div className="mb-8 max-w-2xl">
+        <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[hsl(187_70%_55%)]">
+          Research pipeline
+        </p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+          How intelligence flows through your agents
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Each opportunity moves left to right in three phases. Numbers show strict
+          execution order — the same sequence the backend orchestrator uses.
+        </p>
+      </div>
 
-        return (
-          <motion.article
-            key={agent.agent}
-            variants={reduceMotion ? undefined : cardVariants}
-            whileHover={
-              reduceMotion
-                ? undefined
-                : {
-                    y: -6,
-                    scale: 1.02,
-                    boxShadow: "0 0 32px hsl(187 80% 50% / 0.15)",
-                  }
-            }
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
-            className="jarvis-agent-card group relative overflow-hidden rounded-xl border border-[hsl(187_40%_35%/0.4)] bg-card/80 p-5 backdrop-blur-sm"
-          >
-            <motion.div
-              className="jarvis-card-scan pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(187_90%_60%)] to-transparent"
-              animate={reduceMotion ? undefined : { top: ["0%", "100%", "0%"] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            />
+      <AgentPipelineSchematic agents={sorted} />
 
-            <div className="flex items-start gap-4">
-              <AgentRing value={rate} reduceMotion={!!reduceMotion} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-[hsl(187_70%_55%)]">
-                      {status}
-                    </p>
-                    <h3 className="mt-0.5 truncate text-base font-semibold text-foreground">
-                      {agent.display_name}
-                    </h3>
-                  </div>
-                  <Badge variant={agent.current_failed > 0 ? "warning" : "success"}>
-                    {agent.current_total} runs
-                  </Badge>
-                </div>
+      <div className="grid gap-12 xl:grid-cols-3 xl:gap-6">
+        {PIPELINE_PHASES.map((phase, index) => (
+          <PhaseColumn
+            key={phase.id}
+            phase={phase}
+            agents={agentsForPhase(sorted, phase.stepRange)}
+            reduceMotion={!!reduceMotion}
+            index={index}
+          />
+        ))}
+      </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-md border border-border/60 bg-muted/30 py-2">
-                    <p className="font-mono font-semibold text-[hsl(187_85%_70%)]">
-                      {agent.current_completed}
-                    </p>
-                    <p className="text-muted-foreground">Done</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 bg-muted/30 py-2">
-                    <p className="font-mono font-semibold text-muted-foreground">
-                      {agent.current_skipped}
-                    </p>
-                    <p className="text-muted-foreground">Skip</p>
-                  </div>
-                  <div className="rounded-md border border-border/60 bg-muted/30 py-2">
-                    <p className="font-mono font-semibold text-foreground/60">
-                      {agent.current_failed}
-                    </p>
-                    <p className="text-muted-foreground">Fail</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <motion.div
-              className="mt-4 h-1 overflow-hidden rounded-full bg-muted"
-              layout
-            >
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[hsl(187_60%_35%)] to-[hsl(187_90%_65%)]"
-                initial={{ width: 0 }}
-                animate={{ width: `${rate}%` }}
-                transition={{ type: "spring", stiffness: 80, damping: 18, delay: 0.15 }}
-              />
-            </motion.div>
-          </motion.article>
-        );
-      })}
-    </motion.div>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-6 border-t border-border/60 pt-6 font-mono text-[10px] uppercase tracking-widest text-muted-foreground lg:hidden">
+        <span>Discover</span>
+        <span className="text-[hsl(187_70%_55%)]">→</span>
+        <span>Validate</span>
+        <span className="text-[hsl(187_70%_55%)]">→</span>
+        <span>Strategize</span>
+      </div>
+    </div>
   );
 }
 
@@ -178,12 +220,7 @@ export function AgentCompactList({ agents }: { agents: DashboardAgentStatus[] | 
           className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm"
         >
           <span className="font-medium">{agent.display_name}</span>
-          <div className="flex gap-2">
-            <Badge variant={statusVariant("completed")}>{agent.current_completed}</Badge>
-            {agent.current_failed > 0 && (
-              <Badge variant={statusVariant("failed")}>{agent.current_failed}</Badge>
-            )}
-          </div>
+          <span className="font-mono text-xs text-muted-foreground">{agent.current_completed}</span>
         </div>
       ))}
     </div>
