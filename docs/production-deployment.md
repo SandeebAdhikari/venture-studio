@@ -59,6 +59,14 @@ Do not expose the API key to browsers. See [dashboard-auth.md](./dashboard-auth.
 
 Keep `REQUIRE_FOUNDER_APPROVAL=true`. Pipeline completes nightly; venture reports stay `draft` until `/approvals` approve. See [autonomy-policy-recommendation.md](./autonomy-policy-recommendation.md).
 
+## RC2 production package
+
+- [production-readiness-checklist.md](./production-readiness-checklist.md)
+- [production-deployment-runbook.md](./production-deployment-runbook.md)
+- [production-failure-matrix.md](./production-failure-matrix.md)
+- [rc2-validation-report.md](./rc2-validation-report.md)
+- [rc2-deployment-confidence-assessment.md](./rc2-deployment-confidence-assessment.md)
+
 ## Related
 
 - [deployment.md](./deployment.md) — architecture and Compose
