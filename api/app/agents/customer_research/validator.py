@@ -1,5 +1,9 @@
 """Validation for customer research LLM output."""
 
+from app.agents.customer_research.grounding import (
+    canonicalize_representative_complaints,
+    representative_quote_grounded,
+)
 from app.agents.customer_research.metrics import SENTIMENT_LABEL_RANGES
 from app.agents.customer_research.schemas import (
     CustomerResearchLLMOutput,
@@ -22,6 +26,7 @@ class CustomerResearchValidator:
         *,
         context: OpportunityCustomerContext,
     ) -> CustomerResearchLLMOutput:
+        output = canonicalize_representative_complaints(output, context)
         errors: list[str] = []
         max_index = len(context.complaint_evidence) - 1
 
@@ -46,6 +51,14 @@ class CustomerResearchValidator:
         if output.cares_verdict == "no" and output.pain_score > 60:
             errors.append("cares_verdict=no requires pain_score <= 60")
 
+        if context.complaint_evidence:
+            for index, complaint in enumerate(output.representative_complaints, start=1):
+                if complaint.complaint_index is None:
+                    errors.append(
+                        f"representative_complaints[{index}].complaint_index is required "
+                        "when complaint evidence is provided"
+                    )
+
         for index, complaint in enumerate(output.representative_complaints, start=1):
             if complaint.complaint_index is not None:
                 if complaint.complaint_index < 0 or complaint.complaint_index > max_index:
@@ -54,12 +67,14 @@ class CustomerResearchValidator:
                     )
                 else:
                     evidence = context.complaint_evidence[complaint.complaint_index]
-                    if complaint.verbatim_quote.lower() not in evidence.verbatim_quote.lower():
-                        if evidence.verbatim_quote.lower() not in complaint.verbatim_quote.lower():
-                            errors.append(
-                                f"representative_complaints[{index}] quote not grounded "
-                                "in complaint evidence"
-                            )
+                    if not representative_quote_grounded(
+                        generated=complaint.verbatim_quote,
+                        evidence_quote=evidence.verbatim_quote,
+                    ):
+                        errors.append(
+                            f"representative_complaints[{index}] quote not grounded "
+                            "in complaint evidence"
+                        )
 
         for index, item in enumerate(output.supporting_evidence, start=1):
             if len(item.excerpt.strip()) < 10:
