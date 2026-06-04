@@ -220,7 +220,7 @@ Entrypoint behavior matches Compose: API runs migrations; worker waits for depen
 | `OPENAI_API_KEY` | Yes | LLM agents |
 | `POSTGRES_*` | Yes | Managed PostgreSQL with pgvector |
 | `REDIS_*` | Yes | Managed Redis |
-| `WORKER_READINESS_REQUIRED` | Optional | `true` to require worker in `/health/ready` |
+| `WORKER_READINESS_REQUIRED` | **Yes in production** | `true` — enforced at startup when `ENVIRONMENT=production` |
 | `LOG_JSON` | Recommended | Structured logs |
 
 ### Alerting (production)
@@ -234,7 +234,7 @@ Entrypoint behavior matches Compose: API runs migrations; worker waits for depen
 | `ALERT_WEBHOOK_HEADERS` | Optional | JSON object for auth headers |
 | `ALERT_VALIDATION_STRICT` | Recommended | `true`; redundant with production enforcement |
 
-Misconfiguration causes bootstrap **exit 14** before Uvicorn serves traffic. See [alert-deployment.md](./alert-deployment.md) and [alert-configuration-guide.md](./alert-configuration-guide.md).
+Misconfiguration causes bootstrap **exit 14** (alerts) or **exit 15** (production profile) before Uvicorn serves traffic. See [production-deployment.md](./production-deployment.md), [alert-deployment.md](./alert-deployment.md), and [v2-final-stabilization-sprint.md](./v2-final-stabilization-sprint.md).
 
 ---
 

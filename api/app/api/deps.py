@@ -1,5 +1,6 @@
 """FastAPI dependency injection."""
 
+import secrets
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
@@ -59,7 +60,7 @@ async def verify_api_key(
     x_api_key: Annotated[str | None, Header()] = None,
 ) -> None:
     """Validate the shared API key for protected routes."""
-    if x_api_key is None or x_api_key != settings.api_key:
+    if x_api_key is None or not secrets.compare_digest(x_api_key, settings.api_key):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key",

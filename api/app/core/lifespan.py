@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from app.db.session import get_session_factory
     from app.observability.alerting.engine import init_alerting
     from app.observability.alerting.monitor import start_alert_monitor, stop_alert_monitor
+    from app.deployment.production_validation import validate_production_settings
     from app.observability.alerting.validation import (
         should_fail_on_alert_errors,
         validate_alert_config,
@@ -45,6 +46,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.error("Alert config: %s", error)
     if alert_validation.errors and should_fail_on_alert_errors(settings):
         raise RuntimeError("; ".join(alert_validation.errors))
+
+    production_validation = validate_production_settings(settings)
+    for warning in production_validation.warnings:
+        logger.warning("Production config: %s", warning)
+    for error in production_validation.errors:
+        logger.error("Production config: %s", error)
+    if production_validation.errors and settings.environment == "production":
+        raise RuntimeError("; ".join(production_validation.errors))
 
     init_alerting(settings, redis=get_redis_client())
     start_alert_monitor(get_redis_client(), get_session_factory(), settings)

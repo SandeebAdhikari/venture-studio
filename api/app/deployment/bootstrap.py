@@ -16,6 +16,7 @@ from sqlalchemy import create_engine, text
 from app.config import Settings, get_settings
 from app.db.session import close_db, get_session_factory, init_db
 from app.logging import configure_logging, get_logger
+from app.deployment.production_validation import enforce_production_settings
 from app.observability.alerting.validation import enforce_alert_config
 from app.observability.readiness import check_postgresql, check_redis
 from app.redis.client import close_redis, get_redis_client, init_redis
@@ -27,6 +28,7 @@ STARTUP_EXIT_DEPS_TIMEOUT = 11
 STARTUP_EXIT_READINESS_FAILED = 12
 STARTUP_EXIT_VERIFY_FAILED = 13
 STARTUP_EXIT_ALERT_CONFIG_INVALID = 14
+STARTUP_EXIT_PRODUCTION_CONFIG_INVALID = 15
 
 DEFAULT_STARTUP_TIMEOUT_SEC = 120
 DEFAULT_STARTUP_INTERVAL_SEC = 2.0
@@ -152,8 +154,7 @@ def run_alembic_upgrade(*, cwd: Path | None = None) -> None:
 async def verify_in_process_readiness(settings: Settings) -> None:
     """Run PostgreSQL/Redis readiness checks before the API serves traffic."""
     alert_result = enforce_alert_config(settings)
-    for warning in alert_result.warnings:
-        print(f"WARN: Alert configuration: {warning}", file=sys.stderr)
+    enforce_production_settings(settings)
 
     init_db(settings)
     init_redis(settings)
