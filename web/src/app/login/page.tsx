@@ -2,10 +2,11 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { BarChart3 } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VentureNetworkBackdrop } from "@/components/visuals/venture-network-backdrop";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,14 +44,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
+    <div className="dashboard-canvas relative flex min-h-screen items-center justify-center p-4">
+      <VentureNetworkBackdrop />
+      <Card className="glow-ring relative z-10 w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <BarChart3 className="h-6 w-6 text-primary" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-border bg-muted">
+            <LayoutGrid className="h-6 w-6 text-foreground" />
           </div>
           <CardTitle>Venture Studio Dashboard</CardTitle>
-          <p className="text-sm text-muted-foreground">Sign in to continue</p>
+          <p className="text-sm text-muted-foreground">Elegant ops in black &amp; white</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">

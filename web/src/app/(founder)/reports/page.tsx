@@ -55,7 +55,7 @@ export default function ReportsPage() {
       render: (r) => (
         <button
           type="button"
-          className="text-left font-medium text-primary hover:underline"
+          className="text-left font-medium text-foreground hover:underline"
           onClick={() => setSelectedId(r.id)}
         >
           {r.title}
@@ -99,13 +99,16 @@ export default function ReportsPage() {
         actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
       />
 
-      <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="max-w-xs">
+      <div className="filter-panel max-w-md">
+        <p className="filter-panel-label mb-3">Filters</p>
+      <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
         <option value="">All report types</option>
         <option value="venture_recommendation">Venture recommendation</option>
         <option value="top_opportunities">Top opportunities</option>
         <option value="pipeline_summary">Pipeline summary</option>
         <option value="opportunity_brief">Opportunity brief</option>
       </Select>
+      </div>
 
       {!reports.data ? (
         <Skeleton className="h-64 w-full rounded-xl" />

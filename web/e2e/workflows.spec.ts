@@ -9,6 +9,7 @@ const navTargets = [
   { link: "Reports", path: "/reports", title: "Reports", bffPath: "dashboard/reports" },
   { link: "Approvals", path: "/approvals", title: "Approvals", bffPath: "approvals" },
   { link: "Budget", path: "/budget", title: "Budget", bffPath: "budget" },
+  { link: "Agent Activity", path: "/agents", title: "Agent Activity", bffPath: "dashboard/summary" },
 ] as const;
 
 test.describe("dashboard workflows", () => {

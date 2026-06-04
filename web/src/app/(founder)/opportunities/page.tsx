@@ -133,19 +133,30 @@ export default function OpportunitiesPage() {
         actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Select value={source} onChange={(e) => setSource(e.target.value as "ranking" | "all")}>
-          <option value="ranking">Executive ranking</option>
-          <option value="all">All opportunities</option>
-        </Select>
-        <Select value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}>
-          <option value="">All review statuses</option>
-          <option value="new">New</option>
-          <option value="reviewing">Reviewing</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="archived">Archived</option>
-        </Select>
+      <div className="filter-panel">
+        <p className="filter-panel-label mb-3">Filters</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Select
+            value={source}
+            onChange={(e) => setSource(e.target.value as "ranking" | "all")}
+            className="max-w-xs"
+          >
+            <option value="ranking">Executive ranking</option>
+            <option value="all">All opportunities</option>
+          </Select>
+          <Select
+            value={reviewFilter}
+            onChange={(e) => setReviewFilter(e.target.value)}
+            className="max-w-xs"
+          >
+            <option value="">All review statuses</option>
+            <option value="new">New</option>
+            <option value="reviewing">Reviewing</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="archived">Archived</option>
+          </Select>
+        </div>
       </div>
 
       {!active.data ? (

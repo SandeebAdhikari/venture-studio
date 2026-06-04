@@ -55,6 +55,7 @@ export const config = {
     "/approvals/:path*",
     "/reports/:path*",
     "/budget/:path*",
+    "/agents",
     "/agents/:path*",
     "/opportunities/:path*",
     "/api/v1/:path*",

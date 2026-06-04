@@ -24,7 +24,7 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
         {lastUpdated && (
           <p className="mt-2 text-xs text-muted-foreground">
@@ -47,10 +47,10 @@ export function PageHeader({
 
 export function LiveIndicator({ intervalSeconds }: { intervalSeconds: number }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
       <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-foreground opacity-40" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-foreground" />
       </span>
       Live · {intervalSeconds}s
     </span>
@@ -59,7 +59,7 @@ export function LiveIndicator({ intervalSeconds }: { intervalSeconds: number }) 
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+    <div className="rounded-lg border border-destructive/40 bg-muted/30 p-6 text-center">
       <p className="text-sm text-destructive">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>
@@ -72,8 +72,8 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-border p-10 text-center">
-      <p className="font-medium">{title}</p>
+    <div className="rounded-lg border border-dashed border-border bg-muted/20 p-10 text-center">
+      <p className="font-medium text-foreground">{title}</p>
       {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
     </div>
   );

@@ -13,7 +13,7 @@ export function BudgetUtilizationBar({
   return (
     <Progress
       value={capped}
-      indicatorClassName={budgetExceeded ? "bg-destructive" : utilizationPct >= 75 ? "bg-amber-500" : undefined}
+      indicatorClassName={budgetExceeded ? "bg-muted-foreground" : undefined}
     />
   );
 }
@@ -24,10 +24,10 @@ export function BudgetWarningsList({ warnings }: { warnings: BudgetWarning[] }) 
       {warnings.map((w) => (
         <span
           key={w.threshold_pct}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+          className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
             w.triggered
-              ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-              : "bg-muted text-muted-foreground"
+              ? "border-foreground/30 bg-foreground text-background"
+              : "border-border bg-muted text-muted-foreground"
           }`}
         >
           {w.threshold_pct}% {w.triggered ? "triggered" : "ok"}
@@ -42,9 +42,9 @@ export function AgentUsageTable({ agents }: { agents: BudgetAgentUsage[] }) {
     return <p className="text-sm text-muted-foreground">No agent usage recorded today.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[520px] text-sm">
-        <thead className="bg-muted/50">
+    <div className="data-table-wrap overflow-x-auto">
+      <table className="data-table w-full min-w-[520px] text-sm">
+        <thead>
           <tr>
             <th className="px-4 py-3 text-left font-medium">Agent</th>
             <th className="px-4 py-3 text-right font-medium">Calls</th>
@@ -76,7 +76,7 @@ export function BudgetHistoryChart({ items }: { items: BudgetHistoryDay[] }) {
         return (
           <div key={day.usage_date} className="flex flex-1 flex-col items-center gap-1">
             <div
-              className={`w-full rounded-t ${day.budget_exceeded ? "bg-destructive/80" : "bg-primary/80"}`}
+              className={`w-full rounded-t ${day.budget_exceeded ? "bg-muted-foreground" : "bg-foreground/80"}`}
               style={{ height: `${height}%` }}
               title={`${day.usage_date}: ${formatUsd(day.spent_usd, 4)}`}
             />

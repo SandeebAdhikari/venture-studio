@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { AgentCompactList } from "@/components/agents/agent-activity-grid";
+import { useDashboardSession } from "@/components/layout/session-provider";
 import { LiveIndicator, PageHeader, ErrorState } from "@/components/layout/page-header";
+import { canAccessPage } from "@/lib/auth/rbac";
 import { MetricCard } from "@/components/shared/metric-card";
 import { StatusBadge } from "@/components/shared/data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +17,9 @@ import type { DashboardOpportunitiesResponse, DashboardSummaryResponse } from "@
 const POLL_INTERVAL = 15_000;
 
 export default function DashboardPage() {
+  const session = useDashboardSession();
   const summary = usePollingApi<DashboardSummaryResponse>("dashboard/summary", POLL_INTERVAL);
+  const canViewAgents = !session || canAccessPage("/agents", session.role);
   const opportunities = usePollingApi<DashboardOpportunitiesResponse>(
     `dashboard/opportunities${buildQuery({ top_n: 5 })}`,
     POLL_INTERVAL,
@@ -80,7 +84,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {summary.data.pipeline.running ? (
-                  <div className="rounded-lg border border-border p-4">
+                  <div className="rounded-lg border border-border bg-muted/20 p-4">
                     <div className="flex items-center justify-between">
                       <span className="font-medium">Running</span>
                       <StatusBadge status={summary.data.pipeline.running.status} />
@@ -101,7 +105,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 )}
-                <Link href="/pipeline" className="text-sm text-primary hover:underline">
+                <Link href="/pipeline" className="app-link text-sm">
                   View pipeline →
                 </Link>
               </CardContent>
@@ -112,10 +116,12 @@ export default function DashboardPage() {
                 <CardTitle>Agent activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <AgentCompactList agents={summary.data.agents.slice(0, 6)} />
-                <Link href="/agents" className="mt-4 inline-block text-sm text-primary hover:underline">
-                  View all agents →
-                </Link>
+                <AgentCompactList agents={(summary.data.agents ?? []).slice(0, 6)} />
+                {canViewAgents && (
+                  <Link href="/agents" className="app-link mt-4 inline-block text-sm">
+                    View all agents →
+                  </Link>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -130,8 +136,8 @@ export default function DashboardPage() {
               ) : opportunities.data.items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No ranked opportunities yet.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="data-table-wrap overflow-x-auto">
+                  <table className="data-table w-full text-sm">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="pb-2 pr-4">Rank</th>

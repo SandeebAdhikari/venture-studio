@@ -68,20 +68,25 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {filterFn && (
-          <Input
-            placeholder={filterPlaceholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="max-w-sm"
-          />
-        )}
-        {filterSlot}
-      </div>
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-muted/50">
+      {(filterFn || filterSlot) && (
+        <div className={filterSlot ? "filter-panel" : ""}>
+          {filterSlot ? <p className="filter-panel-label mb-3">Filters</p> : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {filterFn && (
+              <Input
+                placeholder={filterPlaceholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="max-w-sm bg-card"
+              />
+            )}
+            {filterSlot}
+          </div>
+        </div>
+      )}
+      <div className="data-table-wrap overflow-x-auto">
+        <table className="data-table w-full min-w-[640px] text-sm">
+          <thead>
             <tr>
               {columns.map((col) => (
                 <th
@@ -108,7 +113,7 @@ export function DataTable<T>({
               </tr>
             ) : (
               sorted.map((row) => (
-                <tr key={rowKey(row)} className="border-t border-border hover:bg-muted/30">
+                <tr key={rowKey(row)} className="border-t border-border">
                   {columns.map((col) => (
                     <td key={col.key} className={cn("px-4 py-3", col.className)}>
                       {col.render(row)}

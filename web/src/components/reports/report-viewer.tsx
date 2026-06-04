@@ -36,7 +36,7 @@ export function ReportViewer({ title, markdown, isLoading }: ReportViewerProps) 
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <article className="prose prose-sm max-w-none dark:prose-invert prose-headings:scroll-mt-20">
+        <article className="prose prose-sm max-w-none dark:prose-invert prose-headings:scroll-mt-20 prose-p:text-muted-foreground">
           <ReactMarkdown>{markdown}</ReactMarkdown>
         </article>
       </CardContent>

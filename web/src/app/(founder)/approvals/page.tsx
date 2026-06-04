@@ -43,7 +43,7 @@ export default function ApprovalsPage() {
       render: (a) => (
         <button
           type="button"
-          className={`text-left font-medium ${selected?.id === a.id ? "text-primary" : ""}`}
+          className={`text-left font-medium ${selected?.id === a.id ? "text-foreground underline" : "text-muted-foreground"}`}
           onClick={() => setSelectedId(a.id)}
         >
           {a.title}
@@ -87,19 +87,22 @@ export default function ApprovalsPage() {
         actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+      <div className="filter-panel">
+        <p className="filter-panel-label mb-3">Filters</p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="max-w-xs">
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="research_requested">Research requested</option>
         </Select>
-        <Select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
+        <Select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} className="max-w-xs">
           <option value="">All subjects</option>
           <option value="executive_ranking">Executive ranking</option>
           <option value="venture_report">Venture report</option>
         </Select>
+        </div>
       </div>
 
       {!approvals.data ? (

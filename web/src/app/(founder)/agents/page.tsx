@@ -1,55 +1,137 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { AgentActivityGrid } from "@/components/agents/agent-activity-grid";
-import { LiveIndicator, PageHeader, ErrorState } from "@/components/layout/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AgentJarvisHero } from "@/components/agents/agent-jarvis-hero";
+import { useDashboardSession } from "@/components/layout/session-provider";
+import { LiveIndicator, PageHeader, ErrorState, EmptyState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePollingApi } from "@/hooks/use-api";
+import { canAccessPage } from "@/lib/auth/rbac";
 import type { DashboardSummaryResponse } from "@/types/api";
 
 const POLL_INTERVAL = 20_000;
 
-export default function AgentsPage() {
-  const summary = usePollingApi<DashboardSummaryResponse>("dashboard/summary", POLL_INTERVAL);
+const BOOT_SEQUENCE = [
+  "Initializing research mesh…",
+  "Syncing agent telemetry…",
+  "Mapping opportunity graph…",
+  "Ready.",
+];
 
-  if (summary.error) {
-    return <ErrorState message={summary.error.message} onRetry={() => summary.mutate()} />;
+export default function AgentsPage() {
+  const router = useRouter();
+  const session = useDashboardSession();
+  const reduceMotion = useReducedMotion();
+  const summary = usePollingApi<DashboardSummaryResponse>("dashboard/summary", POLL_INTERVAL);
+  const [bootLine, setBootLine] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setBootLine((n) => (n + 1) % BOOT_SEQUENCE.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
+
+  const hasAccess = !session || canAccessPage("/agents", session.role);
+
+  useEffect(() => {
+    if (session && !canAccessPage("/agents", session.role)) {
+      router.replace("/dashboard");
+    }
+  }, [session, router]);
+
+  if (session && !hasAccess) {
+    return (
+      <EmptyState
+        title="Access restricted"
+        description="Agent Activity is available to founder and admin roles. You were returned to the dashboard."
+      />
+    );
   }
 
-  return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Agent Activity"
-        description="Research agent completion metrics from the backend dashboard API."
-        lastUpdated={summary.data?.generated_at}
-        onRefresh={() => summary.mutate()}
-        isRefreshing={summary.isValidating}
-        actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
-      />
+  if (summary.error) {
+    return (
+      <div className="agent-jarvis-page space-y-8">
+        <PageHeader title="Agent Activity" />
+        <ErrorState message={summary.error.message} onRetry={() => summary.mutate()} />
+      </div>
+    );
+  }
 
-      {!summary.data ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-xl" />
-          ))}
+  const agents = summary.data?.agents ?? [];
+  const averageCoverage = summary.data?.research?.average_agent_coverage;
+
+  return (
+    <div className="agent-jarvis-page space-y-8">
+      <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <motion.p
+            className="font-mono text-[10px] uppercase tracking-[0.4em] text-[hsl(187_75%_58%)]"
+            animate={reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Venture intelligence system
+          </motion.p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Agent Activity</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Research agent completion metrics from the backend dashboard API.
+          </p>
+          {!reduceMotion && (
+            <p className="mt-2 font-mono text-xs text-[hsl(187_60%_50%)]">
+              &gt; {BOOT_SEQUENCE[bootLine]}
+            </p>
+          )}
+          {summary.data?.generated_at && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Last updated {new Date(summary.data.generated_at).toLocaleString()}
+            </p>
+          )}
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => summary.mutate()}
+            disabled={summary.isValidating}
+            className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            Refresh
+          </button>
+          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+        </div>
+      </div>
+
+      {summary.isLoading && !summary.data ? (
+        <div className="space-y-6">
+          <Skeleton className="h-[280px] w-full rounded-xl" />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-44 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      ) : !summary.data ? (
+        <ErrorState message="Unable to load agent activity." onRetry={() => summary.mutate()} />
       ) : (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Coverage overview</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Average agent coverage across opportunities:{" "}
-              <span className="font-medium text-foreground">
-                {summary.data.research.average_agent_coverage != null
-                  ? `${Math.round(summary.data.research.average_agent_coverage * 100) / 100}`
-                  : "—"}
-              </span>
-            </CardContent>
-          </Card>
+          <AgentJarvisHero agents={agents} averageCoverage={averageCoverage} />
 
-          <AgentActivityGrid agents={summary.data.agents} />
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                Agent nodes
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-[hsl(187_50%_40%)] to-transparent" />
+            </div>
+            <AgentActivityGrid agents={agents} />
+          </motion.div>
         </>
       )}
     </div>

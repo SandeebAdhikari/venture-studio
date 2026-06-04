@@ -84,7 +84,7 @@ export default function PipelinePage() {
       ) : (
         <>
           {pipeline.data.running && (
-            <Card className="border-primary/30">
+            <Card className="border-foreground/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   Active run
@@ -125,7 +125,7 @@ export default function PipelinePage() {
               <div className="mt-4 flex gap-2">
                 <button
                   type="button"
-                  className="text-sm text-primary disabled:opacity-40"
+                  className="app-link text-sm disabled:opacity-40"
                   disabled={offset === 0}
                   onClick={() => setOffset(Math.max(0, offset - limit))}
                 >
@@ -133,7 +133,7 @@ export default function PipelinePage() {
                 </button>
                 <button
                   type="button"
-                  className="text-sm text-primary disabled:opacity-40"
+                  className="app-link text-sm disabled:opacity-40"
                   disabled={offset + limit >= total}
                   onClick={() => setOffset(offset + limit)}
                 >
