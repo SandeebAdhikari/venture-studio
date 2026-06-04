@@ -55,7 +55,7 @@ export default function AgentsPage() {
 
   if (summary.error) {
     return (
-      <div className="agent-jarvis-page space-y-8">
+      <div className="jarvis-page space-y-8">
         <PageHeader title="Agent Activity" />
         <ErrorState message={summary.error.message} onRetry={() => summary.mutate()} />
       </div>
@@ -66,7 +66,7 @@ export default function AgentsPage() {
   const averageCoverage = summary.data?.research?.average_agent_coverage;
 
   return (
-    <div className="agent-jarvis-page space-y-8">
+    <div className="jarvis-page space-y-8">
       <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <motion.p

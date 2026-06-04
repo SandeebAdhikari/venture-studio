@@ -1,147 +1,134 @@
 "use client";
 
-import { useState } from "react";
-import { PipelineStages } from "@/components/pipeline/pipeline-stages";
-import { LiveIndicator, PageHeader, ErrorState } from "@/components/layout/page-header";
-import { DataTable, StatusBadge, type Column } from "@/components/shared/data-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { PipelineJarvisActive } from "@/components/pipeline/pipeline-jarvis-active";
+import { PipelineJarvisHero } from "@/components/pipeline/pipeline-jarvis-hero";
+import { PipelineJarvisHistory } from "@/components/pipeline/pipeline-jarvis-history";
+import { PipelineJarvisStages } from "@/components/pipeline/pipeline-jarvis-stages";
+import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePollingApi } from "@/hooks/use-api";
 import { buildQuery } from "@/lib/api/client";
-import { formatDate, formatDuration } from "@/lib/utils";
-import type { DashboardPipelineResponse, DashboardPipelineRunSummary } from "@/types/api";
+import type { DashboardPipelineResponse } from "@/types/api";
 
 const POLL_INTERVAL = 10_000;
+
+const BOOT_SEQUENCE = [
+  "Connecting to orchestrator…",
+  "Loading stage graph…",
+  "Syncing run telemetry…",
+  "Pipeline console online.",
+];
 
 export default function PipelinePage() {
   const [offset, setOffset] = useState(0);
   const limit = 20;
+  const reduceMotion = useReducedMotion();
+  const [bootLine, setBootLine] = useState(0);
 
   const pipeline = usePollingApi<DashboardPipelineResponse>(
     `dashboard/pipeline${buildQuery({ limit, offset, include_stages: true })}`,
     POLL_INTERVAL,
   );
 
-  const columns: Column<DashboardPipelineRunSummary>[] = [
-    {
-      key: "status",
-      header: "Status",
-      sortable: true,
-      sortValue: (r) => r.status,
-      render: (r) => <StatusBadge status={r.status} />,
-    },
-    {
-      key: "trigger",
-      header: "Trigger",
-      sortable: true,
-      sortValue: (r) => r.trigger,
-      render: (r) => r.trigger,
-    },
-    {
-      key: "started",
-      header: "Started",
-      sortable: true,
-      sortValue: (r) => r.started_at ?? "",
-      render: (r) => formatDate(r.started_at),
-    },
-    {
-      key: "duration",
-      header: "Duration",
-      sortable: true,
-      sortValue: (r) => r.duration_ms ?? 0,
-      render: (r) => formatDuration(r.duration_ms),
-    },
-    {
-      key: "stages",
-      header: "Stages",
-      render: (r) => (
-        <span className="text-xs text-muted-foreground">
-          {r.stages_completed} ok · {r.stages_failed} failed · {r.stages_skipped} skipped
-        </span>
-      ),
-    },
-  ];
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setBootLine((n) => (n + 1) % BOOT_SEQUENCE.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
 
   if (pipeline.error) {
-    return <ErrorState message={pipeline.error.message} onRetry={() => pipeline.mutate()} />;
+    return (
+      <div className="jarvis-page space-y-8">
+        <ErrorState message={pipeline.error.message} onRetry={() => pipeline.mutate()} />
+      </div>
+    );
   }
 
   const runs = pipeline.data?.runs.items ?? [];
   const total = pipeline.data?.runs.total ?? 0;
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Pipeline"
-        description="Monitor pipeline runs and stage-level execution from the backend orchestrator."
-        onRefresh={() => pipeline.mutate()}
-        isRefreshing={pipeline.isValidating}
-        actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
-      />
+    <div className="jarvis-page space-y-8">
+      <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <motion.p
+            className="font-mono text-[10px] uppercase tracking-[0.4em] text-[hsl(187_75%_58%)]"
+            animate={reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Orchestration control
+          </motion.p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Pipeline</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Monitor pipeline runs and stage-level execution from the backend orchestrator.
+          </p>
+          {!reduceMotion && (
+            <p className="mt-2 font-mono text-xs text-[hsl(187_60%_50%)]">
+              &gt; {BOOT_SEQUENCE[bootLine]}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => pipeline.mutate()}
+            disabled={pipeline.isValidating}
+            className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            Refresh
+          </button>
+          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+        </div>
+      </div>
 
       {!pipeline.data ? (
-        <Skeleton className="h-96 w-full rounded-xl" />
+        <div className="space-y-6">
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-96 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-xl" />
+        </div>
       ) : (
         <>
-          {pipeline.data.running && (
-            <Card className="border-foreground/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Active run
-                  <StatusBadge status={pipeline.data.running.status} />
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                Started {formatDate(pipeline.data.running.started_at)}
-              </CardContent>
-            </Card>
-          )}
+          <PipelineJarvisHero data={pipeline.data} />
+
+          {pipeline.data.running && <PipelineJarvisActive run={pipeline.data.running} />}
 
           {pipeline.data.latest_detail && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Latest run stages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PipelineStages
-                  stages={pipeline.data.latest_detail.stage_runs}
-                  stageOrder={pipeline.data.stage_order}
-                />
-              </CardContent>
-            </Card>
+            <motion.section
+              className="jarvis-panel jarvis-pipeline-panel rounded-2xl border border-[hsl(187_35%_28%/0.4)] bg-[hsl(var(--card)/0.6)] p-6 sm:p-8 lg:p-10"
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="mb-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[hsl(187_75%_58%)]">
+                  Latest execution
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-foreground">Stage breakdown</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Select a stage on the filmstrip to inspect details.
+                </p>
+              </div>
+
+              <PipelineJarvisStages
+                stages={pipeline.data.latest_detail.stage_runs}
+                stageOrder={pipeline.data.stage_order}
+              />
+            </motion.section>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Run history ({total})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                data={runs}
-                columns={columns}
-                rowKey={(r) => r.id}
-                emptyMessage="No pipeline runs recorded."
-              />
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  className="app-link text-sm disabled:opacity-40"
-                  disabled={offset === 0}
-                  onClick={() => setOffset(Math.max(0, offset - limit))}
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  className="app-link text-sm disabled:opacity-40"
-                  disabled={offset + limit >= total}
-                  onClick={() => setOffset(offset + limit)}
-                >
-                  Next
-                </button>
-              </div>
-            </CardContent>
-          </Card>
+          <PipelineJarvisHistory
+            runs={runs}
+            total={total}
+            offset={offset}
+            limit={limit}
+            onPrev={() => setOffset(Math.max(0, offset - limit))}
+            onNext={() => setOffset(offset + limit)}
+          />
         </>
       )}
     </div>

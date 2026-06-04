@@ -1,170 +1,147 @@
 "use client";
 
 import Link from "next/link";
-import { AgentCompactList } from "@/components/agents/agent-activity-grid";
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { DashboardAgentStrip } from "@/components/dashboard/dashboard-agent-strip";
+import { DashboardJarvisHero } from "@/components/dashboard/dashboard-jarvis-hero";
+import { DashboardJarvisOpportunities } from "@/components/dashboard/dashboard-jarvis-opportunities";
+import { DashboardJarvisPipeline } from "@/components/dashboard/dashboard-jarvis-pipeline";
 import { useDashboardSession } from "@/components/layout/session-provider";
-import { LiveIndicator, PageHeader, ErrorState } from "@/components/layout/page-header";
+import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
 import { canAccessPage } from "@/lib/auth/rbac";
-import { MetricCard } from "@/components/shared/metric-card";
-import { StatusBadge } from "@/components/shared/data-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton, TableSkeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePollingApi } from "@/hooks/use-api";
 import { buildQuery } from "@/lib/api/client";
-import { formatDate, formatUsd } from "@/lib/utils";
 import type { DashboardOpportunitiesResponse, DashboardSummaryResponse } from "@/types/api";
 
 const POLL_INTERVAL = 15_000;
 
+const BOOT_SEQUENCE = [
+  "Loading venture studio telemetry…",
+  "Syncing pipeline orchestrator…",
+  "Indexing ranked opportunities…",
+  "Command center online.",
+];
+
 export default function DashboardPage() {
   const session = useDashboardSession();
+  const reduceMotion = useReducedMotion();
   const summary = usePollingApi<DashboardSummaryResponse>("dashboard/summary", POLL_INTERVAL);
   const canViewAgents = !session || canAccessPage("/agents", session.role);
   const opportunities = usePollingApi<DashboardOpportunitiesResponse>(
     `dashboard/opportunities${buildQuery({ top_n: 5 })}`,
     POLL_INTERVAL,
   );
+  const [bootLine, setBootLine] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setBootLine((n) => (n + 1) % BOOT_SEQUENCE.length);
+    }, 2400);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
 
   if (summary.error) {
     return (
-      <ErrorState message={summary.error.message} onRetry={() => summary.mutate()} />
+      <div className="jarvis-page space-y-8">
+        <ErrorState message={summary.error.message} onRetry={() => summary.mutate()} />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Dashboard"
-        description="Venture studio overview — metrics, rankings, and background activity."
-        lastUpdated={summary.data?.generated_at}
-        onRefresh={() => summary.mutate()}
-        isRefreshing={summary.isValidating}
-        actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
-      />
+    <div className="jarvis-page space-y-8">
+      <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <motion.p
+            className="font-mono text-[10px] uppercase tracking-[0.4em] text-[hsl(187_75%_58%)]"
+            animate={reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Venture studio command
+          </motion.p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Metrics, pipeline orchestration, agent pulse, and top-ranked opportunities.
+          </p>
+          {!reduceMotion && (
+            <p className="mt-2 font-mono text-xs text-[hsl(187_60%_50%)]">
+              &gt; {BOOT_SEQUENCE[bootLine]}
+            </p>
+          )}
+          {summary.data?.generated_at && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Last updated {new Date(summary.data.generated_at).toLocaleString()}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => summary.mutate()}
+            disabled={summary.isValidating}
+            className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            Refresh
+          </button>
+          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+        </div>
+      </div>
 
       {!summary.data ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
+        <div className="space-y-6">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+          <Skeleton className="h-72 w-full rounded-xl" />
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              title="Opportunities"
-              value={summary.data.opportunities.total}
-              subtitle={`${summary.data.research.opportunities_total} in research pipeline`}
-            />
-            <MetricCard
-              title="Complaints classified"
-              value={summary.data.classification.signals_classified}
-              subtitle={`${summary.data.collection.signals_pending} pending signals`}
-            />
-            <MetricCard
-              title="LLM spend today"
-              value={formatUsd(summary.data.classification.llm_cost_usd_total, 4)}
-              subtitle={`${summary.data.classification.llm_calls_total} calls`}
-            />
-            <MetricCard
-              title="Ranked opportunities"
-              value={summary.data.ranking.ranked_opportunity_count}
-              subtitle={
-                summary.data.ranking.version != null
-                  ? `Ranking v${summary.data.ranking.version}`
-                  : "No ranking yet"
-              }
-            />
-          </div>
+          <DashboardJarvisHero summary={summary.data} />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pipeline status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {summary.data.pipeline.running ? (
-                  <div className="rounded-lg border border-border bg-muted/20 p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Running</span>
-                      <StatusBadge status={summary.data.pipeline.running.status} />
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Started {formatDate(summary.data.pipeline.running.started_at)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No pipeline run in progress.</p>
-                )}
-                {summary.data.pipeline.latest && (
-                  <div className="rounded-lg bg-muted/30 p-4 text-sm">
-                    <p className="font-medium">Latest run</p>
-                    <p className="mt-1 text-muted-foreground">
-                      {summary.data.pipeline.latest.stages_completed} completed ·{" "}
-                      {summary.data.pipeline.latest.stages_failed} failed
-                    </p>
-                  </div>
-                )}
-                <Link href="/pipeline" className="app-link text-sm">
-                  View pipeline →
+          <motion.div
+            className="grid gap-6 lg:grid-cols-2"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25 }}
+          >
+            <DashboardJarvisPipeline pipeline={summary.data.pipeline} />
+
+            <motion.div
+              className="jarvis-panel flex h-full flex-col rounded-2xl border border-[hsl(187_35%_28%/0.4)] bg-[hsl(var(--card)/0.65)] p-6"
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22 }}
+            >
+              <div className="mb-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[hsl(187_75%_58%)]">
+                  Research mesh
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-foreground">Agent activity</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Completion pulse across active research agents.
+                </p>
+              </div>
+              <DashboardAgentStrip agents={(summary.data.agents ?? []).slice(0, 6)} />
+              {canViewAgents && (
+                <Link
+                  href="/agents"
+                  className="jarvis-link mt-4 font-mono text-xs uppercase tracking-wider text-[hsl(187_75%_60%)]"
+                >
+                  Open agent activity →
                 </Link>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Agent activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AgentCompactList agents={(summary.data.agents ?? []).slice(0, 6)} />
-                {canViewAgents && (
-                  <Link href="/agents" className="app-link mt-4 inline-block text-sm">
-                    View all agents →
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Top opportunities</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!opportunities.data ? (
-                <TableSkeleton rows={5} cols={4} />
-              ) : opportunities.data.items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No ranked opportunities yet.</p>
-              ) : (
-                <div className="data-table-wrap overflow-x-auto">
-                  <table className="data-table w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-muted-foreground">
-                        <th className="pb-2 pr-4">Rank</th>
-                        <th className="pb-2 pr-4">Title</th>
-                        <th className="pb-2 pr-4">Score</th>
-                        <th className="pb-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {opportunities.data.items.map((item) => (
-                        <tr key={item.opportunity_id} className="border-t border-border">
-                          <td className="py-2 pr-4">{item.rank ?? "—"}</td>
-                          <td className="py-2 pr-4 font-medium">{item.title}</td>
-                          <td className="py-2 pr-4">
-                            {item.final_opportunity_score ?? item.score ?? "—"}
-                          </td>
-                          <td className="py-2">
-                            <StatusBadge status={item.review_status} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               )}
-            </CardContent>
-          </Card>
+            </motion.div>
+          </motion.div>
+
+          <DashboardJarvisOpportunities
+            data={opportunities.data}
+            isLoading={!opportunities.data && !opportunities.error}
+          />
         </>
       )}
     </div>

@@ -59,7 +59,7 @@ A solo founder reviews the dashboard daily (~30 minutes), approves rankings and 
 └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────────────┬──────────────┘
        │                 │                 │                         │ REST
        └─────────────────┴─────────────────┘                         ▼
-                              ▼
+                         ▼
        ┌────────────────────────────────────────────────────────────┐
        │                    FastAPI (api/)                          │
        │  Pipeline Orchestrator · APScheduler · Observability       │
@@ -92,15 +92,15 @@ See [docs/architecture.md](docs/architecture.md) for full system design.
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS v4, SWR |
-| **Backend** | FastAPI, Python 3.12, SQLAlchemy 2.0, Pydantic |
-| **Database** | PostgreSQL 16 + pgvector |
-| **Workers** | ARQ on Redis 7 |
-| **Scheduler** | APScheduler 3.x (in-process with API) |
-| **Agent Framework** | LangGraph + OpenAI structured output |
-| **Infrastructure** | Docker Compose, GitHub Actions |
+| Layer               | Technology                                             |
+| ------------------- | ------------------------------------------------------ |
+| **Frontend**        | Next.js 15, React 19, TypeScript, Tailwind CSS v4, SWR |
+| **Backend**         | FastAPI, Python 3.12, SQLAlchemy 2.0, Pydantic         |
+| **Database**        | PostgreSQL 16 + pgvector                               |
+| **Workers**         | ARQ on Redis 7                                         |
+| **Scheduler**       | APScheduler 3.x (in-process with API)                  |
+| **Agent Framework** | LangGraph + OpenAI structured output                   |
+| **Infrastructure**  | Docker Compose, GitHub Actions                         |
 
 ---
 
@@ -248,24 +248,24 @@ agent/
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [docs/vision.md](docs/vision.md) | Product vision and principles |
-| [docs/mvp.md](docs/mvp.md) | Implemented scope and status |
-| [docs/architecture.md](docs/architecture.md) | System architecture |
-| [docs/database.md](docs/database.md) | Schema and migrations |
-| [docs/pipeline.md](docs/pipeline.md) | Pipeline stage reference |
-| [docs/pipeline-orchestration.md](docs/pipeline-orchestration.md) | Orchestrator, workers, scheduler |
-| [docs/agents.md](docs/agents.md) | LangGraph agents and engines |
-| [docs/api-overview.md](docs/api-overview.md) | REST API reference |
-| [docs/dashboard.md](docs/dashboard.md) | Founder dashboard |
-| [docs/operations.md](docs/operations.md) | Runbook |
-| [docs/deployment.md](docs/deployment.md) | Deployment guide (auto-migrations, bootstrap) |
-| [docs/observability.md](docs/observability.md) | Metrics, tracing, readiness |
-| [docs/observability-alerting.md](docs/observability-alerting.md) | Production alerting |
-| [docs/collection-hn-algolia.md](docs/collection-hn-algolia.md) | HN Algolia collector |
-| [docs/ci.md](docs/ci.md) | GitHub Actions |
-| [docs/documentation-audit.md](docs/documentation-audit.md) | Documentation accuracy audit (remediation #5) |
+| Document                                                         | Description                                   |
+| ---------------------------------------------------------------- | --------------------------------------------- |
+| [docs/vision.md](docs/vision.md)                                 | Product vision and principles                 |
+| [docs/mvp.md](docs/mvp.md)                                       | Implemented scope and status                  |
+| [docs/architecture.md](docs/architecture.md)                     | System architecture                           |
+| [docs/database.md](docs/database.md)                             | Schema and migrations                         |
+| [docs/pipeline.md](docs/pipeline.md)                             | Pipeline stage reference                      |
+| [docs/pipeline-orchestration.md](docs/pipeline-orchestration.md) | Orchestrator, workers, scheduler              |
+| [docs/agents.md](docs/agents.md)                                 | LangGraph agents and engines                  |
+| [docs/api-overview.md](docs/api-overview.md)                     | REST API reference                            |
+| [docs/dashboard.md](docs/dashboard.md)                           | Founder dashboard                             |
+| [docs/operations.md](docs/operations.md)                         | Runbook                                       |
+| [docs/deployment.md](docs/deployment.md)                         | Deployment guide (auto-migrations, bootstrap) |
+| [docs/observability.md](docs/observability.md)                   | Metrics, tracing, readiness                   |
+| [docs/observability-alerting.md](docs/observability-alerting.md) | Production alerting                           |
+| [docs/collection-hn-algolia.md](docs/collection-hn-algolia.md)   | HN Algolia collector                          |
+| [docs/ci.md](docs/ci.md)                                         | GitHub Actions                                |
+| [docs/documentation-audit.md](docs/documentation-audit.md)       | Documentation accuracy audit (remediation #5) |
 
 ---
 
