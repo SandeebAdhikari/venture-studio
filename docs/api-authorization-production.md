@@ -1,5 +1,7 @@
 # API authorization — production approach
 
+**RC4 (2026-06-04):** Full production security review — [rc4-security-report.md](./rc4-security-report.md), [rc4-threat-assessment.md](./rc4-threat-assessment.md), [rc4-authorization-recommendations.md](./rc4-authorization-recommendations.md).
+
 Current implementation (`api/app/api/deps.py`): single shared secret via `X-API-Key`, compared with `secrets.compare_digest`.
 
 ## Current model (V2)
