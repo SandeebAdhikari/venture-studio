@@ -16,6 +16,12 @@ from app.db.enums import SourceType
 from app.db.models.llm_call import LLMCall
 from app.db.models.source import Source
 from app.repositories import get_repositories
+from tests.classification.taxonomy_fixtures import ensure_other_category_seeds
+
+
+@pytest.fixture(autouse=True)
+async def _taxonomy_other_seeds(db_session: AsyncSession) -> None:
+    await ensure_other_category_seeds(db_session)
 
 
 @pytest.fixture
@@ -283,3 +289,50 @@ async def test_classify_pending_batch(
 
     assert (await repos.signals.get_by_id(signal_a)).processing_status == "classified"
     assert (await repos.signals.get_by_id(signal_b)).processing_status == "skipped"
+
+
+@pytest.mark.asyncio
+async def test_classify_signal_html_body_and_other_taxonomy(
+    db_session: AsyncSession,
+    enabled_source: Source,
+    classification_settings: Settings,
+) -> None:
+    body = (
+        "<p>I can&#x27;t keep installing <i>dependencies</i> for every new project.</p> "
+        "It wastes hours every week."
+    )
+    signal_id = await _insert_pending_signal(
+        db_session,
+        enabled_source,
+        title="Ask HN: dev environment pain",
+        body=body,
+    )
+    repos = get_repositories(db_session)
+    quote = "I can't keep installing dependencies for every new project."
+    mock = MockClassificationLLMClient(
+        [
+            ClassificationLLMOutput(
+                is_complaint=True,
+                industry="devtools",
+                customer_type="other",
+                problem_category="workflow",
+                severity_score=3,
+                summary="Developer frustrated with repeated dependency setup work.",
+                verbatim_quote=quote,
+                confidence=0.9,
+            )
+        ]
+    )
+    service = ComplaintClassificationService(repos, classification_settings, llm_client=mock)
+
+    result = await service.classify_signal(signal_id)
+
+    assert result.status == "classified"
+    assert result.complaint_id is not None
+    resolved = await repos.complaints.resolve_category_ids(
+        category_code="workflow",
+        domain_code="devtools",
+        persona_code="other",
+    )
+    assert resolved is not None
+    assert resolved[2].code == "other"

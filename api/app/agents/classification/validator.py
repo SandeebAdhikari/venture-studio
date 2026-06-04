@@ -1,6 +1,7 @@
 """Validation for LLM classification output."""
 
 from app.agents.classification.schemas import ClassificationLLMOutput
+from app.agents.classification.source_text import verbatim_quote_in_source
 from app.agents.classification.taxonomy import CUSTOMER_TYPES, INDUSTRIES, PROBLEM_CATEGORIES
 
 
@@ -32,7 +33,7 @@ class ClassificationValidator:
             quote = output.verbatim_quote.strip()
             if not quote:
                 errors.append("verbatim_quote is required for complaints")
-            elif quote not in source_text and quote.lower() not in source_text.lower():
+            elif not verbatim_quote_in_source(quote=quote, source_text=source_text):
                 errors.append("verbatim_quote must appear in source text")
 
             if len(output.summary.strip()) < 10:

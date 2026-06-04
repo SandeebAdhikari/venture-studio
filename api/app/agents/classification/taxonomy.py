@@ -53,5 +53,6 @@ def taxonomy_prompt_block() -> str:
         f"problem_category must be one of: {', '.join(sorted(PROBLEM_CATEGORIES))}\n"
         f"industry must be one of: {', '.join(sorted(INDUSTRIES))}\n"
         f"customer_type must be one of: {', '.join(sorted(CUSTOMER_TYPES))}\n"
+        "Do not use job titles outside this list (e.g. employee, employer, manager).\n"
         "severity_score must be an integer from 1 (mild) to 5 (blocker)."
     )

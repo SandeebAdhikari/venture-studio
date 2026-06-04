@@ -16,6 +16,7 @@ from app.agents.classification.schemas import (
     LLMInvocationResult,
     RawComplaintText,
 )
+from app.agents.classification.source_text import build_classification_source_text
 from app.agents.classification.validator import (
     ClassificationValidationError,
     ClassificationValidator,
@@ -255,6 +256,4 @@ class ComplaintClassificationAgent:
 
     @staticmethod
     def _source_text(title: str | None, body: str) -> str:
-        if title:
-            return f"{title}\n\n{body}"
-        return body
+        return build_classification_source_text(title=title, body=body)
