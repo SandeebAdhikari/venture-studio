@@ -292,6 +292,7 @@ class PipelineOrchestrator:
                             items_out=metrics.items_out,
                             items_failed=metrics.items_failed,
                             records_processed=metrics.records_processed,
+                            stage_metadata=metrics.metadata,
                         )
                         return stage_run
 
@@ -320,6 +321,7 @@ class PipelineOrchestrator:
                 items_out=metrics.items_out,
                 items_failed=metrics.items_failed,
                 records_processed=metrics.records_processed,
+                stage_metadata=metrics.metadata,
             )
         return stage_run
 

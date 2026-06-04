@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from app.config import Settings, get_settings
 from app.db.enums import PipelineStage
-from app.pipeline.schemas import StageExecutionResult
+from app.pipeline.schemas import StageExecutionResult, build_stage_execution_result
 from app.repositories import RepositoryContainer
 from app.schemas.pipeline import PipelineRunOptions
 
@@ -62,6 +62,7 @@ class PipelineStageExecutor:
             total_in = 0
             total_out = 0
             total_failed = 0
+            total_skipped = 0
             batches = 0
             while batches < max_batches:
                 pending = await self._repos.signals.count_pending()
@@ -71,25 +72,27 @@ class PipelineStageExecutor:
                 batch = await services.classification.classify_pending(limit=batch_size)
                 total_out += batch.classified
                 total_failed += batch.failed
+                total_skipped += batch.skipped
                 batches += 1
                 if batch.classified + batch.skipped + batch.failed == 0:
                     break
-            return StageExecutionResult(
+            return build_stage_execution_result(
                 items_in=total_in,
                 items_out=total_out,
                 items_failed=total_failed,
+                skipped=total_skipped,
                 records_processed=batches,
                 metadata={"batches": batches},
             )
 
         if stage == PipelineStage.GENERATE_OPPORTUNITIES:
             result = await services.generation.generate()
-            return StageExecutionResult(
+            return build_stage_execution_result(
                 items_in=result.patterns_found,
                 items_out=result.created,
                 items_failed=result.failed,
+                skipped=result.skipped,
                 records_processed=len(result.items),
-                metadata={"skipped": result.skipped},
             )
 
         if stage == PipelineStage.SCORE_OPPORTUNITIES:
@@ -176,10 +179,11 @@ class PipelineStageExecutor:
 
     @staticmethod
     def _agent_batch_result(result) -> StageExecutionResult:
-        return StageExecutionResult(
+        skipped = getattr(result, "skipped", 0)
+        return build_stage_execution_result(
             items_in=getattr(result, "opportunities_found", 0),
             items_out=getattr(result, "completed", 0),
             items_failed=getattr(result, "failed", 0),
+            skipped=skipped,
             records_processed=len(getattr(result, "items", [])),
-            metadata={"skipped": getattr(result, "skipped", 0)},
         )

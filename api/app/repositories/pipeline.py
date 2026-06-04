@@ -204,6 +204,7 @@ class PipelineRepository(BaseRepository[PipelineRun]):
         items_out: int = 0,
         items_failed: int = 0,
         records_processed: int = 0,
+        stage_metadata: dict[str, Any] | None = None,
     ) -> PipelineStageRun:
         finished_at = datetime.now(UTC)
         stage_run.status = PipelineStageStatus.FAILED.value
@@ -213,6 +214,8 @@ class PipelineRepository(BaseRepository[PipelineRun]):
         stage_run.items_out = items_out
         stage_run.items_failed = items_failed
         stage_run.records_processed = records_processed
+        if stage_metadata:
+            stage_run.stage_metadata = {**stage_run.stage_metadata, **stage_metadata}
         if stage_run.started_at is not None:
             stage_run.duration_ms = int((finished_at - stage_run.started_at).total_seconds() * 1000)
         await self.session.flush()
