@@ -55,7 +55,7 @@ async def test_monitor_cycle_alerts_worker_offline() -> None:
     init_alerting(settings, cooldown=InMemoryCooldownStore())
 
     redis = AsyncMock()
-    redis.llen = AsyncMock(return_value=0)
+    redis.zcard = AsyncMock(return_value=0)
 
     class EmptyAsyncIter:
         def __aiter__(self):
@@ -87,8 +87,9 @@ async def test_monitor_cycle_alerts_worker_offline() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_arq_queue_depth() -> None:
+async def test_get_arq_queue_depth_uses_zcard_on_arq_queue() -> None:
     redis = AsyncMock()
-    redis.llen = AsyncMock(return_value=7)
+    redis.zcard = AsyncMock(return_value=7)
     depth = await get_arq_queue_depth(redis, Settings(arq_queue_name="arq:queue"))
     assert depth == 7
+    redis.zcard.assert_awaited_once_with("arq:queue")

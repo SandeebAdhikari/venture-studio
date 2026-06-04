@@ -159,13 +159,17 @@ class PipelineStageExecutor:
                 generate_ranking_if_missing=False,
                 publish=True,
             )
+            ranking_run_id = report.content.executive_ranking_run_id
+            metadata: dict[str, str | int] = {
+                "report_id": str(report.report_id),
+                "generated_count": report.content.generated_count,
+            }
+            if ranking_run_id is not None:
+                metadata["ranking_run_id"] = str(ranking_run_id)
             return StageExecutionResult(
                 items_out=1,
-                records_processed=report.opportunity_count,
-                metadata={
-                    "report_id": str(report.report_id),
-                    "ranking_run_id": str(report.ranking_run_id),
-                },
+                records_processed=report.content.generated_count,
+                metadata=metadata,
             )
 
         raise ValueError(f"Unsupported pipeline stage: {stage}")

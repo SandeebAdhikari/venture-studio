@@ -29,7 +29,8 @@ _last_queue_depth: int | None = None
 
 
 async def get_arq_queue_depth(redis: Redis, settings: Settings) -> int:
-    depth = await redis.llen(settings.arq_queue_name)
+    """Return pending job count for the ARQ queue (Redis sorted set)."""
+    depth = await redis.zcard(settings.arq_queue_name)
     return int(depth or 0)
 
 

@@ -161,7 +161,7 @@ async def test_rc3_monitor_worker_offline_delivers() -> None:
     init_alerting(settings, cooldown=InMemoryCooldownStore())
 
     redis = AsyncMock()
-    redis.llen = AsyncMock(return_value=0)
+    redis.zcard = AsyncMock(return_value=0)
 
     class EmptyAsyncIter:
         def __aiter__(self):
@@ -194,7 +194,7 @@ async def test_rc3_monitor_scheduler_offline() -> None:
     engine, provider = _engine_with_recording(settings)
 
     redis = AsyncMock()
-    redis.llen = AsyncMock(return_value=0)
+    redis.zcard = AsyncMock(return_value=0)
 
     mock_scheduler = MagicMock()
     mock_scheduler.is_running = False
@@ -226,7 +226,7 @@ async def test_rc3_monitor_queue_backlog_requires_two_cycles() -> None:
     engine, provider = _engine_with_recording(settings)
 
     redis = AsyncMock()
-    redis.llen = AsyncMock(side_effect=[8, 16])
+    redis.zcard = AsyncMock(side_effect=[8, 16])
 
     with patch("app.observability.alerting.monitor.get_alert_engine", return_value=engine):
         await run_alert_monitor_cycle(
@@ -259,7 +259,7 @@ async def test_rc3_monitor_pipeline_stall() -> None:
     engine, provider = _engine_with_recording(settings)
 
     redis = AsyncMock()
-    redis.llen = AsyncMock(return_value=0)
+    redis.zcard = AsyncMock(return_value=0)
 
     mock_repos = MagicMock()
     mock_repos.pipelines.get_running = AsyncMock(return_value=running)

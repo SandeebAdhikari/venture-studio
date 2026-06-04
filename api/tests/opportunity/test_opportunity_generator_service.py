@@ -10,6 +10,10 @@ from app.agents.opportunity.mock_client import MockOpportunityLLMClient
 from app.agents.opportunity.schemas import OpportunityLLMOutput
 from app.agents.opportunity.service import OpportunityGeneratorService
 from app.config import Settings
+from app.db.enums import PipelineStage
+from app.logging import configure_logging
+from app.pipeline.executor import PipelineStageExecutor
+from app.services.container import ServiceContainer
 from app.db.enums import CategoryKind, SourceType
 from app.db.models.category import Category
 from app.db.models.complaint import Complaint
@@ -243,3 +247,42 @@ async def test_generate_retries_malformed_response(
 
     total_scores = await db_session.scalar(select(func.count()).select_from(OpportunityScore))
     assert total_scores == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_completes_with_configured_json_logging(
+    db_session: AsyncSession,
+    generation_settings: Settings,
+) -> None:
+    """Regression: batch-complete log must not use reserved LogRecord key 'created'."""
+    configure_logging(generation_settings.model_copy(update={"log_json": True, "log_level": "INFO"}))
+
+    repos = get_repositories(db_session)
+    service = OpportunityGeneratorService(repos, generation_settings, llm_client=MockOpportunityLLMClient([]))
+
+    result = await service.generate(limit=50)
+
+    assert result.created == 0
+    assert result.failed == 0
+
+
+@pytest.mark.asyncio
+async def test_pipeline_generate_opportunities_stage_completes_with_json_logging(
+    db_session: AsyncSession,
+    generation_settings: Settings,
+) -> None:
+    """Regression: GENERATE_OPPORTUNITIES must complete when app logging is configured."""
+    configure_logging(generation_settings.model_copy(update={"log_json": True, "log_level": "INFO"}))
+
+    repos = get_repositories(db_session)
+    services = ServiceContainer(repos)
+    services.generation = OpportunityGeneratorService(
+        repos, generation_settings, llm_client=MockOpportunityLLMClient([]),
+    )
+    executor = PipelineStageExecutor(repos, services, generation_settings)
+
+    stage_result = await executor.execute(PipelineStage.GENERATE_OPPORTUNITIES)
+
+    assert stage_result.failed is False
+    assert stage_result.items_out == 0
+    assert stage_result.items_failed == 0

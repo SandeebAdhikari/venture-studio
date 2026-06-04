@@ -102,7 +102,7 @@ class OpportunityGeneratorService:
             "Opportunity generation batch complete",
             extra={
                 "patterns_found": batch_result.patterns_found,
-                "created": batch_result.created,
+                "opportunities_created": batch_result.created,
                 "skipped": batch_result.skipped,
                 "failed": batch_result.failed,
             },

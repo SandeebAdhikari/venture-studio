@@ -24,7 +24,7 @@ class LoggingAlertProvider:
                 "alert_type": alert.alert_type.value,
                 "severity": alert.severity.value,
                 "title": alert.title,
-                "message": alert.message,
+                "alert_message": alert.message,
                 "dedup_key": alert.dedup_key,
                 **alert.context,
             },
