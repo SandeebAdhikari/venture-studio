@@ -1,0 +1,56 @@
+{
+  "captured_at": "2026-06-04T14:31:09Z",
+  "pipeline_run_id": "a6a0bc5a-91a1-4d13-9763-96412df13e84",
+  "status": "partial",
+  "wall_seconds": 334.9,
+  "stages_completed": 6,
+  "stages_failed": 1,
+  "stages_skipped": 7,
+  "request_options": {
+    "discovery_validation_mode": true,
+    "stop_on_failure": true,
+    "founder_profile_id": "c52e20d1-a86f-4531-a807-804718c99088",
+    "force": true
+  },
+  "preflight_manual": { "passed": true, "errors": [] },
+  "api_caveat": "Live OpenAPI PipelineRunOptions lacks discovery_validation_mode; config_snapshot did not record it. Restart API from current codebase before claiming full validation-mode enforcement.",
+  "compare_baseline_run_id": "bc69e77a-43dd-4888-b6b2-08b672cdb8b2",
+  "metrics": {
+    "collection": {
+      "signals": 89,
+      "duplicates": 0,
+      "sources": [{ "name": "production-hn-saas", "type": "hn_algolia", "count": 89 }]
+    },
+    "classification": {
+      "complaints": 29,
+      "skipped": 44,
+      "failed": 16,
+      "failure_breakdown": { "verbatim_quote": 16 }
+    },
+    "patterns": {
+      "patterns_detected": 3,
+      "distribution": [
+        { "topic": "User Expresses Frustration", "complaints": 17 },
+        { "topic": "User Frustrated", "complaints": 7 },
+        { "topic": "User Feels", "complaints": 3 }
+      ],
+      "clustered": 27,
+      "unclustered": 2
+    },
+    "opportunities": {
+      "generated": 1,
+      "generation_failures": 2,
+      "title": "Streamlined Developer Workflow Management",
+      "llm_model": "gpt-4o-mini",
+      "linked_complaints": 17
+    },
+    "research": {
+      "market_research": 1,
+      "competitor_analysis": 1,
+      "customer_research": 0,
+      "customer_research_failure": "representative_complaints quote not grounded in complaint evidence (indices 2, 3)"
+    },
+    "ranking": { "runs": 0, "lineage_verified": false },
+    "report": { "venture_reports": 0, "lineage_verified": false }
+  }
+}
