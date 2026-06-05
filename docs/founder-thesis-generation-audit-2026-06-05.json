@@ -1,0 +1,246 @@
+{
+  "experiment": "founder_thesis_generation_audit",
+  "generated_at": "2026-06-05T21:59:21.699902+00:00",
+  "corpus": "stripe_billing",
+  "patterns": [
+    {
+      "theme_id": "R1",
+      "label": "Processor Access",
+      "pattern": {
+        "topic": "Payment Processor \u2014 Accept Payments",
+        "anchor_phrase": "payment_processor|accept_payments",
+        "complaint_ids": [
+          "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+          "c80adb68-44b5-49e6-b47f-be8982d9a054",
+          "a4d30dbe-dbee-4762-b576-c4c520ed1d17",
+          "7e1446aa-d438-4460-bcad-d5f9ccaee94f"
+        ],
+        "domain_code": "fintech",
+        "category_code": "pricing",
+        "dominant_persona_code": "founder",
+        "complaint_count": 4,
+        "avg_severity": 3.25,
+        "pattern_source": "founder_signal_clustering",
+        "founder_grouping_variant": "B",
+        "business_function_code": "payment_processor",
+        "jtbd_code": "accept_payments",
+        "consequence_code": null
+      },
+      "evidence": [
+        {
+          "id": "191e82f8",
+          "summary": "The user expresses frustration about being removed from Stripe and seeks alternative SaaS billing options.",
+          "quote": "I just got kicked off Stripe; classified as high risk. Not really interested in trying to salvage this. Where else can I go for SaaS billing?",
+          "severity": 4,
+          "domain_code": "saas_b2b",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe"
+          ]
+        },
+        {
+          "id": "c80adb68",
+          "summary": "The user is seeking alternatives to Stripe for payment processing in the EU due to high upfront costs. They express frustration with the current options available.",
+          "quote": "the up front costs are relatively high.",
+          "severity": 3,
+          "domain_code": "fintech",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe",
+            "PayPal"
+          ]
+        },
+        {
+          "id": "a4d30dbe",
+          "summary": "The user is facing challenges with payment processing options in South Africa, particularly regarding foreign currency transactions and high fees from alternative processors.",
+          "quote": "Unfortunately Stripe and Braintree isn&#x27;t available where I live (South Africa), making accepting payments (subscriptions) in an international market a bit more difficult.",
+          "severity": 3,
+          "domain_code": "fintech",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe",
+            "Braintree",
+            "Paddle",
+            "PayPal"
+          ]
+        },
+        {
+          "id": "7e1446aa",
+          "summary": "The user is seeking a credit card processing solution that meets specific criteria for their web app but is struggling to find options that fit their budget and requirements.",
+          "quote": "I'm trying to find a credit card processor that supports recurring billing or has a 'credit card vault' where they store the cards so I don't need to worry about PCI compliance.",
+          "severity": 3,
+          "domain_code": "fintech",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Paypal",
+            "Stripe"
+          ]
+        }
+      ],
+      "generation_status": "created",
+      "skip_reason": null,
+      "error": null,
+      "validation_errors": null,
+      "attempts": 1,
+      "output": {
+        "title": "Alternative Payment Processing Solutions for High-Risk Founders",
+        "problem_statement": "Many founders are facing challenges with existing payment processors like Stripe due to high-risk classifications or high upfront costs. This creates a demand for alternative payment processing solutions that cater specifically to their needs, especially in regions with limited options.",
+        "explanation": "The evidence shows a clear pattern of founders struggling with payment processing due to high-risk classifications and costs. There is a significant opportunity to create a payment processing solution that is more accessible and affordable for these users, especially in underserved regions.",
+        "confidence_score": 0.8,
+        "target_user": "Founders of SaaS businesses",
+        "frequency_signal": "The complaints indicate a recurring issue with payment processing, particularly regarding high-risk classifications and the need for affordable alternatives, as evidenced by multiple users expressing frustration with Stripe and seeking other options.",
+        "existing_alternatives": "Stripe, PayPal, Braintree, Paddle",
+        "gap": "Current solutions do not adequately address the needs of high-risk founders or those in regions with limited payment processing options, particularly regarding affordability and support for international transactions."
+      }
+    },
+    {
+      "theme_id": "R2",
+      "label": "Fraud / Disputes",
+      "pattern": {
+        "topic": "Fraud Prevention \u2014 Prevent Fraud",
+        "anchor_phrase": "fraud_prevention|prevent_fraud",
+        "complaint_ids": [
+          "948e6176-2c11-4006-b010-98bcc312c273",
+          "57577e0b-2b86-4176-8e59-042361a3b77d",
+          "df278195-acc0-45d8-9b10-a94bf92d23f4"
+        ],
+        "domain_code": "saas_b2b",
+        "category_code": "security",
+        "dominant_persona_code": "founder",
+        "complaint_count": 3,
+        "avg_severity": 3.6666666666666665,
+        "pattern_source": "founder_signal_clustering",
+        "founder_grouping_variant": "B",
+        "business_function_code": "fraud_prevention",
+        "jtbd_code": "prevent_fraud",
+        "consequence_code": null
+      },
+      "evidence": [
+        {
+          "id": "948e6176",
+          "summary": "The user expresses frustration over unexpected chargeback fees imposed by Stripe, despite having a low chargeback rate and clear cancellation policies. They feel unfairly treated by both Stripe and the bank in the chargeback process.",
+          "quote": "Why are we getting fscked sideways by Stripe, BoA & the customer ?",
+          "severity": 4,
+          "domain_code": "saas_b2b",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe"
+          ]
+        },
+        {
+          "id": "57577e0b",
+          "summary": "The user is seeking advice on preventing credit card fraud on their online selling platform, indicating a significant security concern.",
+          "quote": "Any suggestions ?",
+          "severity": 4,
+          "domain_code": "ecommerce",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe"
+          ]
+        },
+        {
+          "id": "df278195",
+          "summary": "The user is seeking advice on reducing fraud in online payments while using Stripe for subscriptions. They are concerned about the risks associated with collecting minimal payment information.",
+          "quote": "I am concerned that the fewer details collected in the payment form, the greater the chance of a given transaction being fraudulent.",
+          "severity": 3,
+          "domain_code": "saas_b2c",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe"
+          ]
+        }
+      ],
+      "generation_status": "created",
+      "skip_reason": null,
+      "error": null,
+      "validation_errors": null,
+      "attempts": 1,
+      "output": {
+        "title": "Fraud Prevention Solutions for SaaS Businesses",
+        "problem_statement": "SaaS founders are facing significant challenges with fraud prevention, particularly related to chargebacks and credit card fraud. Current solutions like Stripe are perceived as inadequate, leading to frustration and financial losses.",
+        "explanation": "The evidence shows that SaaS founders are actively seeking better ways to prevent fraud and manage chargebacks, suggesting a clear opportunity for a dedicated fraud prevention solution tailored to their needs.",
+        "confidence_score": 0.8,
+        "target_user": "SaaS founders",
+        "frequency_signal": "Three complaints highlight recurring issues with chargeback fees and fraud concerns, indicating a strong need for better fraud prevention solutions.",
+        "existing_alternatives": "Stripe",
+        "gap": "Current fraud prevention measures are not effectively addressing the concerns of SaaS founders, particularly in managing chargebacks and minimizing fraud risk with limited customer data."
+      }
+    },
+    {
+      "theme_id": "R3",
+      "label": "Billing Model Infrastructure",
+      "pattern": {
+        "topic": "Billing Model Infrastructure",
+        "anchor_phrase": "billing_model_infrastructure",
+        "complaint_ids": [
+          "4281360c-288c-43b9-a70e-48ba450f271d",
+          "988dadac-1460-4606-bcc3-505b7b7c3981",
+          "4e3de199-4f95-4f7a-bcb6-c0ab1d1e83c4"
+        ],
+        "domain_code": "saas_b2b",
+        "category_code": "missing_feature",
+        "dominant_persona_code": "developer",
+        "complaint_count": 3,
+        "avg_severity": 3.3333333333333335,
+        "pattern_source": "founder_signal_clustering",
+        "founder_grouping_variant": "B",
+        "business_function_code": "billing_operations",
+        "jtbd_code": "automate_billing",
+        "consequence_code": null
+      },
+      "evidence": [
+        {
+          "id": "4281360c",
+          "summary": "The user is facing challenges with Stripe's inability to track usage-based billing per subscription, which is crucial for their business model. They are exploring alternatives but are encountering difficulties.",
+          "quote": "Stripe does not allow me to track usage ( such as how much GB of data is used ) per subscription.",
+          "severity": 4,
+          "domain_code": "saas_b2b",
+          "persona_code": "founder",
+          "product_mentions": [
+            "Stripe",
+            "Pinggy.io",
+            "KillBill"
+          ]
+        },
+        {
+          "id": "988dadac",
+          "summary": "The user expresses frustration over the lack of subscription management products that support various payment methods, particularly in regions with limited credit card usage.",
+          "quote": "Why there isn&#x27;t any subscription management product which supports all of these gateways?",
+          "severity": 3,
+          "domain_code": "saas_b2b",
+          "persona_code": "developer",
+          "product_mentions": []
+        },
+        {
+          "id": "4e3de199",
+          "summary": "The user is seeking a simpler method to monetize an API with Stripe, expressing frustration with existing complex solutions.",
+          "quote": "I want a simple solution to manage API keys, users and billing.",
+          "severity": 3,
+          "domain_code": "devtools",
+          "persona_code": "developer",
+          "product_mentions": [
+            "Stripe",
+            "Mashery",
+            "Azure",
+            "Apigee"
+          ]
+        }
+      ],
+      "generation_status": "created",
+      "skip_reason": null,
+      "error": null,
+      "validation_errors": null,
+      "attempts": 1,
+      "output": {
+        "title": "Enhanced Subscription Management for Usage-Based Billing",
+        "problem_statement": "There is a significant gap in subscription management solutions that can effectively handle usage-based billing and support diverse payment methods. Developers and founders are struggling with existing tools that do not meet their specific needs for tracking usage and managing subscriptions efficiently.",
+        "explanation": "The evidence shows that multiple users are frustrated with the limitations of existing billing solutions, particularly in tracking usage and managing subscriptions across different payment gateways. This suggests a clear opportunity to develop a more flexible and user-friendly subscription management tool.",
+        "confidence_score": 0.8,
+        "target_user": "Developers and Founders in SaaS B2B",
+        "frequency_signal": "The complaints highlight recurring issues with existing billing solutions, particularly around usage tracking and payment method diversity, indicating a consistent demand for improved features.",
+        "existing_alternatives": "Stripe, Pinggy.io, KillBill, Mashery, Azure, Apigee",
+        "gap": "Current solutions lack the ability to track usage-based billing per subscription and do not adequately support various payment methods, especially in regions with limited credit card access."
+      }
+    }
+  ]
+}

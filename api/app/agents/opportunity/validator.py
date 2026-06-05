@@ -1,8 +1,19 @@
 """Validation for synthesized opportunity briefs."""
 
+from __future__ import annotations
+
 import re
+from typing import Literal
 
 from app.agents.opportunity.schemas import ComplaintEvidence, OpportunityLLMOutput
+
+PatternSource = Literal[
+    "phrase_clustering",
+    "token_clustering",
+    "founder_signal_clustering",
+    "taxonomy_fallback",
+]
+FOUNDER_SIGNAL_PATTERN_SOURCE: PatternSource = "founder_signal_clustering"
 
 COMMON_WORDS = frozenset(
     {
@@ -49,6 +60,7 @@ class OpportunityValidator:
         anchor_phrase: str | None = None,
         domain_code: str | None = None,
         category_code: str | None = None,
+        pattern_source: PatternSource | None = None,
     ) -> OpportunityLLMOutput:
         errors: list[str] = []
 
@@ -83,7 +95,7 @@ class OpportunityValidator:
                 continue
             errors.append(f"existing_alternatives mentions ungrounded product: {product}")
 
-        if not self._topic_reflected_in_output(
+        if pattern_source != FOUNDER_SIGNAL_PATTERN_SOURCE and not self._topic_reflected_in_output(
             topic=topic,
             anchor_phrase=anchor_phrase,
             domain_code=domain_code,

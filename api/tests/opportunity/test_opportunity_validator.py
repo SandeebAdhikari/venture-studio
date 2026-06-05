@@ -105,6 +105,46 @@ def test_validator_accepts_topic_via_taxonomy_when_display_topic_cosmetic() -> N
     assert validated.title.startswith("Workflow")
 
 
+def test_validator_bypasses_topic_reflection_for_founder_signal_patterns() -> None:
+    evidence = [
+        _evidence(
+            summary="The user seeks affordable payment processing alternatives in the EU.",
+            products=["Stripe", "PayPal"],
+        )
+    ]
+    validated = OpportunityValidator().validate(
+        _output(
+            title="Affordable Payment Processing for Founders",
+            problem_statement=(
+                "Founders struggle with high upfront payment processing costs and limited "
+                "regional processor options for recurring billing."
+            ),
+            existing_alternatives="Stripe and PayPal appear in the evidence.",
+            explanation="Recurring processor access complaints indicate a focused SaaS wedge.",
+        ),
+        evidence=evidence,
+        topic="Payment Processor — Accept Payments",
+        anchor_phrase="payment_processor|accept_payments",
+        domain_code="fintech",
+        category_code="pricing",
+        pattern_source="founder_signal_clustering",
+    )
+    assert validated.title == "Affordable Payment Processing for Founders"
+
+
+def test_validator_still_enforces_product_grounding_for_founder_signal_patterns() -> None:
+    evidence = [_evidence(summary="Payment processing costs are too high.", products=["Stripe"])]
+    with pytest.raises(OpportunityValidationError) as exc:
+        OpportunityValidator().validate(
+            _output(existing_alternatives="Teams rely on MegaCorp Billing Pro."),
+            evidence=evidence,
+            topic="Payment Processor — Accept Payments",
+            anchor_phrase="payment_processor|accept_payments",
+            pattern_source="founder_signal_clustering",
+        )
+    assert any("ungrounded product" in err for err in exc.value.errors)
+
+
 def test_validator_rejects_cosmetic_topic_without_taxonomy_or_anchor_match() -> None:
     evidence = [_evidence(summary="Unrelated product pricing complaints only.")]
     with pytest.raises(OpportunityValidationError) as exc:

@@ -1,0 +1,67 @@
+{
+  "experiment": "founder_signal_opportunity_persistence_validation",
+  "generated_at": "2026-06-05T20:07:22.767086+00:00",
+  "lane_relevant_complaints": 15,
+  "patterns": {
+    "phrase": 0,
+    "token": 0,
+    "founder_signal": 2,
+    "taxonomy_fallback_direct": 0,
+    "resolved_for_generation": 2,
+    "founder_signal_details": [
+      {
+        "cluster_key": "payment_processor|accept_payments",
+        "topic": "Payment Processor \u2014 Accept Payments",
+        "complaint_count": 4,
+        "complaint_ids": [
+          "c80adb68-44b5-49e6-b47f-be8982d9a054",
+          "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+          "7e1446aa-d438-4460-bcad-d5f9ccaee94f",
+          "a4d30dbe-dbee-4762-b576-c4c520ed1d17"
+        ]
+      },
+      {
+        "cluster_key": "subscription_management|manage_subscriptions",
+        "topic": "Subscription Management \u2014 Manage Subscriptions",
+        "complaint_count": 3,
+        "complaint_ids": [
+          "988dadac-1460-4606-bcc3-505b7b7c3981",
+          "1aac2925-1030-4896-96e3-0a50f485c8c3",
+          "4281360c-288c-43b9-a70e-48ba450f271d"
+        ]
+      }
+    ]
+  },
+  "regression_checks": {
+    "phrase_unchanged_zero": true,
+    "token_unchanged_zero": true,
+    "taxonomy_fallback_unchanged_zero": true
+  },
+  "opportunities_before": 0,
+  "opportunities_after": 2,
+  "opportunities_created_this_run": 2,
+  "generation_results": [
+    {
+      "cluster_key": "payment_processor|accept_payments",
+      "topic": "Payment Processor \u2014 Accept Payments",
+      "pattern_source": "founder_signal_clustering",
+      "complaint_count": 4,
+      "status": "created",
+      "skip_reason": null,
+      "error": null,
+      "opportunity_id": "132c0698-b2d0-44eb-a9bc-a9627bdcb9c5",
+      "draft_title": "Affordable and Accessible Payment Processing for Founders"
+    },
+    {
+      "cluster_key": "subscription_management|manage_subscriptions",
+      "topic": "Subscription Management \u2014 Manage Subscriptions",
+      "pattern_source": "founder_signal_clustering",
+      "complaint_count": 3,
+      "status": "created",
+      "skip_reason": null,
+      "error": null,
+      "opportunity_id": "f159d6e0-8219-4a76-b636-b081dc2fe4e9",
+      "draft_title": "Comprehensive Subscription Management for Diverse Payment Methods"
+    }
+  ]
+}

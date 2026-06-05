@@ -30,6 +30,89 @@ class OpportunityLLMClient(Protocol):
     ) -> LLMInvocationResult: ...
 
 
+def _format_founder_signal_value(code: str | None) -> str:
+    return code if code else "unknown"
+
+
+def _format_pattern_founder_signals(pattern: ComplaintPattern) -> str:
+    return (
+        "Founder signals (cluster context — supporting hints only; "
+        "verbatim quotes and summaries take precedence if they disagree):\n"
+        f"Pattern business_function: {_format_founder_signal_value(pattern.business_function_code)}\n"
+        f"Pattern jtbd: {_format_founder_signal_value(pattern.jtbd_code)}\n"
+        f"Pattern consequence: {_format_founder_signal_value(pattern.consequence_code)}"
+    )
+
+
+def build_opportunity_user_prompt(
+    *,
+    pattern: ComplaintPattern,
+    evidence: list[ComplaintEvidence],
+    attempt: int,
+    validation_errors: list[str] | None = None,
+) -> str:
+    """Build the user prompt for opportunity synthesis (also used in tests)."""
+    evidence_block = OpenAIOpportunityClient._format_evidence(evidence)
+    pattern_signals = _format_pattern_founder_signals(pattern)
+    retry_block = ""
+    if validation_errors:
+        retry_block = (
+            "\n\nPrevious validation errors (fix these in your response):\n"
+            + "\n".join(f"- {err}" for err in validation_errors)
+        )
+
+    return (
+        f"Attempt: {attempt}\n"
+        f"Topic pattern: {pattern.topic}\n"
+        f"Anchor phrase: {pattern.anchor_phrase}\n"
+        f"Complaint count: {pattern.complaint_count}\n"
+        f"Average severity: {pattern.avg_severity:.1f}\n"
+        f"Dominant domain: {pattern.domain_code}\n"
+        f"Dominant category: {pattern.category_code}\n"
+        f"Dominant persona: {pattern.dominant_persona_code}\n"
+        f"{pattern_signals}\n\n"
+        f"Evidence:\n{evidence_block}\n\n"
+        "Founder signal codes on each complaint are supporting classification hints — "
+        "not mandatory labels. Ground the opportunity in quotes and summaries first.\n\n"
+        "Generate a specific SaaS wedge opportunity title and brief. "
+        "If no products appear in evidence, write "
+        "'No named products in evidence' for existing_alternatives "
+        "(do not use the word None as a product name)."
+        f"{retry_block}"
+    )
+
+
+def build_opportunity_synthesis_messages(
+    *,
+    pattern: ComplaintPattern,
+    evidence: list[ComplaintEvidence],
+    attempt: int,
+    validation_errors: list[str] | None = None,
+) -> list[dict[str, str]]:
+    """Return chat messages sent to the model for opportunity synthesis."""
+    system_prompt = (
+        "You synthesize software business opportunities from recurring complaint patterns. "
+        "Use only evidence from the provided complaints. "
+        "Founder signal codes (business_function, jtbd, consequence) are supporting hints "
+        "from clustering — prefer verbatim quotes and summaries when they conflict. "
+        "Do not invent market size, funding data, or competitor names "
+        "not present in the evidence. "
+        "No market research — evidence only."
+    )
+    return [
+        {"role": "system", "content": system_prompt},
+        {
+            "role": "user",
+            "content": build_opportunity_user_prompt(
+                pattern=pattern,
+                evidence=evidence,
+                attempt=attempt,
+                validation_errors=validation_errors,
+            ),
+        },
+    ]
+
+
 def _estimate_cost_usd(model: str, prompt_tokens: int, completion_tokens: int) -> float:
     if "gpt-4o-mini" in model:
         return (prompt_tokens * 0.15 + completion_tokens * 0.60) / 1_000_000
@@ -56,20 +139,12 @@ class OpenAIOpportunityClient:
         validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult:
         started = time.perf_counter()
-        system_prompt = (
-            "You synthesize software business opportunities from recurring complaint patterns. "
-            "Use only evidence from the provided complaints. "
-            "Do not invent market size, funding data, or competitor names "
-            "not present in the evidence. "
-            "No market research — evidence only."
+        messages = build_opportunity_synthesis_messages(
+            pattern=pattern,
+            evidence=evidence,
+            attempt=attempt,
+            validation_errors=validation_errors,
         )
-        evidence_block = self._format_evidence(evidence)
-        retry_block = ""
-        if validation_errors:
-            retry_block = (
-                "\n\nPrevious validation errors (fix these in your response):\n"
-                + "\n".join(f"- {err}" for err in validation_errors)
-            )
 
         try:
             response = await self._client.chat.completions.create(
@@ -83,28 +158,7 @@ class OpenAIOpportunityClient:
                         "schema": openai_strict_json_schema(OpportunityLLMOutput),
                     },
                 },
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Attempt: {attempt}\n"
-                            f"Topic pattern: {pattern.topic}\n"
-                            f"Anchor phrase: {pattern.anchor_phrase}\n"
-                            f"Complaint count: {pattern.complaint_count}\n"
-                            f"Average severity: {pattern.avg_severity:.1f}\n"
-                            f"Dominant domain: {pattern.domain_code}\n"
-                            f"Dominant category: {pattern.category_code}\n"
-                            f"Dominant persona: {pattern.dominant_persona_code}\n\n"
-                            f"Evidence:\n{evidence_block}\n\n"
-                            "Generate a specific SaaS wedge opportunity title and brief. "
-                            "If no products appear in evidence, write "
-                            "'No named products in evidence' for existing_alternatives "
-                            "(do not use the word None as a product name)."
-                            f"{retry_block}"
-                        ),
-                    },
-                ],
+                messages=messages,
             )
             latency_ms = int((time.perf_counter() - started) * 1000)
             raw_text = response.choices[0].message.content or ""
@@ -159,7 +213,12 @@ class OpenAIOpportunityClient:
             lines.append(
                 f"{index}. summary={item.summary!r} "
                 f"severity={item.severity} persona={item.persona_code} "
-                f"products={products} quote={item.verbatim_quote!r}"
+                f"products={products} "
+                f"founder_signals("
+                f"business_function={_format_founder_signal_value(item.business_function_code)}, "
+                f"jtbd={_format_founder_signal_value(item.jtbd_code)}, "
+                f"consequence={_format_founder_signal_value(item.consequence_code)}) "
+                f"quote={item.verbatim_quote!r}"
             )
         if len(evidence) > 20:
             lines.append(f"... and {len(evidence) - 20} more complaints")

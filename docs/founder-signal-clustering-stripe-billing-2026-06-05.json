@@ -1,6 +1,6 @@
 {
   "experiment": "founder_signal_clustering_stripe_billing",
-  "generated_at": "2026-06-05T19:43:20.079317+00:00",
+  "generated_at": "2026-06-05T20:07:15.190707+00:00",
   "corpus": "stripe_billing_corpus_validation",
   "lane_relevant_complaints": 15,
   "baseline_passes": {
@@ -65,8 +65,8 @@
           "label": "Billing model implementation",
           "manual_size": 3,
           "best_pattern_index": 1,
-          "jaccard": 0.2,
-          "recall": 0.333,
+          "jaccard": 0.5,
+          "recall": 0.667,
           "recovered": false
         }
       ],
@@ -145,8 +145,8 @@
           "label": "Billing model implementation",
           "manual_size": 3,
           "best_pattern_index": 1,
-          "jaccard": 0.2,
-          "recall": 0.333,
+          "jaccard": 0.5,
+          "recall": 0.667,
           "recovered": false
         }
       ],

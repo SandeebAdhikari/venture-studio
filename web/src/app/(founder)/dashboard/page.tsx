@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { DashboardAgentStrip } from "@/components/dashboard/dashboard-agent-strip";
+import { DashboardJarvisAgentActivity } from "@/components/dashboard/dashboard-jarvis-agent-activity";
 import { DashboardJarvisHero } from "@/components/dashboard/dashboard-jarvis-hero";
 import { DashboardJarvisMetrics } from "@/components/dashboard/dashboard-jarvis-metrics";
 import { DashboardJarvisOpportunities } from "@/components/dashboard/dashboard-jarvis-opportunities";
@@ -13,7 +12,10 @@ import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
 import { canAccessPage } from "@/lib/auth/rbac";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePollingApi } from "@/hooks/use-api";
+import { usePipelineLive } from "@/hooks/use-pipeline-live";
+import { computeAgentStepSync, agentKeyForStep } from "@/lib/agents/agent-step-sync";
 import { buildQuery } from "@/lib/api/client";
+import { resolveDashboardAgents } from "@/lib/dashboard/agents";
 import type { DashboardOpportunitiesResponse, DashboardSummaryResponse } from "@/types/api";
 
 const POLL_INTERVAL = 15_000;
@@ -34,7 +36,36 @@ export default function DashboardPage() {
     `dashboard/opportunities${buildQuery({ top_n: 5 })}`,
     POLL_INTERVAL,
   );
+  const live = usePipelineLive(!!summary.data);
+  const [pipelineExpanded, setPipelineExpanded] = useState(false);
+  const [agentsExpanded, setAgentsExpanded] = useState(false);
   const [bootLine, setBootLine] = useState(0);
+
+  const agents = useMemo(
+    () => (summary.data ? resolveDashboardAgents(summary.data) : []),
+    [summary.data],
+  );
+
+  const stepSync = useMemo(
+    () =>
+      summary.data
+        ? computeAgentStepSync(
+            live.pipeline?.latest_detail?.stage_runs,
+            live.pipeline?.stage_order ?? [],
+            agents,
+            live.isLive,
+            live.activeAgentKey,
+          )
+        : null,
+    [
+      summary.data,
+      live.pipeline?.latest_detail?.stage_runs,
+      live.pipeline?.stage_order,
+      agents,
+      live.isLive,
+      live.activeAgentKey,
+    ],
+  );
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -108,38 +139,30 @@ export default function DashboardPage() {
           </div>
 
           <motion.div
-            className="grid gap-6 lg:grid-cols-2"
+            className={`grid gap-6 lg:grid-cols-2 ${
+              pipelineExpanded || agentsExpanded ? "items-start" : "items-stretch"
+            }`}
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25 }}
           >
-            <DashboardJarvisPipeline pipeline={summary.data.pipeline} />
+            <DashboardJarvisPipeline
+              pipeline={summary.data.pipeline}
+              liveProgress={live.progress}
+              isLive={live.isLive}
+              expanded={pipelineExpanded}
+              onExpandedChange={setPipelineExpanded}
+            />
 
-            <motion.div
-              className="jarvis-panel flex h-full flex-col rounded-2xl border border-[hsl(187_35%_28%/0.4)] bg-[hsl(var(--card)/0.65)] p-6"
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.22 }}
-            >
-              <div className="mb-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-[hsl(187_75%_58%)]">
-                  Research mesh
-                </p>
-                <h3 className="mt-1 text-lg font-semibold text-foreground">Agent activity</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Completion pulse across active research agents.
-                </p>
-              </div>
-              <DashboardAgentStrip agents={(summary.data.agents ?? []).slice(0, 6)} />
-              {canViewAgents && (
-                <Link
-                  href="/agents"
-                  className="jarvis-link mt-4 font-mono text-xs uppercase tracking-wider text-[hsl(187_75%_60%)]"
-                >
-                  Open agent activity →
-                </Link>
-              )}
-            </motion.div>
+            <DashboardJarvisAgentActivity
+              agents={agents}
+              activeAgentKey={
+                stepSync?.activeStep != null ? agentKeyForStep(stepSync.activeStep) : null
+              }
+              canViewAgents={canViewAgents}
+              expanded={agentsExpanded}
+              onExpandedChange={setAgentsExpanded}
+            />
           </motion.div>
 
           <DashboardJarvisOpportunities

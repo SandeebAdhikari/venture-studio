@@ -197,6 +197,7 @@ class OpportunityGeneratorAgent:
                 anchor_phrase=state["pattern"].anchor_phrase,
                 domain_code=state["pattern"].domain_code,
                 category_code=state["pattern"].category_code,
+                pattern_source=state["pattern"].pattern_source,
             )
         except OpportunityValidationError as exc:
             errors = list(state.get("validation_errors", []))
