@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/data-table";
-import { formatDate, formatDuration } from "@/lib/utils";
+import { cn, formatDate, formatDuration } from "@/lib/utils";
 import type { DashboardPipelineRunSummary } from "@/types/api";
+
+const COLLAPSED_RUN_COUNT = 4;
 
 function runProgress(run: DashboardPipelineRunSummary): number {
   const total = run.stages_completed + run.stages_failed + run.stages_skipped;
@@ -29,6 +33,9 @@ export function PipelineJarvisHistory({
   onNext,
 }: PipelineJarvisHistoryProps) {
   const reduceMotion = useReducedMotion();
+  const [expanded, setExpanded] = useState(false);
+  const canExpand = runs.length > COLLAPSED_RUN_COUNT;
+  const visibleRuns = expanded || !canExpand ? runs : runs.slice(0, COLLAPSED_RUN_COUNT);
 
   return (
     <motion.section
@@ -55,7 +62,7 @@ export function PipelineJarvisHistory({
         <p className="text-sm text-muted-foreground">No pipeline runs recorded.</p>
       ) : (
         <ul className="space-y-3">
-          {runs.map((run, i) => {
+          {visibleRuns.map((run, i) => {
             const pct = runProgress(run);
             return (
               <motion.li
@@ -108,6 +115,20 @@ export function PipelineJarvisHistory({
             );
           })}
         </ul>
+      )}
+
+      {canExpand && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[hsl(187_35%_28%/0.4)] bg-[hsl(187_24%_10%/0.25)] py-2 font-mono text-[10px] uppercase tracking-wider text-[hsl(187_75%_60%)] transition-colors hover:border-[hsl(187_55%_45%/0.55)] hover:text-[hsl(187_85%_72%)]"
+        >
+          {expanded ? "Show fewer runs" : `Show all ${runs.length} runs on this page`}
+          <ChevronDown
+            className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")}
+            aria-hidden
+          />
+        </button>
       )}
 
       <div className="mt-6 flex flex-wrap gap-3">

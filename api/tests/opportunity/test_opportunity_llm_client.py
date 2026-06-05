@@ -1,11 +1,15 @@
-"""Tests for opportunity generation prompt construction."""
+"""Tests for founder-thesis opportunity generation prompt construction."""
 
 from uuid import uuid4
 
 from app.agents.opportunity.llm_client import (
+    BANNED_TITLE_PATTERNS,
+    FOUNDER_CONSEQUENCE_CODES,
+    FOUNDER_THESIS_SYSTEM_PROMPT,
     OpenAIOpportunityClient,
     build_opportunity_synthesis_messages,
     build_opportunity_user_prompt,
+    format_opportunity_evidence,
 )
 from app.agents.opportunity.schemas import ComplaintEvidence, ComplaintPattern
 
@@ -166,6 +170,80 @@ def _r3_fixtures() -> tuple[ComplaintPattern, list[ComplaintEvidence]]:
     return pattern, evidence
 
 
+def test_system_prompt_is_founder_thesis_extraction() -> None:
+    assert "You extract founder venture theses from complaint evidence" in FOUNDER_THESIS_SYSTEM_PROMPT
+    assert "Monday morning build test" in FOUNDER_THESIS_SYSTEM_PROMPT
+    assert "Solutions for" in FOUNDER_THESIS_SYSTEM_PROMPT
+
+
+def test_user_prompt_contains_four_steps() -> None:
+    pattern, evidence = _r1_fixtures()
+    prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
+
+    assert "=== STEP 1: COMPLAINT EVIDENCE" in prompt
+    assert "=== STEP 2: WEDGE SELECTION" in prompt
+    assert "=== STEP 3: CLUSTER CONTEXT" in prompt
+    assert "=== STEP 4: OUTPUT ===" in prompt
+
+
+def test_wedge_selection_section_exists() -> None:
+    pattern, evidence = _r1_fixtures()
+    prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
+
+    assert "dominant_complaint:" in prompt
+    assert "dominant_wedge:" in prompt
+    assert "excluded_pains:" in prompt
+    assert "economic_stake:" in prompt
+
+
+def test_dominant_complaint_and_excluded_pain_instructions_exist() -> None:
+    pattern, evidence = _r1_fixtures()
+    prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
+
+    assert "highest severity first" in prompt
+    assert "most specific quote" in prompt
+    assert "clearest economic consequence" in prompt
+    assert "Do NOT merge excluded pains into the title or problem_statement" in prompt
+
+
+def test_anti_category_rules_exist() -> None:
+    pattern, evidence = _r1_fixtures()
+    prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
+
+    for banned in BANNED_TITLE_PATTERNS:
+        assert banned in prompt
+
+    assert "invalid because they hide the mechanism" in prompt
+    assert "fail the build test" in FOUNDER_THESIS_SYSTEM_PROMPT
+
+
+def test_founder_consequence_instructions_exist() -> None:
+    pattern, evidence = _r1_fixtures()
+    prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
+
+    for code in FOUNDER_CONSEQUENCE_CODES:
+        assert code in prompt
+        assert code in FOUNDER_THESIS_SYSTEM_PROMPT
+
+
+def test_evidence_ordering_is_quote_first() -> None:
+    item = _evidence(
+        summary="Billing pain summary text.",
+        quote="Dominant quote text.",
+        business_function_code="payment_processor",
+        jtbd_code="accept_payments",
+        consequence_code="revenue_interruption",
+    )
+    block = format_opportunity_evidence([item])
+
+    quote_pos = block.index("quote:")
+    consequence_pos = block.index("economic_consequence:")
+    signals_pos = block.index("founder_signals(")
+    summary_pos = block.index("summary:")
+
+    assert quote_pos < consequence_pos < signals_pos < summary_pos
+
+
 def test_format_evidence_includes_per_complaint_founder_signals() -> None:
     item = _evidence(
         summary="Billing pain",
@@ -180,7 +258,7 @@ def test_format_evidence_includes_per_complaint_founder_signals() -> None:
     assert "founder_signals(" in block
     assert "business_function=payment_processor" in block
     assert "jtbd=accept_payments" in block
-    assert "consequence=revenue_interruption" in block
+    assert "economic_consequence: revenue_interruption" in block
 
 
 def test_format_evidence_uses_unknown_for_missing_founder_signals() -> None:
@@ -188,21 +266,20 @@ def test_format_evidence_uses_unknown_for_missing_founder_signals() -> None:
 
     block = OpenAIOpportunityClient._format_evidence([item])
 
+    assert "economic_consequence: unknown" in block
     assert "business_function=unknown" in block
     assert "jtbd=unknown" in block
-    assert "consequence=unknown" in block
 
 
-def test_user_prompt_includes_pattern_level_founder_signals() -> None:
+def test_cluster_context_includes_pattern_founder_signals() -> None:
     pattern, evidence = _r1_fixtures()
-
     prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
 
-    assert "Pattern business_function: payment_processor" in prompt
-    assert "Pattern jtbd: accept_payments" in prompt
-    assert "Pattern consequence: unknown" in prompt
-    assert "supporting hints only" in prompt
-    assert "quotes and summaries take precedence" in prompt
+    assert "Pattern topic (internal cluster label only)" in prompt
+    assert "Pattern founder signals (supporting hints only)" in prompt
+    assert "business_function=payment_processor" in prompt
+    assert "jtbd=accept_payments" in prompt
+    assert "do not copy labels into title" in prompt
 
 
 def test_synthesis_messages_include_founder_signals_for_r1_r2_r3() -> None:
@@ -220,27 +297,23 @@ def test_synthesis_messages_include_founder_signals_for_r1_r2_r3() -> None:
         user_prompt = messages[1]["content"]
         system_prompt = messages[0]["content"]
 
-        assert f"Pattern business_function: {pattern.business_function_code}" in user_prompt, label
-        assert f"Pattern jtbd: {pattern.jtbd_code}" in user_prompt, label
+        assert system_prompt == FOUNDER_THESIS_SYSTEM_PROMPT, label
+        assert "=== STEP 1: COMPLAINT EVIDENCE" in user_prompt, label
+        assert f"business_function={pattern.business_function_code}" in user_prompt, label
         for item in evidence:
-            assert f"business_function={item.business_function_code}" in user_prompt, label
-            assert f"jtbd={item.jtbd_code}" in user_prompt, label
+            assert item.verbatim_quote in user_prompt, label
             assert f"consequence={item.consequence_code}" in user_prompt, label
-
-        assert "supporting hints" in system_prompt
-        assert "prefer verbatim quotes and summaries when they conflict" in system_prompt
-        assert "supporting classification hints" in user_prompt
 
 
 def test_r2_prompt_preserves_margin_erosion_vs_fraud_loss_distinction() -> None:
-    _, evidence = _r2_fixtures()
-    prompt = build_opportunity_user_prompt(pattern=_r2_fixtures()[0], evidence=evidence, attempt=1)
+    pattern, evidence = _r2_fixtures()
+    prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
 
-    assert "consequence=margin_erosion" in prompt
+    assert "economic_consequence: margin_erosion" in prompt
     assert "consequence=fraud_loss" in prompt
 
 
-def test_retry_block_still_appended_with_founder_signals() -> None:
+def test_retry_block_still_appended() -> None:
     pattern, evidence = _r1_fixtures()
 
     prompt = build_opportunity_user_prompt(
@@ -252,4 +325,17 @@ def test_retry_block_still_appended_with_founder_signals() -> None:
 
     assert "Previous validation errors" in prompt
     assert "title is too short" in prompt
-    assert "founder_signals(" in prompt
+    assert "=== STEP 4: OUTPUT ===" in prompt
+
+
+def test_r1_r2_r3_prompt_payload_examples() -> None:
+    """Document expected prompt sections for manual R1/R2/R3 patterns."""
+    for label, fixtures in [
+        ("R1", _r1_fixtures),
+        ("R2", _r2_fixtures),
+        ("R3", _r3_fixtures),
+    ]:
+        pattern, evidence = fixtures()
+        prompt = build_opportunity_user_prompt(pattern=pattern, evidence=evidence, attempt=1)
+        assert label in {"R1", "R2", "R3"}
+        assert prompt.index("=== STEP 1") < prompt.index("=== STEP 2") < prompt.index("=== STEP 3") < prompt.index("=== STEP 4")

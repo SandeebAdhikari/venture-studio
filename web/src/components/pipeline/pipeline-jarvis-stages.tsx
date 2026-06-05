@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { ChevronDown } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Badge, statusVariant } from "@/components/ui/badge";
 import {
@@ -11,8 +12,21 @@ import {
   formatStageName,
   stageShortLabel,
 } from "@/lib/pipeline/stage-order";
-import { formatDuration } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 import type { DashboardPipelineStageSummary } from "@/types/api";
+
+/** Stages through this step are shown when collapsed; expand to see research + report stages. */
+const COLLAPSED_STAGE_UP_TO = "market_research";
+
+function visibleStages(
+  ordered: DashboardPipelineStageSummary[],
+  expanded: boolean,
+): DashboardPipelineStageSummary[] {
+  if (expanded) return ordered;
+  const cutoff = ordered.findIndex((stage) => stage.stage === COLLAPSED_STAGE_UP_TO);
+  if (cutoff === -1) return ordered;
+  return ordered.slice(0, cutoff + 1);
+}
 
 function defaultSelected(
   ordered: DashboardPipelineStageSummary[],
@@ -46,13 +60,39 @@ export function PipelineJarvisStages({
     () => computePipelineLiveProgress(stages, stageOrder),
     [stages, stageOrder],
   );
-  const { ordered, completed, runningIndex, runningStage, progressPct, trackFillPct } = live;
+  const { ordered, completed, runningStage, progressPct, trackFillPct } = live;
 
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [pinned, setPinned] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const activeKey = selectedStage ?? defaultSelected(ordered)?.stage ?? null;
+  const stagesShown = useMemo(
+    () => visibleStages(ordered, expanded),
+    [ordered, expanded],
+  );
+  const hiddenStageCount = useMemo(() => {
+    const cutoff = ordered.findIndex((stage) => stage.stage === COLLAPSED_STAGE_UP_TO);
+    if (cutoff === -1 || cutoff >= ordered.length - 1) return 0;
+    return ordered.length - (cutoff + 1);
+  }, [ordered]);
+  const canExpandStages = hiddenStageCount > 0;
+  const visibleRunningIndex =
+    runningStage != null
+      ? stagesShown.findIndex((stage) => stage.stage === runningStage.stage)
+      : -1;
+
+  const activeKey = selectedStage ?? defaultSelected(stagesShown)?.stage ?? null;
   const active = ordered.find((s) => s.stage === activeKey) ?? null;
+
+  useEffect(() => {
+    if (expanded) return;
+    if (!activeKey) return;
+    const isVisible = stagesShown.some((stage) => stage.stage === activeKey);
+    if (!isVisible) {
+      setSelectedStage(stagesShown[stagesShown.length - 1]?.stage ?? null);
+      setPinned(false);
+    }
+  }, [expanded, activeKey, stagesShown]);
 
   useEffect(() => {
     setPinned(false);
@@ -62,12 +102,16 @@ export function PipelineJarvisStages({
   useEffect(() => {
     if (pinned) return;
     if (isLive && runningStage) {
+      if (!expanded && !stagesShown.some((s) => s.stage === runningStage.stage)) {
+        setExpanded(true);
+        return;
+      }
       setSelectedStage(runningStage.stage);
       return;
     }
-    const pick = defaultSelected(ordered);
+    const pick = defaultSelected(stagesShown);
     if (pick) setSelectedStage(pick.stage);
-  }, [ordered, pinned, isLive, runningStage]);
+  }, [ordered, pinned, isLive, runningStage, expanded, stagesShown]);
 
   return (
     <div className="jarvis-pipeline-stages">
@@ -109,7 +153,7 @@ export function PipelineJarvisStages({
         className="jarvis-stage-filmstrip relative mb-6 rounded-xl border border-[hsl(187_35%_28%/0.35)] bg-[hsl(187_22%_8%/0.35)] px-3 py-3 sm:px-5"
         style={
           {
-            "--stage-count": ordered.length,
+            "--stage-count": stagesShown.length,
             "--track-fill": `${trackFillPct}%`,
           } as CSSProperties
         }
@@ -128,7 +172,8 @@ export function PipelineJarvisStages({
             }}
             aria-hidden
           />
-          {ordered.map((stage, index) => {
+          {stagesShown.map((stage) => {
+            const globalIndex = ordered.findIndex((s) => s.stage === stage.stage);
             const isSelected = stage.stage === activeKey;
             const inProcess = stage.status === "running";
             const isDone =
@@ -155,7 +200,7 @@ export function PipelineJarvisStages({
                     isDone && !inProcess ? "jarvis-stage-node--synced" : ""
                   }`}
                 >
-                  {String(index + 1).padStart(2, "0")}
+                  {String(globalIndex + 1).padStart(2, "0")}
                   {inProcess && !reduceMotion && (
                     <span className="jarvis-stage-ping absolute inset-0 rounded-full" aria-hidden />
                   )}
@@ -171,11 +216,11 @@ export function PipelineJarvisStages({
           })}
         </div>
 
-        {isLive && runningIndex >= 0 && !reduceMotion && (
+        {isLive && visibleRunningIndex >= 0 && !reduceMotion && (
           <motion.div
             className="jarvis-schematic-pulse pointer-events-none absolute top-[1.55rem] z-20 hidden h-1.5 w-6 rounded-full bg-[hsl(187_95%_62%)] sm:block"
             animate={{
-              left: `calc((100% / ${ordered.length}) * ${runningIndex} + (100% / ${ordered.length}) / 2 - 12px)`,
+              left: `calc((100% / ${stagesShown.length}) * ${visibleRunningIndex} + (100% / ${stagesShown.length}) / 2 - 12px)`,
             }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
             aria-hidden
@@ -190,7 +235,7 @@ export function PipelineJarvisStages({
       )}
 
       <ul className="mt-6 space-y-1 border-t border-border/50 pt-5" aria-label="Stage index">
-        {ordered.map((stage) => {
+        {stagesShown.map((stage) => {
           const isSelected = stage.stage === activeKey;
           return (
             <li key={stage.stage}>
@@ -230,6 +275,22 @@ export function PipelineJarvisStages({
           );
         })}
       </ul>
+
+      {canExpandStages && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[hsl(187_35%_28%/0.4)] bg-[hsl(187_24%_10%/0.25)] py-2 font-mono text-[10px] uppercase tracking-wider text-[hsl(187_75%_60%)] transition-colors hover:border-[hsl(187_55%_45%/0.55)] hover:text-[hsl(187_85%_72%)]"
+        >
+          {expanded
+            ? "Show fewer stages"
+            : `Show remaining stages (${hiddenStageCount} more)`}
+          <ChevronDown
+            className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")}
+            aria-hidden
+          />
+        </button>
+      )}
     </div>
   );
 }
