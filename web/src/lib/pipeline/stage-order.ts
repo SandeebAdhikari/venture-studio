@@ -1,14 +1,26 @@
 import type { DashboardPipelineStageSummary } from "@/types/api";
 
+function pendingStage(stage: string, sequence: number): DashboardPipelineStageSummary {
+  return {
+    stage,
+    sequence,
+    status: "pending",
+    duration_ms: null,
+    items_in: 0,
+    items_out: 0,
+    items_failed: 0,
+    records_processed: 0,
+    error_detail: null,
+  };
+}
+
 export function orderPipelineStages(
   stages: DashboardPipelineStageSummary[],
   stageOrder: string[],
 ): DashboardPipelineStageSummary[] {
   const byStage = new Map(stages.map((s) => [s.stage, s]));
   if (stageOrder.length) {
-    return stageOrder
-      .map((name) => byStage.get(name))
-      .filter(Boolean) as DashboardPipelineStageSummary[];
+    return stageOrder.map((name, index) => byStage.get(name) ?? pendingStage(name, index + 1));
   }
   return [...stages].sort((a, b) => a.sequence - b.sequence);
 }

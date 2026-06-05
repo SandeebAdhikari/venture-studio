@@ -281,7 +281,7 @@ async def test_generate_completes_with_configured_json_logging(
 
     with patch(
         "app.agents.opportunity.service.resolve_generation_patterns",
-        side_effect=lambda _evidence, phrase_patterns: phrase_patterns,
+        side_effect=lambda _evidence, phrase_patterns, **_: phrase_patterns,
     ):
         result = await service.generate(limit=50)
 
@@ -314,7 +314,7 @@ async def test_pipeline_generate_opportunities_stage_completes_with_json_logging
 
     with patch(
         "app.agents.opportunity.service.resolve_generation_patterns",
-        side_effect=lambda _evidence, phrase_patterns: phrase_patterns,
+        side_effect=lambda _evidence, phrase_patterns, **_: phrase_patterns,
     ):
         stage_result = await executor.execute(PipelineStage.GENERATE_OPPORTUNITIES)
 

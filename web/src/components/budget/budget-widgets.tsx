@@ -41,7 +41,8 @@ export function BudgetWarningsList({ warnings }: { warnings: BudgetWarning[] }) 
 
 export function AgentUsageTable({ agents }: { agents: BudgetAgentUsage[] }) {
   const maxCost = Math.max(...agents.map((a) => a.actual_cost_usd_total), 0.0001);
-  return <BudgetAgentUsageList agents={agents} maxCost={maxCost} />;
+  const sorted = [...agents].sort((a, b) => b.actual_cost_usd_total - a.actual_cost_usd_total);
+  return <BudgetAgentUsageList agents={sorted} maxCost={maxCost} />;
 }
 
 export function BudgetAgentUsageList({
@@ -55,11 +56,9 @@ export function BudgetAgentUsageList({
     return <p className="text-sm text-muted-foreground">No agent usage recorded today.</p>;
   }
 
-  const sorted = [...agents].sort((a, b) => b.actual_cost_usd_total - a.actual_cost_usd_total);
-
   return (
     <ul className="space-y-3">
-      {sorted.map((agent) => {
+      {agents.map((agent) => {
         const pct = Math.round((agent.actual_cost_usd_total / maxCost) * 100);
         return (
           <li
@@ -88,38 +87,132 @@ export function BudgetAgentUsageList({
   );
 }
 
+const HISTORY_DAYS = 14;
+
+function localDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function normalizeUsageDate(value: string): string {
+  return value.slice(0, 10);
+}
+
+function buildHistorySeries(items: BudgetHistoryDay[], dayCount = HISTORY_DAYS): BudgetHistoryDay[] {
+  const byDate = new Map(items.map((item) => [normalizeUsageDate(item.usage_date), item]));
+  const budget = items[0]?.budget_usd ?? 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const series: BudgetHistoryDay[] = [];
+  for (let offset = dayCount - 1; offset >= 0; offset -= 1) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - offset);
+    const key = localDateKey(d);
+    const existing = byDate.get(key);
+    if (existing) {
+      series.push(existing);
+      continue;
+    }
+    series.push({
+      usage_date: key,
+      budget_usd: budget,
+      spent_usd: 0,
+      estimated_cost_usd_total: 0,
+      remaining_usd: budget,
+      utilization_pct: 0,
+      budget_exceeded: false,
+      calls_total: 0,
+      prompt_tokens_total: 0,
+      completion_tokens_total: 0,
+    });
+  }
+  return series;
+}
+
+function formatAxisUsd(value: number): string {
+  if (value >= 1) return `$${value.toFixed(2)}`;
+  if (value >= 0.01) return `$${value.toFixed(2)}`;
+  return `$${value.toFixed(4)}`;
+}
+
 export function BudgetHistoryChart({ items }: { items: BudgetHistoryDay[] }) {
-  const max = Math.max(...items.map((i) => i.spent_usd), 0.0001);
-  const days = [...items].reverse().slice(-14);
+  const days = buildHistorySeries(items);
+  const max = Math.max(...days.map((d) => d.spent_usd), 0.0001);
+  const yTicks = [max, max / 2, 0];
 
   return (
-    <div className="budget-history-chart flex h-52 items-end gap-1.5 sm:gap-2">
-      {days.map((day) => {
-        const height = Math.max((day.spent_usd / max) * 100, 6);
-        const util = Math.min(day.utilization_pct, 100);
-        return (
-          <div
-            key={day.usage_date}
-            className="group flex min-w-0 flex-1 flex-col items-center gap-2"
-          >
-            <div className="relative flex h-40 w-full items-end justify-center">
-              <div
-                className={`budget-history-bar w-full max-w-[2.5rem] rounded-t-md transition-opacity group-hover:opacity-90 ${
-                  day.budget_exceeded ? "bg-destructive/85" : "jarvis-score-fill"
-                }`}
-                style={{ height: `${height}%` }}
-                title={`${day.usage_date}: ${formatUsd(day.spent_usd, 4)} (${util.toFixed(0)}%)`}
-              />
-            </div>
-            <span className="font-mono text-[9px] uppercase text-muted-foreground">
-              {new Date(day.usage_date).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
+    <div className="budget-history-chart">
+      <div className="flex gap-2 sm:gap-3">
+        <div
+          className="flex h-44 shrink-0 flex-col justify-between pb-6 pt-0.5 text-right font-mono text-[9px] tabular-nums text-muted-foreground"
+          aria-hidden
+        >
+          {yTicks.map((tick) => (
+            <span key={tick}>{formatAxisUsd(tick)}</span>
+          ))}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="relative h-44 border-b border-l border-[hsl(187_35%_28%/0.55)] pl-2">
+            {yTicks.slice(1, -1).map((tick) => {
+              const pct = (tick / max) * 100;
+              return (
+                <div
+                  key={tick}
+                  className="pointer-events-none absolute left-0 right-0 border-t border-[hsl(187_35%_28%/0.2)]"
+                  style={{ bottom: `${pct}%` }}
+                  aria-hidden
+                />
+              );
+            })}
+
+            <div className="flex h-full items-end gap-0.5 sm:gap-1">
+              {days.map((day) => {
+                const heightPct =
+                  day.spent_usd > 0 ? Math.max((day.spent_usd / max) * 100, 4) : 0;
+                const util = Math.min(day.utilization_pct, 100);
+                return (
+                  <div
+                    key={day.usage_date}
+                    className="group flex h-full min-w-0 flex-1 flex-col justify-end"
+                  >
+                    <div
+                      className={`mx-auto w-full max-w-[2rem] rounded-t-sm transition-opacity group-hover:opacity-90 sm:max-w-[2.25rem] ${
+                        day.spent_usd === 0
+                          ? "h-px bg-muted-foreground/35"
+                          : day.budget_exceeded
+                            ? "bg-destructive/85"
+                            : "budget-history-bar jarvis-score-fill"
+                      }`}
+                      style={day.spent_usd > 0 ? { height: `${heightPct}%` } : undefined}
+                      title={`${day.usage_date}: ${formatUsd(day.spent_usd, 4)} (${util.toFixed(0)}%)`}
+                    />
+                  </div>
+                );
               })}
-            </span>
+            </div>
           </div>
-        );
-      })}
+
+          <div className="mt-2 flex gap-0.5 pl-2 sm:gap-1">
+            {days.map((day) => (
+              <span
+                key={`${day.usage_date}-label`}
+                className={`min-w-0 flex-1 text-center font-mono text-[8px] uppercase leading-tight sm:text-[9px] ${
+                  day.spent_usd === 0 ? "text-muted-foreground/60" : "text-muted-foreground"
+                }`}
+              >
+                {new Date(`${day.usage_date}T12:00:00`).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

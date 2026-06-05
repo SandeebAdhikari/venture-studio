@@ -17,6 +17,9 @@ class ComplaintEvidence(BaseModel):
     category_code: str
     persona_code: str
     product_mentions: list[str] = Field(default_factory=list)
+    business_function_code: str | None = None
+    jtbd_code: str | None = None
+    consequence_code: str | None = None
 
 
 class ComplaintPattern(BaseModel):
@@ -32,10 +35,22 @@ class ComplaintPattern(BaseModel):
     dominant_persona_code: str
     complaint_count: int
     avg_severity: float
-    pattern_source: Literal["phrase_clustering", "taxonomy_fallback"] = Field(
+    pattern_source: Literal[
+        "phrase_clustering",
+        "token_clustering",
+        "founder_signal_clustering",
+        "taxonomy_fallback",
+    ] = Field(
         default="phrase_clustering",
-        description="How the pattern was detected (phrase clustering vs taxonomy fallback).",
+        description="How the pattern was detected (phrase, token, founder signal, or taxonomy fallback).",
     )
+    founder_grouping_variant: Literal["A", "B", "C", "D"] | None = Field(
+        default=None,
+        description="Founder signal grouping variant when pattern_source is founder_signal_clustering.",
+    )
+    business_function_code: str | None = None
+    jtbd_code: str | None = None
+    consequence_code: str | None = None
 
 
 class OpportunityLLMOutput(BaseModel):

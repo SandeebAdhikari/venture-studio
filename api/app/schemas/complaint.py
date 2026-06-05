@@ -18,6 +18,9 @@ class ComplaintBase(ORMModel):
     product_mentions: list[str] = Field(default_factory=list)
     llm_model: str = Field(max_length=50)
     llm_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    business_function_code: str | None = Field(default=None, max_length=64)
+    jtbd_code: str | None = Field(default=None, max_length=64)
+    consequence_code: str | None = Field(default=None, max_length=64)
 
 
 class ComplaintCreate(ComplaintBase):
@@ -35,6 +38,9 @@ class ComplaintUpdate(ORMModel):
     embedding: list[float] | None = None
     llm_model: str | None = Field(default=None, max_length=50)
     llm_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    business_function_code: str | None = Field(default=None, max_length=64)
+    jtbd_code: str | None = Field(default=None, max_length=64)
+    consequence_code: str | None = Field(default=None, max_length=64)
 
 
 class ComplaintRead(ComplaintBase, UUIDSchema):

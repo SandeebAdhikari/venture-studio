@@ -18,10 +18,13 @@ function defaultSelected(
   ordered: DashboardPipelineStageSummary[],
 ): DashboardPipelineStageSummary | null {
   if (ordered.length === 0) return null;
+  const lastCompleted = [...ordered].reverse().find((s) => s.status === "completed");
   return (
     ordered.find((s) => s.status === "running") ??
     ordered.find((s) => s.status === "failed") ??
-    ordered[ordered.length - 1]
+    lastCompleted ??
+    ordered.find((s) => s.status === "pending") ??
+    ordered[0]
   );
 }
 
@@ -57,20 +60,14 @@ export function PipelineJarvisStages({
   }, [runningRunId]);
 
   useEffect(() => {
-    if (!isLive || pinned) return;
-    if (runningStage) {
+    if (pinned) return;
+    if (isLive && runningStage) {
       setSelectedStage(runningStage.stage);
+      return;
     }
-  }, [isLive, pinned, runningStage?.stage, runningStage]);
-
-  useEffect(() => {
     const pick = defaultSelected(ordered);
-    if (!pick) return;
-    setSelectedStage((prev) => {
-      if (prev && ordered.some((s) => s.stage === prev)) return prev;
-      return pick.stage;
-    });
-  }, [ordered]);
+    if (pick) setSelectedStage(pick.stage);
+  }, [ordered, pinned, isLive, runningStage]);
 
   return (
     <div className="jarvis-pipeline-stages">
@@ -109,7 +106,7 @@ export function PipelineJarvisStages({
       </div>
 
       <div
-        className="jarvis-stage-filmstrip relative mb-6 rounded-xl border border-[hsl(187_35%_28%/0.35)] bg-[hsl(187_22%_8%/0.35)] px-3 py-4 sm:px-4"
+        className="jarvis-stage-filmstrip relative mb-6 rounded-xl border border-[hsl(187_35%_28%/0.35)] bg-[hsl(187_22%_8%/0.35)] px-3 py-3 sm:px-5"
         style={
           {
             "--stage-count": ordered.length,
@@ -122,9 +119,9 @@ export function PipelineJarvisStages({
           role="tablist"
           aria-label="Pipeline stages"
         >
-          <div className="jarvis-filmstrip-track pointer-events-none absolute inset-x-0 top-[1.125rem] z-0 hidden h-px sm:block" />
+          <div className="jarvis-filmstrip-track pointer-events-none absolute inset-x-0 top-[1.625rem] z-0 hidden h-px sm:block" />
           <div
-            className="jarvis-filmstrip-track-fill pointer-events-none absolute top-[1.125rem] z-0 hidden h-0.5 sm:block"
+            className="jarvis-filmstrip-track-fill pointer-events-none absolute top-[1.625rem] z-0 hidden h-0.5 sm:block"
             style={{
               left: "calc(50% / var(--stage-count))",
               width: "calc((100% - 100% / var(--stage-count)) * var(--track-fill) / 100)",
@@ -176,7 +173,7 @@ export function PipelineJarvisStages({
 
         {isLive && runningIndex >= 0 && !reduceMotion && (
           <motion.div
-            className="jarvis-schematic-pulse pointer-events-none absolute top-[1.05rem] z-20 hidden h-1.5 w-6 rounded-full bg-[hsl(187_95%_62%)] sm:block"
+            className="jarvis-schematic-pulse pointer-events-none absolute top-[1.55rem] z-20 hidden h-1.5 w-6 rounded-full bg-[hsl(187_95%_62%)] sm:block"
             animate={{
               left: `calc((100% / ${ordered.length}) * ${runningIndex} + (100% / ${ordered.length}) / 2 - 12px)`,
             }}

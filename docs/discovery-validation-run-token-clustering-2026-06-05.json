@@ -1,0 +1,50 @@
+{
+  "captured_at": "2026-06-05T16:46:46.216730+00:00",
+  "label": "token-clustering-pass-validation",
+  "preflight": {
+    "passed": true,
+    "errors": []
+  },
+  "pattern_audit_on_unlinked_complaints": {
+    "complaints_unlinked": 35,
+    "counts_by_source": {
+      "phrase_clustering": 0,
+      "token_clustering": 0,
+      "taxonomy_fallback": 0,
+      "resolved_total": 0
+    },
+    "resolved_by_source": {},
+    "patterns_by_source": {
+      "phrase_clustering": [],
+      "token_clustering": [],
+      "taxonomy_fallback": [],
+      "resolved": []
+    }
+  },
+  "generation_batch": {
+    "patterns_found": 0,
+    "opportunities_created": 0
+  },
+  "pipeline": {
+    "pipeline_run_id": "cec8d67f-0951-4765-961c-65a14088eeb1",
+    "status": "completed",
+    "stages_completed": 14,
+    "stages_failed": 0,
+    "stages_skipped": 0,
+    "duration_seconds": 0.14
+  },
+  "db_totals": {
+    "signals": 89,
+    "complaints": 35,
+    "opportunities": 0
+  },
+  "verify": {
+    "passed": true,
+    "empty_discovery": true,
+    "artifacts": {
+      "complaints": 35,
+      "opportunities": 0
+    }
+  },
+  "verify_output_path": "docs/discovery-validation-verify-token-clustering-2026-06-05.json"
+}

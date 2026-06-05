@@ -14,6 +14,7 @@ from app.exceptions import NotFoundError, ValidationError
 from app.logging import get_logger
 from app.ranking.service import ExecutiveRankingService
 from app.reports.venture.collector import VentureReportCollector
+from app.reports.venture.funnel import load_discovery_funnel
 from app.reports.venture.generator import REPORT_ENGINE, VentureReportGenerator
 from app.reports.venture.schemas import (
     VentureReportContent,
@@ -107,15 +108,87 @@ class VentureReportService:
             top_entries = sorted(ranking.entries, key=lambda item: item.rank)[:top_limit]
 
         if not top_entries:
-            raise ValidationError(
-                "Executive ranking has no opportunities to include in the report."
-            )
+            top_entries = sorted(ranking.entries, key=lambda item: item.rank)[:top_limit]
 
         resolved_pipeline_run_id = pipeline_run_id or pipeline_run_id_from_metadata(
             ranking.ranking_metadata
         )
 
         profile_id = founder_profile_id or ranking.founder_profile_id
+        generated_at = datetime.now(UTC)
+
+        if not top_entries:
+            discovery_funnel = await load_discovery_funnel(
+                self._repos,
+                pipeline_run_id=resolved_pipeline_run_id,
+                ranked_opportunity_count=ranking.ranked_opportunity_count,
+            )
+            content = self._generator.build_report(
+                [],
+                generated_at=generated_at,
+                executive_ranking_run_id=ranking.id,
+                founder_profile_id=profile_id,
+                discovery_funnel=discovery_funnel,
+            )
+            title = f"Venture Discovery Report — {generated_at.strftime('%Y-%m-%d')}"
+            summary = (
+                "Discovery completed with no founder-grade ranked opportunities. "
+                f"Funnel: {discovery_funnel.signals_collected} signals, "
+                f"{discovery_funnel.complaints_extracted} complaints, "
+                f"{discovery_funnel.patterns_found} patterns, "
+                f"{discovery_funnel.opportunities_generated} opportunities."
+            )
+            report_metadata = merge_pipeline_run_lineage(
+                {
+                    "engine": REPORT_ENGINE,
+                    "generated_at": generated_at.isoformat(),
+                    "executive_ranking_run_id": str(ranking.id),
+                    "executive_ranking_version": ranking.version,
+                    "founder_profile_id": str(profile_id) if profile_id else None,
+                    "top_n": top_limit,
+                    "opportunity_count": 0,
+                    "outcome": "empty_discovery",
+                    "discovery_funnel": discovery_funnel.model_dump(mode="json"),
+                    **(
+                        {"discovery_validation_mode": True}
+                        if discovery_validation_mode
+                        else {}
+                    ),
+                },
+                pipeline_run_id=resolved_pipeline_run_id,
+            )
+            if self._approval is not None and self._approval.enabled:
+                publish = False
+
+            entity = await self._repos.reports.create(
+                ReportCreate(
+                    opportunity_id=None,
+                    report_type=ReportType.VENTURE_RECOMMENDATION,
+                    title=title,
+                    summary=summary,
+                    content=content.model_dump(mode="json"),
+                    status=ReportStatus.PUBLISHED if publish else ReportStatus.DRAFT,
+                    report_metadata=report_metadata,
+                )
+            )
+
+            logger.info(
+                "Empty-discovery venture report generated",
+                extra={
+                    "report_id": str(entity.id),
+                    "opportunity_count": 0,
+                    "patterns_found": discovery_funnel.patterns_found,
+                },
+            )
+
+            return VentureReportResult(
+                report_id=entity.id,
+                title=entity.title,
+                summary=entity.summary or summary,
+                markdown=content.markdown,
+                content=content,
+            )
+
         opportunity_reports = []
         for entry in top_entries:
             opportunity_reports.append(
@@ -125,7 +198,6 @@ class VentureReportService:
                 )
             )
 
-        generated_at = datetime.now(UTC)
         content = self._generator.build_report(
             opportunity_reports,
             generated_at=generated_at,

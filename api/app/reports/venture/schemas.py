@@ -43,6 +43,14 @@ class VentureOpportunityReport(BaseModel):
     recommendation: str
 
 
+class VentureDiscoveryFunnelSummary(BaseModel):
+    signals_collected: int = 0
+    complaints_extracted: int = 0
+    patterns_found: int = 0
+    opportunities_generated: int = 0
+    ranked_opportunity_count: int = 0
+
+
 class VentureReportContent(BaseModel):
     format: str = "markdown"
     markdown: str
@@ -50,6 +58,8 @@ class VentureReportContent(BaseModel):
     founder_profile_id: UUID | None = None
     opportunities: list[VentureOpportunityReport] = Field(default_factory=list)
     generated_count: int = 0
+    outcome: str = "ranked_opportunities"
+    discovery_funnel: VentureDiscoveryFunnelSummary | None = None
 
 
 class VentureReportResult(BaseModel):

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { DashboardAgentStrip } from "@/components/dashboard/dashboard-agent-strip";
 import { DashboardJarvisHero } from "@/components/dashboard/dashboard-jarvis-hero";
+import { DashboardJarvisMetrics } from "@/components/dashboard/dashboard-jarvis-metrics";
 import { DashboardJarvisOpportunities } from "@/components/dashboard/dashboard-jarvis-opportunities";
 import { DashboardJarvisPipeline } from "@/components/dashboard/dashboard-jarvis-pipeline";
 import { useDashboardSession } from "@/components/layout/session-provider";
@@ -101,7 +102,10 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <DashboardJarvisHero summary={summary.data} />
+          <div className="space-y-4">
+            <DashboardJarvisHero summary={summary.data} />
+            <DashboardJarvisMetrics summary={summary.data} />
+          </div>
 
           <motion.div
             className="grid gap-6 lg:grid-cols-2"

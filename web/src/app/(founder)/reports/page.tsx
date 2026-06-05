@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ReportsJarvisHero } from "@/components/reports/reports-jarvis-hero";
+import { ReportsJarvisMetrics } from "@/components/reports/reports-jarvis-metrics";
 import { ReportsJarvisLibrary } from "@/components/reports/reports-jarvis-library";
 import { ReportsJarvisViewer } from "@/components/reports/reports-jarvis-viewer";
 import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
@@ -98,7 +99,10 @@ export default function ReportsPage() {
         </div>
       ) : (
         <>
-          <ReportsJarvisHero data={reports.data} libraryCount={allReports.length} />
+          <div className="space-y-4">
+            <ReportsJarvisHero />
+            <ReportsJarvisMetrics data={reports.data} libraryCount={allReports.length} />
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <ReportsJarvisLibrary

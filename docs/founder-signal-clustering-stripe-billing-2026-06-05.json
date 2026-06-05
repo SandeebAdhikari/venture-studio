@@ -1,0 +1,256 @@
+{
+  "experiment": "founder_signal_clustering_stripe_billing",
+  "generated_at": "2026-06-05T19:43:20.079317+00:00",
+  "corpus": "stripe_billing_corpus_validation",
+  "lane_relevant_complaints": 15,
+  "baseline_passes": {
+    "phrase_patterns": 0,
+    "token_patterns": 0,
+    "production_resolve_patterns": 2,
+    "production_pattern_source": "founder_signal_clustering"
+  },
+  "variants": {
+    "A": {
+      "pattern_count": 2,
+      "patterns": [
+        {
+          "topic": "Where High Stripe",
+          "cluster_key": "payment_processor",
+          "complaint_ids": [
+            "c80adb68-44b5-49e6-b47f-be8982d9a054",
+            "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+            "7e1446aa-d438-4460-bcad-d5f9ccaee94f",
+            "a4d30dbe-dbee-4762-b576-c4c520ed1d17"
+          ],
+          "complaint_count": 4,
+          "business_function_code": "payment_processor",
+          "jtbd_code": null,
+          "consequence_code": null
+        },
+        {
+          "topic": "Play There Subscription",
+          "cluster_key": "subscription_management",
+          "complaint_ids": [
+            "988dadac-1460-4606-bcc3-505b7b7c3981",
+            "1aac2925-1030-4896-96e3-0a50f485c8c3",
+            "4281360c-288c-43b9-a70e-48ba450f271d"
+          ],
+          "complaint_count": 3,
+          "business_function_code": "subscription_management",
+          "jtbd_code": null,
+          "consequence_code": null
+        }
+      ],
+      "theme_overlap": [
+        {
+          "theme_id": "R1",
+          "label": "Processor access / selection",
+          "manual_size": 4,
+          "best_pattern_index": 0,
+          "jaccard": 1.0,
+          "recall": 1.0,
+          "recovered": true
+        },
+        {
+          "theme_id": "R2",
+          "label": "Fraud / disputes",
+          "manual_size": 3,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        },
+        {
+          "theme_id": "R3",
+          "label": "Billing model implementation",
+          "manual_size": 3,
+          "best_pattern_index": 1,
+          "jaccard": 0.2,
+          "recall": 0.333,
+          "recovered": false
+        }
+      ],
+      "recovered_themes": [
+        "R1"
+      ],
+      "missed_themes": [
+        "R2",
+        "R3"
+      ],
+      "junk_patterns": [
+        {
+          "pattern_index": 1,
+          "cluster_key": "subscription_management",
+          "matching_themes": [
+            "R3",
+            "R6"
+          ],
+          "reason": "spans multiple manual themes"
+        }
+      ],
+      "exact_recovery_score": 0.333
+    },
+    "B": {
+      "pattern_count": 2,
+      "patterns": [
+        {
+          "topic": "Payment Processor \u2014 Accept Payments",
+          "cluster_key": "payment_processor|accept_payments",
+          "complaint_ids": [
+            "c80adb68-44b5-49e6-b47f-be8982d9a054",
+            "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+            "7e1446aa-d438-4460-bcad-d5f9ccaee94f",
+            "a4d30dbe-dbee-4762-b576-c4c520ed1d17"
+          ],
+          "complaint_count": 4,
+          "business_function_code": "payment_processor",
+          "jtbd_code": "accept_payments",
+          "consequence_code": null
+        },
+        {
+          "topic": "Subscription Management \u2014 Manage Subscriptions",
+          "cluster_key": "subscription_management|manage_subscriptions",
+          "complaint_ids": [
+            "988dadac-1460-4606-bcc3-505b7b7c3981",
+            "1aac2925-1030-4896-96e3-0a50f485c8c3",
+            "4281360c-288c-43b9-a70e-48ba450f271d"
+          ],
+          "complaint_count": 3,
+          "business_function_code": "subscription_management",
+          "jtbd_code": "manage_subscriptions",
+          "consequence_code": null
+        }
+      ],
+      "theme_overlap": [
+        {
+          "theme_id": "R1",
+          "label": "Processor access / selection",
+          "manual_size": 4,
+          "best_pattern_index": 0,
+          "jaccard": 1.0,
+          "recall": 1.0,
+          "recovered": true
+        },
+        {
+          "theme_id": "R2",
+          "label": "Fraud / disputes",
+          "manual_size": 3,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        },
+        {
+          "theme_id": "R3",
+          "label": "Billing model implementation",
+          "manual_size": 3,
+          "best_pattern_index": 1,
+          "jaccard": 0.2,
+          "recall": 0.333,
+          "recovered": false
+        }
+      ],
+      "recovered_themes": [
+        "R1"
+      ],
+      "missed_themes": [
+        "R2",
+        "R3"
+      ],
+      "junk_patterns": [
+        {
+          "pattern_index": 1,
+          "cluster_key": "subscription_management|manage_subscriptions",
+          "matching_themes": [
+            "R3",
+            "R6"
+          ],
+          "reason": "spans multiple manual themes"
+        }
+      ],
+      "exact_recovery_score": 0.333
+    },
+    "C": {
+      "pattern_count": 0,
+      "patterns": [],
+      "theme_overlap": [
+        {
+          "theme_id": "R1",
+          "label": "Processor access / selection",
+          "manual_size": 4,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        },
+        {
+          "theme_id": "R2",
+          "label": "Fraud / disputes",
+          "manual_size": 3,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        },
+        {
+          "theme_id": "R3",
+          "label": "Billing model implementation",
+          "manual_size": 3,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        }
+      ],
+      "recovered_themes": [],
+      "missed_themes": [
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "junk_patterns": [],
+      "exact_recovery_score": 0.0
+    },
+    "D": {
+      "pattern_count": 0,
+      "patterns": [],
+      "theme_overlap": [
+        {
+          "theme_id": "R1",
+          "label": "Processor access / selection",
+          "manual_size": 4,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        },
+        {
+          "theme_id": "R2",
+          "label": "Fraud / disputes",
+          "manual_size": 3,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        },
+        {
+          "theme_id": "R3",
+          "label": "Billing model implementation",
+          "manual_size": 3,
+          "best_pattern_index": null,
+          "jaccard": 0.0,
+          "recall": 0.0,
+          "recovered": false
+        }
+      ],
+      "recovered_themes": [],
+      "missed_themes": [
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "junk_patterns": [],
+      "exact_recovery_score": 0.0
+    }
+  }
+}

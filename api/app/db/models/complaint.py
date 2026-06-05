@@ -61,6 +61,9 @@ class Complaint(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
     llm_model: Mapped[str] = mapped_column(String(50), nullable=False)
     llm_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    business_function_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    jtbd_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    consequence_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     signal: Mapped[Signal] = relationship(back_populates="complaint")
     category: Mapped[Category] = relationship(

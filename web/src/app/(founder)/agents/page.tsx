@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { AgentActivityGrid } from "@/components/agents/agent-activity-grid";
 import { AgentJarvisHero } from "@/components/agents/agent-jarvis-hero";
+import { AgentJarvisMetrics } from "@/components/agents/agent-jarvis-metrics";
 import { useDashboardSession } from "@/components/layout/session-provider";
 import { LiveIndicator, PageHeader, ErrorState, EmptyState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -147,11 +148,10 @@ export default function AgentsPage() {
         <ErrorState message="Unable to load agent activity." onRetry={() => summary.mutate()} />
       ) : (
         <>
-          <AgentJarvisHero
-            agents={agents}
-            averageCoverage={averageCoverage}
-            stepSync={stepSync}
-          />
+          <div className="space-y-4">
+            <AgentJarvisHero agents={agents} stepSync={stepSync} />
+            <AgentJarvisMetrics agents={agents} averageCoverage={averageCoverage} />
+          </div>
 
           <motion.div
             initial={reduceMotion ? false : { opacity: 0 }}

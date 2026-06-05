@@ -19,6 +19,9 @@ def _output(**overrides) -> ClassificationLLMOutput:
         "summary": "The pricing model is too expensive for early-stage teams.",
         "verbatim_quote": "pricing is too expensive",
         "confidence": 0.8,
+        "business_function_code": "billing_operations",
+        "jtbd_code": "automate_billing",
+        "consequence_code": "margin_erosion",
     }
     payload.update(overrides)
     return ClassificationLLMOutput(**payload)

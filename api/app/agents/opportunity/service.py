@@ -66,16 +66,45 @@ class OpportunityGeneratorService:
             evidence,
             min_cluster_size=self._settings.min_cluster_size,
         )
-        patterns = resolve_generation_patterns(evidence, phrase_patterns)
+        patterns = resolve_generation_patterns(
+            evidence,
+            phrase_patterns,
+            min_cluster_size=self._settings.min_cluster_size,
+        )
         if not phrase_patterns and patterns:
-            logger.info(
-                "Taxonomy fallback patterns activated",
-                extra={
-                    "phrase_patterns": 0,
-                    "fallback_patterns": len(patterns),
-                    "topics": [pattern.topic for pattern in patterns],
-                },
-            )
+            if all(pattern.pattern_source == "taxonomy_fallback" for pattern in patterns):
+                logger.info(
+                    "Taxonomy fallback patterns activated",
+                    extra={
+                        "phrase_patterns": 0,
+                        "token_patterns": 0,
+                        "founder_signal_patterns": 0,
+                        "fallback_patterns": len(patterns),
+                        "topics": [pattern.topic for pattern in patterns],
+                    },
+                )
+            elif all(
+                pattern.pattern_source == "founder_signal_clustering" for pattern in patterns
+            ):
+                logger.info(
+                    "Founder signal clustering patterns activated",
+                    extra={
+                        "phrase_patterns": 0,
+                        "token_patterns": 0,
+                        "founder_signal_patterns": len(patterns),
+                        "grouping_variant": patterns[0].founder_grouping_variant,
+                        "topics": [pattern.topic for pattern in patterns],
+                    },
+                )
+            elif all(pattern.pattern_source == "token_clustering" for pattern in patterns):
+                logger.info(
+                    "Token clustering patterns activated",
+                    extra={
+                        "phrase_patterns": 0,
+                        "token_patterns": len(patterns),
+                        "topics": [pattern.topic for pattern in patterns],
+                    },
+                )
 
         batch_result = GenerationBatchResult(patterns_found=len(patterns))
         evidence_by_id = {item.id: item for item in evidence}
@@ -181,6 +210,9 @@ class OpportunityGeneratorService:
             category_code=complaint.category.code,
             persona_code=complaint.persona.code,
             product_mentions=list(complaint.product_mentions or []),
+            business_function_code=complaint.business_function_code,
+            jtbd_code=complaint.jtbd_code,
+            consequence_code=complaint.consequence_code,
         )
 
     @staticmethod

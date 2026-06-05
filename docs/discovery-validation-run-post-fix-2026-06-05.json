@@ -1,0 +1,38 @@
+{
+  "captured_at": "2026-06-05T16:31:51.292351+00:00",
+  "label": "post-fix-baseline-local",
+  "fallback_fixture_counts": {
+    "disjoint_ux_ui_quotes": 0,
+    "workflow_devtools_coherent": 1
+  },
+  "fallback_fixture_counts_before_fix": {
+    "disjoint_ux_ui_quotes": 1,
+    "workflow_devtools_coherent": 1
+  },
+  "preflight": {
+    "passed": true,
+    "errors": []
+  },
+  "pipeline": {
+    "pipeline_run_id": "9886747a-9e6f-4857-a1ea-d04cf3b404a1",
+    "status": "completed",
+    "stages_completed": 14,
+    "stages_failed": 0,
+    "stages_skipped": 0,
+    "duration_seconds": 260.997003,
+    "generate_opportunities": {
+      "items_in": 0,
+      "items_out": 0,
+      "status": "completed"
+    },
+    "executive_ranking": {
+      "items_out": 2,
+      "status": "completed"
+    },
+    "venture_report": {
+      "status": "completed",
+      "report_id": "fcbe63bf-72eb-4fb3-a8f0-996c4c30c60a",
+      "generated_count": 2
+    }
+  }
+}

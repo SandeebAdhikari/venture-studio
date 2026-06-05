@@ -1,0 +1,113 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "no_mock_opportunities",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_market_briefs",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_competitor_analyses",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_customer_research",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_revenue_validations",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_product_strategies",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_gtm_plans",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_growth_evaluations",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_mock_human_proxy_evaluations",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "no_e2e_opportunities",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "fresh_complaints",
+      "ok": true,
+      "count": 35
+    },
+    {
+      "name": "empty_discovery_opportunities",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "name": "fresh_ranking",
+      "ok": true
+    },
+    {
+      "name": "fresh_venture_report",
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "artifacts": {
+    "complaints": 35,
+    "opportunities": 0,
+    "completed_market_briefs": 0,
+    "current_ranking": {
+      "id": "4de81ab7-770b-4e28-8d51-4b109f03c33c",
+      "created_at": "2026-06-05 16:37:14.219273+00:00",
+      "ranking_metadata": {
+        "pipeline_run_id": "e0798670-a312-487b-803c-d465671da666"
+      }
+    },
+    "latest_venture_report": {
+      "id": "6a2e5c5e-4c49-479f-923d-f30cf55f35d4",
+      "title": "Venture Discovery Report \u2014 2026-06-05",
+      "created_at": "2026-06-05 16:37:14.219273+00:00",
+      "report_metadata": {
+        "top_n": 5,
+        "engine": "venture_report_v1",
+        "outcome": "empty_discovery",
+        "generated_at": "2026-06-05T16:37:14.316094+00:00",
+        "pipeline_run_id": "e0798670-a312-487b-803c-d465671da666",
+        "discovery_funnel": {
+          "patterns_found": 0,
+          "signals_collected": 89,
+          "complaints_extracted": 35,
+          "opportunities_generated": 0,
+          "ranked_opportunity_count": 0
+        },
+        "opportunity_count": 0,
+        "founder_profile_id": null,
+        "executive_ranking_run_id": "4de81ab7-770b-4e28-8d51-4b109f03c33c",
+        "executive_ranking_version": 3
+      }
+    }
+  },
+  "empty_discovery": true,
+  "pipeline_run": null,
+  "top_ranked": [],
+  "llm_models_seen": []
+}

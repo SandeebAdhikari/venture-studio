@@ -343,6 +343,161 @@ def derive_pattern_topic(anchor_phrase: str, members: list[ComplaintEvidence]) -
     return _taxonomy_fallback_topic(members)
 
 
+PATTERN_SOURCE_TOKEN = "token_clustering"
+
+
+def _select_token_cluster_anchor(
+    members: list[ComplaintEvidence],
+    shared_tokens: set[str],
+    *,
+    seed_token: str,
+) -> str | None:
+    """Pick the top two shared substantive tokens for a non-weak anchor phrase."""
+    if len(shared_tokens) < MIN_SHARED_CONTENT_TOKENS:
+        return None
+
+    freq = Counter()
+    for member in members:
+        for token in _content_tokens(clustering_source_text(member)):
+            if token in shared_tokens:
+                freq[token] += 1
+
+    ranked = sorted(shared_tokens, key=lambda token: (-freq[token], -len(token), token))
+    if seed_token in ranked:
+        ranked.remove(seed_token)
+        ranked.insert(0, seed_token)
+    else:
+        ranked.insert(0, seed_token)
+
+    anchor_tokens = ranked[:MIN_SHARED_CONTENT_TOKENS]
+    if len(anchor_tokens) < MIN_SHARED_CONTENT_TOKENS:
+        return None
+
+    anchor_phrase = " ".join(anchor_tokens)
+    if is_weak_anchor_phrase(anchor_phrase):
+        return None
+    return anchor_phrase
+
+
+def _build_complaint_pattern(
+    anchor_phrase: str,
+    members: list[ComplaintEvidence],
+    *,
+    pattern_source: str = "phrase_clustering",
+) -> ComplaintPattern:
+    domain_counts = Counter(member.domain_code for member in members)
+    category_counts = Counter(member.category_code for member in members)
+    persona_counts = Counter(member.persona_code for member in members)
+    severities = [member.severity for member in members]
+
+    return ComplaintPattern(
+        topic=derive_pattern_topic(anchor_phrase, members),
+        anchor_phrase=anchor_phrase,
+        complaint_ids=[member.id for member in members],
+        domain_code=domain_counts.most_common(1)[0][0],
+        category_code=category_counts.most_common(1)[0][0],
+        dominant_persona_code=persona_counts.most_common(1)[0][0],
+        complaint_count=len(members),
+        avg_severity=sum(severities) / len(severities),
+        pattern_source=pattern_source,
+    )
+
+
+class TokenPatternDetector:
+    """Groups complaints by shared substantive tokens in grounded complaint evidence."""
+
+    def detect(
+        self,
+        complaints: list[ComplaintEvidence],
+        *,
+        min_cluster_size: int,
+    ) -> list[ComplaintPattern]:
+        if len(complaints) < min_cluster_size:
+            return []
+
+        token_to_ids: dict[str, set[UUID]] = defaultdict(set)
+        complaints_by_id = {complaint.id: complaint for complaint in complaints}
+
+        for complaint in complaints:
+            for token in _content_tokens(clustering_source_text(complaint)):
+                token_to_ids[token].add(complaint.id)
+
+        eligible_tokens = [
+            token
+            for token, member_ids in token_to_ids.items()
+            if len(member_ids) >= min_cluster_size
+        ]
+        eligible_tokens.sort(
+            key=lambda token: (len(token_to_ids[token]), len(token)),
+            reverse=True,
+        )
+
+        assigned: set[UUID] = set()
+        patterns: list[ComplaintPattern] = []
+
+        for token in eligible_tokens:
+            member_ids = [
+                complaint_id
+                for complaint_id in token_to_ids[token]
+                if complaint_id not in assigned
+            ]
+            if len(member_ids) < min_cluster_size:
+                continue
+
+            members = [complaints_by_id[complaint_id] for complaint_id in member_ids]
+            domain_counts = Counter(member.domain_code for member in members)
+            dominant_domain, domain_count = domain_counts.most_common(1)[0]
+            if domain_count / len(members) < MIN_DOMINANT_TAXONOMY_SHARE:
+                continue
+
+            domain_members = [
+                member for member in members if member.domain_code == dominant_domain
+            ]
+            if len(domain_members) < min_cluster_size:
+                continue
+            members = domain_members
+
+            token_sets = [_content_tokens(clustering_source_text(member)) for member in members]
+            if not all(token_sets):
+                continue
+
+            shared_tokens = set.intersection(*token_sets)
+            if token not in shared_tokens:
+                continue
+
+            anchor_phrase = _select_token_cluster_anchor(
+                members,
+                shared_tokens,
+                seed_token=token,
+            )
+            if anchor_phrase is None:
+                continue
+            if not passes_coherence_gate(anchor_phrase, members):
+                continue
+
+            for complaint_id in (member.id for member in members):
+                assigned.add(complaint_id)
+
+            patterns.append(
+                _build_complaint_pattern(
+                    anchor_phrase,
+                    members,
+                    pattern_source=PATTERN_SOURCE_TOKEN,
+                )
+            )
+
+        return patterns
+
+
+def detect_token_clustering_patterns(
+    complaints: list[ComplaintEvidence],
+    *,
+    min_cluster_size: int,
+) -> list[ComplaintPattern]:
+    """Pass 2: cluster complaints on shared substantive tokens before taxonomy fallback."""
+    return TokenPatternDetector().detect(complaints, min_cluster_size=min_cluster_size)
+
+
 class TopicPatternDetector:
     """Groups complaints by repeated phrases in grounded complaint evidence."""
 
@@ -399,24 +554,6 @@ class TopicPatternDetector:
             for complaint_id in member_ids:
                 assigned.add(complaint_id)
 
-            patterns.append(self._build_pattern(phrase, members))
+            patterns.append(_build_complaint_pattern(phrase, members))
 
         return patterns
-
-    @staticmethod
-    def _build_pattern(anchor_phrase: str, members: list[ComplaintEvidence]) -> ComplaintPattern:
-        domain_counts = Counter(member.domain_code for member in members)
-        category_counts = Counter(member.category_code for member in members)
-        persona_counts = Counter(member.persona_code for member in members)
-        severities = [member.severity for member in members]
-
-        return ComplaintPattern(
-            topic=derive_pattern_topic(anchor_phrase, members),
-            anchor_phrase=anchor_phrase,
-            complaint_ids=[member.id for member in members],
-            domain_code=domain_counts.most_common(1)[0][0],
-            category_code=category_counts.most_common(1)[0][0],
-            dominant_persona_code=persona_counts.most_common(1)[0][0],
-            complaint_count=len(members),
-            avg_severity=sum(severities) / len(severities),
-        )

@@ -207,6 +207,9 @@ class ComplaintClassificationAgent:
             verbatim_quote=validated.verbatim_quote,
             confidence=validated.confidence,
             product_mentions=validated.product_mentions,
+            business_function_code=validated.business_function_code,
+            jtbd_code=validated.jtbd_code,
+            consequence_code=validated.consequence_code,
         )
         return {
             "is_complaint": True,

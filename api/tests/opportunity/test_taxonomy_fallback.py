@@ -68,8 +68,8 @@ def test_phrase_patterns_found_fallback_not_used() -> None:
     assert not any(p.pattern_source == PATTERN_SOURCE_TAXONOMY for p in resolved)
 
 
-def test_no_phrase_patterns_fallback_activates() -> None:
-    """Diverse HN-like quotes: no phrase cluster, taxonomy bucket qualifies."""
+def test_no_phrase_patterns_fallback_rejects_incoherent_bucket() -> None:
+    """Diverse HN-like quotes: no phrase cluster; fallback fails coherence gate."""
     evidence = []
     disjoint_quotes = (
         "Checkout latency overwhelms shoppers during peak holiday weekends.",
@@ -93,14 +93,10 @@ def test_no_phrase_patterns_fallback_activates() -> None:
     assert phrase_patterns == []
 
     fallback = detect_taxonomy_fallback_patterns(evidence)
-    assert len(fallback) == 1
-    assert fallback[0].pattern_source == PATTERN_SOURCE_TAXONOMY
-    assert fallback[0].topic == build_taxonomy_topic("ux_ui", "saas_b2c")
-    assert fallback[0].complaint_count == 5
+    assert fallback == []
 
     resolved = resolve_generation_patterns(evidence, phrase_patterns)
-    assert len(resolved) == 1
-    assert resolved[0].pattern_source == PATTERN_SOURCE_TAXONOMY
+    assert resolved == []
 
 
 def test_complaint_count_threshold_enforced() -> None:
@@ -140,8 +136,11 @@ def test_maximum_three_patterns_enforced() -> None:
                     category_code=category,
                     domain_code="devtools",
                     persona_code="developer",
-                    summary=f"{category} issue {index}",
-                    quote=f"Distinct {category} complaint {index} with enough unique words here.",
+                    summary=f"{category} deploy pipeline pain {index}",
+                    quote=(
+                        f"Deploy pipeline breaks during {category} release step {index} "
+                        "for our monorepo service environment."
+                    ),
                 )
             )
 

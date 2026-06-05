@@ -1,0 +1,28 @@
+{
+  "experiment": "stripe_billing_corpus_validation",
+  "description": "Stripe Billing Corpus Validation: billing-focused Ask HN query for founder-grade complaint density.",
+  "source_name": "production-hn-saas",
+  "config": {
+    "query": "Ask HN Stripe billing",
+    "keywords": [
+      "frustrated",
+      "frustrating",
+      "painful",
+      "broken",
+      "struggle",
+      "stripe",
+      "billing",
+      "subscription",
+      "invoice",
+      "chargeback",
+      "webhook",
+      "payment",
+      "payout",
+      "refund",
+      "alternative"
+    ],
+    "max_pages": 3,
+    "hits_per_page": 30,
+    "min_keyword_matches": 1
+  }
+}

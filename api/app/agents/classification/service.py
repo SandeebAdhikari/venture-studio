@@ -144,6 +144,9 @@ class ComplaintClassificationService:
                     product_mentions=classification.product_mentions,
                     llm_model=model,
                     llm_confidence=classification.confidence,
+                    business_function_code=classification.business_function_code,
+                    jtbd_code=classification.jtbd_code,
+                    consequence_code=classification.consequence_code,
                 )
             )
             await self._repos.signals.set_processing_status(

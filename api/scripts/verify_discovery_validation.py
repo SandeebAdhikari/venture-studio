@@ -75,7 +75,7 @@ async def verify(pipeline_run_id: UUID | None) -> dict:
         ranking = (
             await session.execute(
                 text(
-                    "SELECT id, created_at, metadata AS ranking_metadata "
+                    "SELECT id, created_at, ranking_metadata "
                     "FROM executive_ranking_runs "
                     "WHERE is_current ORDER BY created_at DESC LIMIT 1"
                 )
@@ -100,17 +100,56 @@ async def verify(pipeline_run_id: UUID | None) -> dict:
             "latest_venture_report": dict(report._mapping) if report else None,
         }
 
-        for key, min_val in [
-            ("complaints", 1),
-            ("opportunities", 1),
-            ("completed_market_briefs", 1),
-        ]:
-            val = out["artifacts"][key]
-            ok = val >= min_val
-            out["checks"].append({"name": f"fresh_{key}", "ok": ok, "count": val})
+        report_metadata = {}
+        if report is not None:
+            meta_row = (
+                await session.execute(
+                    text(
+                        "SELECT metadata FROM reports WHERE id = :id"
+                    ),
+                    {"id": str(report._mapping["id"])},
+                )
+            ).first()
+            if meta_row is not None:
+                report_metadata = meta_row._mapping.get("metadata") or {}
+
+        empty_discovery = (
+            new_opps == 0
+            and report is not None
+            and (
+                report_metadata.get("outcome") == "empty_discovery"
+                or (report_metadata.get("opportunity_count") == 0)
+            )
+        )
+        out["empty_discovery"] = empty_discovery
+
+        ok = new_complaints >= 1
+        out["checks"].append({"name": "fresh_complaints", "ok": ok, "count": new_complaints})
+        if not ok:
+            out["passed"] = False
+            out["errors"].append(f"Expected complaints >= 1, got {new_complaints}")
+
+        if empty_discovery:
+            ok = new_opps == 0
+            out["checks"].append(
+                {"name": "empty_discovery_opportunities", "ok": ok, "count": new_opps}
+            )
             if not ok:
                 out["passed"] = False
-                out["errors"].append(f"Expected {key} >= {min_val}, got {val}")
+                out["errors"].append(
+                    f"Empty discovery run expected 0 opportunities, got {new_opps}"
+                )
+        else:
+            for key, min_val in [
+                ("opportunities", 1),
+                ("completed_market_briefs", 1),
+            ]:
+                val = out["artifacts"][key]
+                ok = val >= min_val
+                out["checks"].append({"name": f"fresh_{key}", "ok": ok, "count": val})
+                if not ok:
+                    out["passed"] = False
+                    out["errors"].append(f"Expected {key} >= {min_val}, got {val}")
 
         ok = ranking is not None
         out["checks"].append({"name": "fresh_ranking", "ok": ok})
@@ -135,12 +174,26 @@ async def verify(pipeline_run_id: UUID | None) -> dict:
                 )
             ).first()
             out["pipeline_run"] = dict(run._mapping) if run else None
+            if run is not None and empty_discovery:
+                status_ok = run._mapping.get("status") == "completed"
+                out["checks"].append(
+                    {
+                        "name": "empty_discovery_pipeline_completed",
+                        "ok": status_ok,
+                        "status": run._mapping.get("status"),
+                    }
+                )
+                if not status_ok:
+                    out["passed"] = False
+                    out["errors"].append(
+                        "Empty discovery run must finish with pipeline status completed"
+                    )
 
         top = (
             await session.execute(
                 text(
                     """
-                    SELECT o.title, o.llm_model, e.rank, e.composite_score
+                    SELECT o.title, o.llm_model, e.rank, e.final_opportunity_score
                     FROM executive_ranking_entries e
                     JOIN executive_ranking_runs r ON r.id = e.executive_ranking_run_id AND r.is_current
                     JOIN opportunities o ON o.id = e.opportunity_id

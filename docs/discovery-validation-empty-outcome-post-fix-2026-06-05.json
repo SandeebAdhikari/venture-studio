@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-06-05T16:37:14.321939+00:00",
+  "label": "empty_discovery_post_fix_scenario",
+  "pipeline_run_id": "e0798670-a312-487b-803c-d465671da666",
+  "funnel": {
+    "signals_collected": 89,
+    "complaints_extracted": 35,
+    "patterns_found": 0,
+    "opportunities_generated": 0,
+    "ranked_opportunity_count": 0
+  },
+  "report": {
+    "report_id": "6a2e5c5e-4c49-479f-923d-f30cf55f35d4",
+    "outcome": "empty_discovery",
+    "generated_count": 0,
+    "title": "Venture Discovery Report \u2014 2026-06-05",
+    "summary": "Discovery completed with no founder-grade ranked opportunities. Funnel: 89 signals, 35 complaints, 0 patterns, 0 opportunities."
+  },
+  "markdown_excerpt": "# Venture Recommendation Report\n\nDiscovery completed without founder-grade ranked opportunities. This is a valid outcome when signal evidence does not support a venture thesis.\n\n**Generated:** 2026-06-05 16:37 UTC\n**Opportunities covered:** 0\n\n---\n\n## Discovery funnel\n\n- **Signals collected:** 89\n- **Complaints extracted:** 35\n- **Patterns found:** 0\n- **Opportunities generated:** 0\n- **Ranked opportunities:** 0\n\n## Why no founder-grade opportunities\n\nNo founder-grade opportunities were ranked for this run. Discovery processed real signal data but did not surface a venture thesis strong enough to research and rank."
+}

@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from app.agents.classification.schemas import ClassificationLLMOutput, LLMInvocationResult
 from app.agents.openai_schema import openai_strict_json_schema
 from app.agents.classification.taxonomy import taxonomy_prompt_block
+from app.agents.classification.founder_signals import founder_signals_prompt_block
 from app.config import Settings
 
 
@@ -57,7 +58,8 @@ class OpenAIClassificationClient:
             "If the text is not a complaint, set is_complaint to false "
             "and still return valid enum codes. "
             "Use 'other' codes when uncertain.\n\n"
-            f"{taxonomy_prompt_block()}"
+            f"{taxonomy_prompt_block()}\n\n"
+            f"{founder_signals_prompt_block()}"
         )
 
         try:

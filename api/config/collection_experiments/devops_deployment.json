@@ -1,0 +1,23 @@
+{
+  "experiment": "devops_deployment_collection",
+  "description": "Controlled collection experiment: DevOps/deployment-focused HN Algolia query (replaces broad Ask HN frustrated).",
+  "source_name": "production-hn-saas",
+  "config": {
+    "query": "Ask HN deployment",
+    "keywords": [
+      "deploy",
+      "deployment",
+      "pipeline",
+      "staging",
+      "production",
+      "docker",
+      "kubernetes",
+      "terraform",
+      "ci",
+      "cd"
+    ],
+    "max_pages": 3,
+    "hits_per_page": 30,
+    "min_keyword_matches": 1
+  }
+}

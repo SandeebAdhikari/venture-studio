@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { PipelineJarvisActive } from "@/components/pipeline/pipeline-jarvis-active";
 import { PipelineJarvisHero } from "@/components/pipeline/pipeline-jarvis-hero";
+import { PipelineJarvisMetrics } from "@/components/pipeline/pipeline-jarvis-metrics";
 import { PipelineJarvisHistory } from "@/components/pipeline/pipeline-jarvis-history";
 import { PipelineJarvisStages } from "@/components/pipeline/pipeline-jarvis-stages";
 import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
@@ -99,7 +100,10 @@ export default function PipelinePage() {
         </div>
       ) : (
         <>
-          <PipelineJarvisHero data={pipeline.data} />
+          <div className="space-y-4">
+            <PipelineJarvisHero data={pipeline.data} />
+            <PipelineJarvisMetrics data={pipeline.data} />
+          </div>
 
           {pipeline.data.running && <PipelineJarvisActive run={pipeline.data.running} />}
 

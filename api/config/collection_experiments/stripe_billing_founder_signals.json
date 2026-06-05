@@ -1,0 +1,143 @@
+{
+  "experiment": "founder_signal_clustering_stripe_billing",
+  "description": "Audited founder signal enum assignments for the 15 lane-relevant Stripe Billing corpus complaints (venture reconstruction audit 2026-06-05).",
+  "complaint_signals": {
+    "191e82f8-18a1-4d17-9bb1-2adff6aabe87": {
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "revenue_interruption",
+      "manual_theme": "R1"
+    },
+    "c80adb68-44b5-49e6-b47f-be8982d9a054": {
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "margin_erosion",
+      "manual_theme": "R1"
+    },
+    "a4d30dbe-dbee-4762-b576-c4c520ed1d17": {
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "revenue_interruption",
+      "manual_theme": "R1"
+    },
+    "7e1446aa-d438-4460-bcad-d5f9ccaee94f": {
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "operational_risk",
+      "manual_theme": "R1"
+    },
+    "948e6176-2c11-4006-b010-98bcc312c273": {
+      "business_function_code": "fraud_prevention",
+      "jtbd_code": "prevent_fraud",
+      "consequence_code": "margin_erosion",
+      "manual_theme": "R2"
+    },
+    "57577e0b-2b86-4176-8e59-042361a3b77d": {
+      "business_function_code": "fraud_prevention",
+      "jtbd_code": "prevent_fraud",
+      "consequence_code": "fraud_loss",
+      "manual_theme": "R2"
+    },
+    "df278195-acc0-45d8-9b10-a94bf92d23f4": {
+      "business_function_code": "fraud_prevention",
+      "jtbd_code": "prevent_fraud",
+      "consequence_code": "fraud_loss",
+      "manual_theme": "R2"
+    },
+    "4281360c-288c-43b9-a70e-48ba450f271d": {
+      "business_function_code": "subscription_management",
+      "jtbd_code": "manage_subscriptions",
+      "consequence_code": "revenue_interruption",
+      "manual_theme": "R3"
+    },
+    "988dadac-1460-4606-bcc3-505b7b7c3981": {
+      "business_function_code": "subscription_management",
+      "jtbd_code": "manage_subscriptions",
+      "consequence_code": "revenue_interruption",
+      "manual_theme": "R3"
+    },
+    "4e3de199-4f95-4f7a-bcb6-c0ab1d1e83c4": {
+      "business_function_code": "billing_operations",
+      "jtbd_code": "automate_billing",
+      "consequence_code": "engineering_friction",
+      "manual_theme": "R3"
+    },
+    "ed75d5bb-622d-473e-81c7-4665b2181820": {
+      "business_function_code": "checkout_optimization",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "customer_loss",
+      "manual_theme": "R4"
+    },
+    "b5205e50-1044-4b8c-aaac-c2898fc25065": {
+      "business_function_code": "checkout_optimization",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "customer_loss",
+      "manual_theme": "R4"
+    },
+    "f776acef-53cb-4465-97cf-bc3cb235a7c1": {
+      "business_function_code": "invoice_collection",
+      "jtbd_code": "collect_invoices",
+      "consequence_code": "operational_overhead",
+      "manual_theme": "R5"
+    },
+    "a3f26dc4-bcda-4040-a83f-6c79e6f36ae1": {
+      "business_function_code": "invoice_collection",
+      "jtbd_code": "collect_invoices",
+      "consequence_code": "operational_overhead",
+      "manual_theme": "R5"
+    },
+    "1aac2925-1030-4896-96e3-0a50f485c8c3": {
+      "business_function_code": "subscription_management",
+      "jtbd_code": "manage_subscriptions",
+      "consequence_code": "margin_erosion",
+      "manual_theme": "R6"
+    }
+  },
+  "manual_themes": {
+    "R1": {
+      "label": "Processor access / selection",
+      "complaint_ids": [
+        "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+        "c80adb68-44b5-49e6-b47f-be8982d9a054",
+        "a4d30dbe-dbee-4762-b576-c4c520ed1d17",
+        "7e1446aa-d438-4460-bcad-d5f9ccaee94f"
+      ]
+    },
+    "R2": {
+      "label": "Fraud / disputes",
+      "complaint_ids": [
+        "948e6176-2c11-4006-b010-98bcc312c273",
+        "57577e0b-2b86-4176-8e59-042361a3b77d",
+        "df278195-acc0-45d8-9b10-a94bf92d23f4"
+      ]
+    },
+    "R3": {
+      "label": "Billing model implementation",
+      "complaint_ids": [
+        "4281360c-288c-43b9-a70e-48ba450f271d",
+        "988dadac-1460-4606-bcc3-505b7b7c3981",
+        "4e3de199-4f95-4f7a-bcb6-c0ab1d1e83c4"
+      ]
+    },
+    "R4": {
+      "label": "Checkout friction",
+      "complaint_ids": [
+        "ed75d5bb-622d-473e-81c7-4665b2181820",
+        "b5205e50-1044-4b8c-aaac-c2898fc25065"
+      ]
+    },
+    "R5": {
+      "label": "Invoice operations",
+      "complaint_ids": [
+        "f776acef-53cb-4465-97cf-bc3cb235a7c1",
+        "a3f26dc4-bcda-4040-a83f-6c79e6f36ae1"
+      ]
+    },
+    "R6": {
+      "label": "Platform billing mandate",
+      "complaint_ids": [
+        "1aac2925-1030-4896-96e3-0a50f485c8c3"
+      ]
+    }
+  }
+}

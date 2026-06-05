@@ -4,6 +4,16 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
+from app.agents.opportunity.patterns import (
+    PATTERN_SOURCE_TOKEN,
+    detect_token_clustering_patterns,
+    passes_coherence_gate,
+)
+from app.agents.opportunity.founder_signal_clustering import (
+    DEFAULT_FOUNDER_SIGNAL_VARIANT,
+    PATTERN_SOURCE_FOUNDER_SIGNAL,
+    detect_founder_signal_patterns,
+)
 from app.agents.opportunity.schemas import ComplaintEvidence, ComplaintPattern
 
 MIN_FALLBACK_COMPLAINT_COUNT = 4
@@ -12,6 +22,8 @@ MIN_FALLBACK_DOMINANT_PERSONA_SHARE = 0.4
 MAX_FALLBACK_PATTERNS = 3
 
 PATTERN_SOURCE_PHRASE = "phrase_clustering"
+PATTERN_SOURCE_TOKEN_CLUSTERING = PATTERN_SOURCE_TOKEN
+PATTERN_SOURCE_FOUNDER_SIGNAL_CLUSTERING = PATTERN_SOURCE_FOUNDER_SIGNAL
 PATTERN_SOURCE_TAXONOMY = "taxonomy_fallback"
 
 
@@ -54,10 +66,14 @@ def detect_taxonomy_fallback_patterns(
         if persona_share < MIN_FALLBACK_DOMINANT_PERSONA_SHARE:
             continue
 
+        anchor_phrase = f"{category_code}|{domain_code}"
+        if not passes_coherence_gate(anchor_phrase, members):
+            continue
+
         topic = build_taxonomy_topic(category_code, domain_code)
         pattern = ComplaintPattern(
             topic=topic,
-            anchor_phrase=f"{category_code}|{domain_code}",
+            anchor_phrase=anchor_phrase,
             complaint_ids=[member.id for member in members],
             domain_code=domain_code,
             category_code=category_code,
@@ -75,8 +91,27 @@ def detect_taxonomy_fallback_patterns(
 def resolve_generation_patterns(
     evidence: list[ComplaintEvidence],
     phrase_patterns: list[ComplaintPattern],
+    *,
+    min_cluster_size: int = 3,
+    founder_signal_variant: str = DEFAULT_FOUNDER_SIGNAL_VARIANT,
 ) -> list[ComplaintPattern]:
-    """Return phrase clusters when present; otherwise bounded taxonomy fallback."""
+    """Return phrase clusters, then token, then founder signal, then bounded taxonomy fallback."""
     if phrase_patterns:
         return phrase_patterns
+
+    token_patterns = detect_token_clustering_patterns(
+        evidence,
+        min_cluster_size=min_cluster_size,
+    )
+    if token_patterns:
+        return token_patterns
+
+    founder_patterns = detect_founder_signal_patterns(
+        evidence,
+        min_cluster_size=min_cluster_size,
+        variant=founder_signal_variant,  # type: ignore[arg-type]
+    )
+    if founder_patterns:
+        return founder_patterns
+
     return detect_taxonomy_fallback_patterns(evidence)

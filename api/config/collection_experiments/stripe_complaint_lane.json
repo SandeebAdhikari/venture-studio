@@ -1,0 +1,23 @@
+{
+  "experiment": "stripe_complaint_lane_validation",
+  "description": "Stripe Complaint-Lane Validation: emotion + market query for B2B billing pain recurrence.",
+  "source_name": "production-hn-saas",
+  "config": {
+    "query": "Ask HN frustrated Stripe",
+    "keywords": [
+      "frustrated",
+      "frustrating",
+      "painful",
+      "broken",
+      "stripe",
+      "billing",
+      "subscription",
+      "invoice",
+      "webhook",
+      "payment"
+    ],
+    "max_pages": 3,
+    "hits_per_page": 30,
+    "min_keyword_matches": 1
+  }
+}

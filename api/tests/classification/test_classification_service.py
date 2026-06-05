@@ -80,6 +80,9 @@ def _valid_output(*, quote: str, is_complaint: bool = True) -> ClassificationLLM
         verbatim_quote=quote,
         confidence=0.92,
         product_mentions=["SomeTool"],
+        business_function_code="billing_operations",
+        jtbd_code="automate_billing",
+        consequence_code="margin_erosion",
     )
 
 
@@ -193,6 +196,9 @@ async def test_classify_signal_fails_after_validation_retries(
                 summary="Support is unresponsive on billing issues for this customer.",
                 verbatim_quote="Support never responds when our billing is wrong",
                 confidence=0.5,
+                business_function_code="billing_operations",
+                jtbd_code="automate_billing",
+                consequence_code="operational_overhead",
             ),
             ClassificationLLMOutput(
                 is_complaint=True,
@@ -203,6 +209,9 @@ async def test_classify_signal_fails_after_validation_retries(
                 summary="Support is unresponsive on billing issues for this customer.",
                 verbatim_quote="Support never responds when our billing is wrong",
                 confidence=0.5,
+                business_function_code="billing_operations",
+                jtbd_code="automate_billing",
+                consequence_code="operational_overhead",
             ),
         ]
     )
@@ -272,6 +281,9 @@ async def test_classify_pending_batch(
                 summary="Integrations break after releases and require manual webhook fixes.",
                 verbatim_quote=quote,
                 confidence=0.88,
+                business_function_code="ci_cd",
+                jtbd_code="deploy_software",
+                consequence_code="engineering_friction",
             ),
             _valid_output(
                 quote="Company X raised a Series B round today",
@@ -320,6 +332,9 @@ async def test_classify_signal_html_body_and_other_taxonomy(
                 summary="Developer frustrated with repeated dependency setup work.",
                 verbatim_quote=quote,
                 confidence=0.9,
+                business_function_code="deployment",
+                jtbd_code="deploy_software",
+                consequence_code="engineering_friction",
             )
         ]
     )

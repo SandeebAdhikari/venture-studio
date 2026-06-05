@@ -1,27 +1,40 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import {
+  createJarvisRenderer,
+  JARVIS,
+  JARVIS_DIM,
+  setRendererSize,
+  supportsWebGL,
+} from "@/lib/visuals/jarvis-three";
+import {
+  addGlowMesh,
+  addOrbitalRing,
+  addWireframeShell,
+  bindVisibilityLoop,
+  createEdgePulses,
+  createGridFloor,
+  createPulsePoints,
+  disposeGrid,
+  disposeResources,
+  type SceneDisposable,
+  updateEdgePulsePositions,
+} from "@/lib/visuals/jarvis-scene-utils";
 import type { DashboardAgentStatus } from "@/types/api";
 
-const JARVIS = 0x6ee7ff;
-const JARVIS_DIM = 0x1a4a55;
+const SCENE_RADIUS = 2.05;
+const RING_A = 1.72;
+const RING_B = 1.28;
+const SCENE_SCALE = 1.28;
 
 function agentSuccessRate(agent: DashboardAgentStatus): number {
   if (agent.current_total <= 0) return 0;
   return agent.current_completed / agent.current_total;
 }
 
-function supportsWebGL(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return !!(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
-
-function mountJarvisCore(
+function mountAgentMesh(
   host: HTMLDivElement,
   agents: DashboardAgentStatus[],
   activeStep: number | null,
@@ -29,223 +42,165 @@ function mountJarvisCore(
   isMobile: boolean,
 ): () => void {
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000000, 0.08);
+  scene.fog = new THREE.FogExp2(0x000000, 0.046);
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 80);
-  camera.position.set(0, 0.35, 5.2);
-
-  const renderer = new THREE.WebGLRenderer({
-    alpha: true,
-    antialias: !isMobile,
-    powerPreference: "low-power",
-  });
-  renderer.setClearColor(0x000000, 0);
-  host.appendChild(renderer.domElement);
+  const renderer = createJarvisRenderer(host, isMobile);
+  const disposables: SceneDisposable[] = [];
 
   const root = new THREE.Group();
+  root.rotation.x = 0.32;
+  root.scale.setScalar(SCENE_SCALE);
   scene.add(root);
 
-  const coreGeo = new THREE.IcosahedronGeometry(0.42, 1);
-  const coreWire = new THREE.LineSegments(
-    new THREE.WireframeGeometry(coreGeo),
-    new THREE.LineBasicMaterial({ color: JARVIS, transparent: true, opacity: 0.85 }),
-  );
-  root.add(coreWire);
+  const grid = createGridFloor(5.5, 14, JARVIS_DIM, -0.75);
+  root.add(grid);
 
-  const coreMesh = new THREE.Mesh(
-    coreGeo,
-    new THREE.MeshBasicMaterial({
-      color: JARVIS,
-      transparent: true,
-      opacity: 0.12,
-      wireframe: false,
-    }),
-  );
-  root.add(coreMesh);
+  const orchestrator = new THREE.Group();
+  orchestrator.position.y = 0.05;
+  root.add(orchestrator);
 
-  const rings: THREE.Mesh[] = [];
-  [1.05, 1.45, 1.9].forEach((radius, i) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, 0.008, 8, 96),
-      new THREE.MeshBasicMaterial({
-        color: i === 1 ? JARVIS : JARVIS_DIM,
-        transparent: true,
-        opacity: 0.35 + i * 0.12,
-      }),
-    );
-    ring.rotation.x = Math.PI / 2 + i * 0.35;
-    ring.rotation.y = i * 0.5;
-    root.add(ring);
-    rings.push(ring);
-  });
+  const hubGeo = new THREE.IcosahedronGeometry(0.18, 0);
+  addWireframeShell(orchestrator, hubGeo, JARVIS, 0.95, disposables);
+  addGlowMesh(orchestrator, hubGeo, JARVIS, 0.15, disposables);
+  addOrbitalRing(orchestrator, 0.32, 0.004, Math.PI / 2, 0, JARVIS_DIM, 0.5, disposables);
 
-  const scanMat = new THREE.MeshBasicMaterial({
-    color: JARVIS,
-    transparent: true,
-    opacity: 0.45,
-    side: THREE.DoubleSide,
-  });
-  const scanRing = new THREE.Mesh(new THREE.RingGeometry(2.1, 2.12, 64), scanMat);
-  scanRing.rotation.x = -Math.PI / 2;
-  scanRing.visible = false;
-  root.add(scanRing);
-
-  const agentGroup = new THREE.Group();
-  root.add(agentGroup);
-
-  const agentNodes: THREE.Mesh[] = [];
-  const agentLines: THREE.Line[] = [];
-  const count = Math.max(agents.length, 1);
+  const count = Math.max(agents.length, 8);
+  const nodeGroups: THREE.Group[] = [];
+  const nodePositions: THREE.Vector3[] = [];
+  const pulseEdges: Array<{ from: THREE.Vector3; to: THREE.Vector3 }> = [];
 
   agents.forEach((agent, i) => {
     const rate = agentSuccessRate(agent);
     const step = i + 1;
     const isActive = activeStep === step;
-    const angle = (i / count) * Math.PI * 2;
-    const orbit = 2.35 + rate * 0.45;
-    const y = Math.sin(angle * 2) * 0.35;
-    const x = Math.cos(angle) * orbit;
-    const z = Math.sin(angle) * orbit;
+    const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+    const ring = i % 2 === 0 ? RING_A : RING_B;
+    const y = i % 2 === 0 ? 0.28 : -0.22;
+    const x = Math.cos(angle) * ring;
+    const z = Math.sin(angle) * ring;
+    const pos = new THREE.Vector3(x, y, z);
+    nodePositions.push(pos);
 
-    const node = new THREE.Mesh(
-      new THREE.SphereGeometry(0.06 + rate * 0.04 + (isActive ? 0.03 : 0), 12, 12),
-      new THREE.MeshBasicMaterial({
-        color: isActive ? 0xffffff : JARVIS,
-        transparent: true,
-        opacity: isActive ? 0.95 : 0.55 + rate * 0.45,
-      }),
-    );
-    node.position.set(x, y, z);
-    agentGroup.add(node);
-    agentNodes.push(node);
+    const group = new THREE.Group();
+    group.position.copy(pos);
+    root.add(group);
+    nodeGroups.push(group);
 
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(x, y, z),
-    ]);
-    const line = new THREE.Line(
-      lineGeo,
+    const size = 0.11 + rate * 0.05 + (isActive ? 0.05 : 0);
+    const nodeGeo = new THREE.OctahedronGeometry(size, 0);
+    addWireframeShell(group, nodeGeo, isActive ? 0xffffff : JARVIS, isActive ? 1 : 0.55 + rate * 0.4, disposables);
+    addGlowMesh(group, nodeGeo, JARVIS, isActive ? 0.35 : 0.08 + rate * 0.12, disposables);
+
+    if (isActive) {
+      const halo = addOrbitalRing(group, size * 1.6, 0.004, Math.PI / 2, 0, JARVIS, 0.75, disposables);
+      halo.userData.isHalo = true;
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.55, 6),
+        new THREE.MeshBasicMaterial({ color: JARVIS, transparent: true, opacity: 0.7 }),
+      );
+      beam.position.y = size + 0.28;
+      group.add(beam);
+      disposables.push({ geometry: beam.geometry, material: beam.material as THREE.Material });
+    }
+
+    const link = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), pos.clone().sub(orchestrator.position)]),
       new THREE.LineBasicMaterial({
         color: JARVIS,
         transparent: true,
-        opacity: isActive ? 0.75 : 0.15 + rate * 0.35,
+        opacity: isActive ? 0.7 : 0.12 + rate * 0.28,
       }),
     );
-    agentGroup.add(line);
-    agentLines.push(line);
+    orchestrator.add(link);
+    disposables.push({ geometry: link.geometry, material: link.material as THREE.Material });
+    pulseEdges.push({ from: pos, to: orchestrator.position });
   });
 
-  const particleCount = isMobile ? 120 : 220;
-  const particlePos = new Float32Array(particleCount * 3);
-  for (let i = 0; i < particleCount; i += 1) {
-    const r = 2.8 + Math.random() * 1.2;
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    particlePos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-    particlePos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.4;
-    particlePos[i * 3 + 2] = r * Math.cos(phi);
+  for (let i = 0; i < nodePositions.length; i += 1) {
+    const curr = nodePositions[i];
+    const next = nodePositions[(i + 1) % nodePositions.length];
+    const step = i + 1;
+    const isActive = activeStep === step;
+    const seg = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([curr, next]),
+      new THREE.LineBasicMaterial({
+        color: JARVIS,
+        transparent: true,
+        opacity: isActive ? 0.8 : 0.22,
+      }),
+    );
+    root.add(seg);
+    disposables.push({ geometry: seg.geometry, material: seg.material as THREE.Material });
+    pulseEdges.push({ from: curr, to: next });
   }
-  const particleGeo = new THREE.BufferGeometry();
-  particleGeo.setAttribute("position", new THREE.BufferAttribute(particlePos, 3));
-  const particles = new THREE.Points(
-    particleGeo,
-    new THREE.PointsMaterial({
-      color: JARVIS,
-      size: isMobile ? 0.02 : 0.015,
-      transparent: true,
-      opacity: 0.5,
-      depthWrite: false,
-    }),
+
+  for (let i = 0; i < nodePositions.length; i += 2) {
+    const a = nodePositions[i];
+    const b = nodePositions[(i + 4) % nodePositions.length];
+    const cross = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([a, b]),
+      new THREE.LineBasicMaterial({ color: JARVIS_DIM, transparent: true, opacity: 0.14 }),
+    );
+    root.add(cross);
+    disposables.push({ geometry: cross.geometry, material: cross.material as THREE.Material });
+  }
+
+  const trackA = addOrbitalRing(root, RING_A, 0.006, Math.PI / 2, 0, JARVIS_DIM, 0.4, disposables);
+  trackA.position.y = 0.28;
+  const trackB = addOrbitalRing(root, RING_B, 0.006, Math.PI / 2, 0, JARVIS_DIM, 0.35, disposables);
+  trackB.position.y = -0.22;
+
+  const pulseCount = isMobile ? 6 : 10;
+  const { geo: pulseGeo, mat: pulseMat, mesh: pulseMesh } = createPulsePoints(
+    pulseCount,
+    JARVIS,
+    isMobile,
   );
-  root.add(particles);
+  root.add(pulseMesh);
+  const pulses = createEdgePulses(pulseEdges, pulseCount);
+  const pulsePos = pulseGeo.attributes.position.array as Float32Array;
 
-  const resize = () => {
-    const w = host.clientWidth;
-    const h = host.clientHeight;
-    if (w === 0 || h === 0) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.75);
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  };
-
-  const resizeObserver = new ResizeObserver(resize);
-  resizeObserver.observe(host);
+  const resize = () =>
+    setRendererSize(renderer, host, camera, isMobile, SCENE_RADIUS, 0.9);
+  const ro = new ResizeObserver(resize);
+  ro.observe(host);
   resize();
 
-  let raf = 0;
   let t0 = performance.now();
-
-  const tick = (now: number) => {
-    raf = requestAnimationFrame(tick);
-    if (document.visibilityState === "hidden") return;
-
+  const stopLoop = bindVisibilityLoop(reducedMotion, (now, delta) => {
     const elapsed = (now - t0) / 1000;
-
     if (!reducedMotion) {
-      root.rotation.y = elapsed * 0.18;
-      coreMesh.rotation.x = elapsed * 0.35;
-      coreMesh.rotation.z = elapsed * 0.22;
-      rings.forEach((ring, i) => {
-        ring.rotation.z += 0.004 * (i % 2 === 0 ? 1 : -1);
-      });
-
-      agentNodes.forEach((node, i) => {
+      root.rotation.y = elapsed * 0.08;
+      orchestrator.rotation.y = elapsed * 0.25;
+      nodeGroups.forEach((group, i) => {
         const step = i + 1;
         const isActive = activeStep === step;
-        const pulse = isActive ? 1 + Math.sin(elapsed * 4) * 0.18 : 1 + Math.sin(elapsed * 2 + i) * 0.06;
-        node.scale.setScalar(pulse);
+        const bob = Math.sin(elapsed * 1.3 + i * 0.7) * 0.03;
+        group.position.y = (i % 2 === 0 ? 0.28 : -0.22) + bob;
+        if (isActive) {
+          group.rotation.y = elapsed * 0.6;
+          group.children.forEach((child) => {
+            if (child.userData.isHalo) {
+              child.rotation.z = elapsed * 1.2;
+            }
+          });
+        }
       });
-
-      particles.rotation.y = elapsed * 0.05;
+      updateEdgePulsePositions(pulses, pulsePos, delta, reducedMotion);
+      pulseGeo.attributes.position.needsUpdate = true;
     }
-
     renderer.render(scene, camera);
-  };
-
-  if (reducedMotion) {
-    renderer.render(scene, camera);
-  } else {
-    raf = requestAnimationFrame(tick);
-  }
-
-  const onVisibility = () => {
-    if (document.visibilityState === "hidden") {
-      cancelAnimationFrame(raf);
-      raf = 0;
-    } else if (!reducedMotion && raf === 0) {
-      t0 = performance.now();
-      raf = requestAnimationFrame(tick);
-    }
-  };
-  document.addEventListener("visibilitychange", onVisibility);
+  });
 
   return () => {
-    document.removeEventListener("visibilitychange", onVisibility);
-    resizeObserver.disconnect();
-    cancelAnimationFrame(raf);
+    stopLoop();
+    ro.disconnect();
     renderer.dispose();
-    coreGeo.dispose();
-    coreWire.geometry.dispose();
-    (coreWire.material as THREE.Material).dispose();
-    (coreMesh.material as THREE.Material).dispose();
-    rings.forEach((r) => {
-      r.geometry.dispose();
-      (r.material as THREE.Material).dispose();
-    });
-    scanRing.geometry.dispose();
-    scanMat.dispose();
-    agentNodes.forEach((n) => {
-      n.geometry.dispose();
-      (n.material as THREE.Material).dispose();
-    });
-    agentLines.forEach((l) => {
-      l.geometry.dispose();
-      (l.material as THREE.Material).dispose();
-    });
-    particleGeo.dispose();
-    (particles.material as THREE.Material).dispose();
+    disposeResources(disposables);
+    disposeGrid(grid);
+    pulseGeo.dispose();
+    pulseMat.dispose();
     if (renderer.domElement.parentElement === host) {
       host.removeChild(renderer.domElement);
     }
@@ -266,19 +221,32 @@ export function AgentJarvisCore({
   isMobile = false,
 }: AgentJarvisCoreProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const [webgl, setWebgl] = useState(true);
+
+  useEffect(() => {
+    setWebgl(supportsWebGL());
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || !supportsWebGL()) return;
+    if (!host || !webgl) return;
 
     let dispose: (() => void) | undefined;
     try {
-      dispose = mountJarvisCore(host, agents, activeStep, reducedMotion, isMobile);
+      dispose = mountAgentMesh(host, agents, activeStep, reducedMotion, isMobile);
     } catch {
       return;
     }
     return () => dispose?.();
-  }, [agents, activeStep, reducedMotion, isMobile]);
+  }, [agents, activeStep, reducedMotion, isMobile, webgl]);
 
-  return <div ref={hostRef} className="jarvis-core-canvas h-full min-h-[220px] w-full" />;
+  if (!webgl) {
+    return (
+      <div className="jarvis-scene-fallback font-mono text-xs text-[hsl(187_70%_55%)]">
+        AGENT_MESH :: STANDBY
+      </div>
+    );
+  }
+
+  return <div ref={hostRef} className="jarvis-scene-canvas h-full w-full" />;
 }

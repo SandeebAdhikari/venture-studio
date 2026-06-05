@@ -1,0 +1,243 @@
+{
+  "captured_at": "2026-06-05T17:11:40.111802+00:00",
+  "label": "devops-deployment-collection-experiment",
+  "config_change": {
+    "source_name": "production-hn-saas",
+    "previous_config": {
+      "query": "Ask HN deployment",
+      "keywords": [
+        "deploy",
+        "deployment",
+        "pipeline",
+        "staging",
+        "production",
+        "docker",
+        "kubernetes",
+        "terraform",
+        "ci",
+        "cd"
+      ],
+      "max_pages": 3,
+      "hits_per_page": 30,
+      "min_keyword_matches": 1
+    },
+    "experiment_config": {
+      "query": "Ask HN deployment",
+      "keywords": [
+        "deploy",
+        "deployment",
+        "pipeline",
+        "staging",
+        "production",
+        "docker",
+        "kubernetes",
+        "terraform",
+        "ci",
+        "cd"
+      ],
+      "max_pages": 3,
+      "hits_per_page": 30,
+      "min_keyword_matches": 1
+    }
+  },
+  "collection": {
+    "sources_processed": 1,
+    "inserted": 90,
+    "duplicates": 0,
+    "skipped": 0
+  },
+  "signals_collected": 90,
+  "complaints_extracted": 3,
+  "phrase_patterns": 0,
+  "token_patterns": 0,
+  "fallback_patterns": 0,
+  "opportunities_generated": 0,
+  "sample_patterns": {
+    "phrase_clustering": [],
+    "token_clustering": [],
+    "taxonomy_fallback": []
+  },
+  "sample_complaints": [
+    {
+      "summary": "The user is seeking alternatives to AWS Opsworks for continuous integration and deployment due to performance issues and",
+      "verbatim": "Opsworks is slow, theres very limited feedback on whats happening as I run commands, and there is no notion of builds.",
+      "domain": "devtools",
+      "category": "performance",
+      "persona": "developer",
+      "severity": 3,
+      "signal_title": "Ask HN: Continuous integration and deployment server"
+    },
+    {
+      "summary": "The user is frustrated with the difficulties of deploying a project using Docker Compose and Docker Swarm on a single VP",
+      "verbatim": "I guess docker-compose/swarm is totally painful.",
+      "domain": "devtools",
+      "category": "workflow",
+      "persona": "developer",
+      "severity": 4,
+      "signal_title": "Ask HN: Container orchestrator for single host deployments?"
+    },
+    {
+      "summary": "The user expresses concerns about the visibility and operational transparency of applications deployed using serverless ",
+      "verbatim": "The primary concern has been visibility into the app. The app's operation can be quite opaque when deployed that way.",
+      "domain": "devtools",
+      "category": "performance",
+      "persona": "developer",
+      "severity": 3,
+      "signal_title": "Ask HN: Have you shipped anything serious with a \u201cserverless\u201d architecture?"
+    }
+  ],
+  "pipeline": {
+    "pipeline_run_id": "dfdc82dc-7046-45fe-86ce-3f85319b9fc6",
+    "status": "completed",
+    "stages_completed": 14,
+    "stages_failed": 0,
+    "duration_seconds": 324.148036,
+    "generate_opportunities": {
+      "items_in": 0,
+      "items_out": 0
+    }
+  },
+  "verify": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "no_mock_opportunities",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_market_briefs",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_competitor_analyses",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_customer_research",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_revenue_validations",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_product_strategies",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_gtm_plans",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_growth_evaluations",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_mock_human_proxy_evaluations",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "no_e2e_opportunities",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "fresh_complaints",
+        "ok": true,
+        "count": 3
+      },
+      {
+        "name": "empty_discovery_opportunities",
+        "ok": true,
+        "count": 0
+      },
+      {
+        "name": "fresh_ranking",
+        "ok": true
+      },
+      {
+        "name": "fresh_venture_report",
+        "ok": true
+      },
+      {
+        "name": "empty_discovery_pipeline_completed",
+        "ok": true,
+        "status": "completed"
+      }
+    ],
+    "errors": [],
+    "artifacts": {
+      "complaints": 3,
+      "opportunities": 0,
+      "completed_market_briefs": 0,
+      "current_ranking": {
+        "id": "c2333a77-b78f-4584-8bbb-92ad95b6d653",
+        "created_at": "2026-06-05 17:06:15.964372+00:00",
+        "ranking_metadata": {
+          "approval_status": "pending",
+          "pipeline_run_id": "dfdc82dc-7046-45fe-86ce-3f85319b9fc6",
+          "min_agent_coverage": 1,
+          "approval_request_id": "c468a0c2-a939-4560-bf92-e098dbc99ee3",
+          "founder_profile_name": "Default Solo Technical Founder",
+          "discovery_validation_mode": true
+        }
+      },
+      "latest_venture_report": {
+        "id": "b9bcceec-fc75-491a-80c1-25f69d8eea15",
+        "title": "Venture Discovery Report \u2014 2026-06-05",
+        "created_at": "2026-06-05 17:06:15.964372+00:00",
+        "report_metadata": {
+          "top_n": 5,
+          "engine": "venture_report_v1",
+          "outcome": "empty_discovery",
+          "generated_at": "2026-06-05T17:11:40.078883+00:00",
+          "pipeline_run_id": "dfdc82dc-7046-45fe-86ce-3f85319b9fc6",
+          "discovery_funnel": {
+            "patterns_found": 0,
+            "signals_collected": 0,
+            "complaints_extracted": 3,
+            "opportunities_generated": 0,
+            "ranked_opportunity_count": 0
+          },
+          "opportunity_count": 0,
+          "founder_profile_id": "c52e20d1-a86f-4531-a807-804718c99088",
+          "executive_ranking_run_id": "c2333a77-b78f-4584-8bbb-92ad95b6d653",
+          "discovery_validation_mode": true,
+          "executive_ranking_version": 1
+        }
+      }
+    },
+    "empty_discovery": true,
+    "pipeline_run": {
+      "status": "completed",
+      "started_at": "2026-06-05 17:06:16.026402+00:00",
+      "finished_at": "2026-06-05 17:11:40.099391+00:00",
+      "config_snapshot": {
+        "force": true,
+        "top_n": null,
+        "max_retries": null,
+        "score_limit": null,
+        "skip_stages": [],
+        "stages_only": null,
+        "pipeline_run_id": null,
+        "stop_on_failure": true,
+        "founder_profile_id": null,
+        "classify_batch_size": null,
+        "classify_max_batches": null,
+        "discovery_validation_mode": true,
+        "validation_ranking_run_id": null
+      }
+    },
+    "top_ranked": [],
+    "llm_models_seen": []
+  }
+}

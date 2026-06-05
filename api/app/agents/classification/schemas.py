@@ -31,6 +31,11 @@ class ClassificationLLMOutput(BaseModel):
     )
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the classification.")
     product_mentions: list[str] = Field(default_factory=list)
+    business_function_code: str = Field(
+        description="Closed-vocabulary business function code for founder signal clustering.",
+    )
+    jtbd_code: str = Field(description="Closed-vocabulary job-to-be-done code.")
+    consequence_code: str = Field(description="Closed-vocabulary economic consequence code.")
 
 
 class ClassificationResult(BaseModel):
@@ -45,6 +50,9 @@ class ClassificationResult(BaseModel):
     verbatim_quote: str | None = None
     confidence: float | None = None
     product_mentions: list[str] = Field(default_factory=list)
+    business_function_code: str | None = None
+    jtbd_code: str | None = None
+    consequence_code: str | None = None
 
 
 class ClassificationAgentResult(BaseModel):

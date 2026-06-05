@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { BudgetJarvisHero } from "@/components/budget/budget-jarvis-hero";
+import { BudgetJarvisMetrics } from "@/components/budget/budget-jarvis-metrics";
 import {
-  BudgetJarvisAgentsPanel,
-  BudgetJarvisHistoryPanel,
+  BudgetJarvisPanels,
 } from "@/components/budget/budget-jarvis-panels";
 import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -98,11 +98,11 @@ export default function BudgetPage() {
         </div>
       ) : (
         <>
-          <BudgetJarvisHero status={status.data} />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <BudgetJarvisAgentsPanel status={status.data} />
-            <BudgetJarvisHistoryPanel history={history.data} />
+          <div className="space-y-4">
+            <BudgetJarvisHero status={status.data} />
+            <BudgetJarvisMetrics status={status.data} />
           </div>
+          <BudgetJarvisPanels status={status.data} history={history.data} />
         </>
       )}
     </div>

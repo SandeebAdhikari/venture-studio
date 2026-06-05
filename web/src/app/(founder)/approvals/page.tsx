@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ApprovalsJarvisDetail } from "@/components/approvals/approvals-jarvis-detail";
 import { ApprovalsJarvisHero } from "@/components/approvals/approvals-jarvis-hero";
+import { ApprovalsJarvisMetrics } from "@/components/approvals/approvals-jarvis-metrics";
 import { ApprovalsJarvisQueue } from "@/components/approvals/approvals-jarvis-queue";
 import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,12 +112,15 @@ export default function ApprovalsPage() {
         </div>
       ) : (
         <>
-          <ApprovalsJarvisHero
-            total={stats.total}
-            pending={stats.pending}
-            approved={stats.approved}
-            rejected={stats.rejected}
-          />
+          <div className="space-y-4">
+            <ApprovalsJarvisHero />
+            <ApprovalsJarvisMetrics
+              total={stats.total}
+              pending={stats.pending}
+              approved={stats.approved}
+              rejected={stats.rejected}
+            />
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-5">
             <div className="lg:col-span-3">

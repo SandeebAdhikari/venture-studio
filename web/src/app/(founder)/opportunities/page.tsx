@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { OpportunityJarvisFilters } from "@/components/opportunities/opportunity-jarvis-filters";
 import { OpportunityJarvisHero } from "@/components/opportunities/opportunity-jarvis-hero";
+import { OpportunityJarvisMetrics } from "@/components/opportunities/opportunity-jarvis-metrics";
 import { OpportunityJarvisInventory } from "@/components/opportunities/opportunity-jarvis-inventory";
 import { OpportunityJarvisRanking } from "@/components/opportunities/opportunity-jarvis-ranking";
 import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
@@ -127,11 +128,14 @@ export default function OpportunitiesPage() {
       </div>
 
       {!isLoading && (
-        <OpportunityJarvisHero
-          ranking={ranking.data}
-          visibleCount={visibleCount}
-          inventoryTotal={all.data?.total}
-        />
+        <div className="space-y-4">
+          <OpportunityJarvisHero ranking={ranking.data} />
+          <OpportunityJarvisMetrics
+            ranking={ranking.data}
+            visibleCount={visibleCount}
+            inventoryTotal={all.data?.total}
+          />
+        </div>
       )}
 
       <OpportunityJarvisFilters
