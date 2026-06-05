@@ -36,6 +36,15 @@ def test_validator_rejects_tam_greater_than_market_size() -> None:
     assert "tam_usd must not exceed market_size_usd" in exc_info.value.errors
 
 
+def test_validator_rules_unchanged_after_hierarchy_hardening() -> None:
+    """Regression: sizing hierarchy checks remain strict."""
+    validator = MarketResearchValidator()
+    bad_sam = _valid_output().model_copy(update={"sam_usd": 5_000_000_000})
+    with pytest.raises(MarketResearchValidationError) as exc_info:
+        validator.validate(bad_sam)
+    assert "sam_usd must not exceed tam_usd" in exc_info.value.errors
+
+
 def test_validator_rejects_empty_segments() -> None:
     validator = MarketResearchValidator()
     output = _valid_output().model_copy(update={"customer_segments": []})

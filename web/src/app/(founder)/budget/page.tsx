@@ -1,17 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { BudgetJarvisHero } from "@/components/budget/budget-jarvis-hero";
 import {
-  AgentUsageTable,
-  BudgetHistoryChart,
-  BudgetSummaryLine,
-  BudgetUtilizationBar,
-  BudgetWarningsList,
-  formatPercent,
-  formatUsd,
-} from "@/components/budget/budget-widgets";
-import { LiveIndicator, PageHeader, ErrorState } from "@/components/layout/page-header";
-import { MetricCard } from "@/components/shared/metric-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  BudgetJarvisAgentsPanel,
+  BudgetJarvisHistoryPanel,
+} from "@/components/budget/budget-jarvis-panels";
+import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePollingApi } from "@/hooks/use-api";
 import { buildQuery } from "@/lib/api/client";
@@ -19,104 +15,94 @@ import type { BudgetHistoryResponse, BudgetStatusResponse } from "@/types/api";
 
 const POLL_INTERVAL = 30_000;
 
+const BOOT_SEQUENCE = [
+  "Syncing LLM spend telemetry…",
+  "Loading agent attribution…",
+  "Indexing 30-day burn…",
+  "Budget console online.",
+];
+
 export default function BudgetPage() {
+  const reduceMotion = useReducedMotion();
+  const [bootLine, setBootLine] = useState(0);
+
   const status = usePollingApi<BudgetStatusResponse>("budget", POLL_INTERVAL);
   const history = usePollingApi<BudgetHistoryResponse>(
     `budget/history${buildQuery({ days: 30 })}`,
     POLL_INTERVAL,
   );
 
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setBootLine((n) => (n + 1) % BOOT_SEQUENCE.length);
+    }, 2400);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
+
   if (status.error) {
-    return <ErrorState message={status.error.message} onRetry={() => status.mutate()} />;
+    return (
+      <div className="jarvis-page space-y-8">
+        <ErrorState message={status.error.message} onRetry={() => status.mutate()} />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Budget"
-        description="Daily LLM spend, per-agent usage, and threshold warnings from the backend."
-        lastUpdated={history.data?.generated_at}
-        onRefresh={() => {
-          status.mutate();
-          history.mutate();
-        }}
-        isRefreshing={status.isValidating || history.isValidating}
-        actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
-      />
+    <div className="jarvis-page space-y-8">
+      <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <motion.p
+            className="font-mono text-[10px] uppercase tracking-[0.4em] text-[hsl(187_75%_58%)]"
+            animate={reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Spend control
+          </motion.p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Budget</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Daily LLM spend, per-agent usage, and threshold warnings from the backend.
+          </p>
+          {!reduceMotion && (
+            <p className="mt-2 font-mono text-xs text-[hsl(187_60%_50%)]">
+              &gt; {BOOT_SEQUENCE[bootLine]}
+            </p>
+          )}
+          {history.data?.generated_at && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              History updated {new Date(history.data.generated_at).toLocaleString()}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              status.mutate();
+              history.mutate();
+            }}
+            disabled={status.isValidating || history.isValidating}
+            className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            Refresh
+          </button>
+          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+        </div>
+      </div>
 
       {!status.data ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
+        <div className="space-y-6">
+          <Skeleton className="h-[280px] w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard title="Daily budget" value={formatUsd(status.data.budget_usd)} />
-            <MetricCard title="Spent today" value={formatUsd(status.data.spent_usd, 4)} />
-            <MetricCard title="Remaining" value={formatUsd(status.data.remaining_usd, 4)} />
-            <MetricCard
-              title="Utilization"
-              value={formatPercent(status.data.utilization_pct)}
-              subtitle={`${status.data.calls_total} LLM calls`}
-            />
+          <BudgetJarvisHero status={status.data} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <BudgetJarvisAgentsPanel status={status.data} />
+            <BudgetJarvisHistoryPanel history={history.data} />
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily utilization</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <BudgetUtilizationBar
-                utilizationPct={status.data.utilization_pct}
-                budgetExceeded={status.data.budget_exceeded}
-              />
-              <BudgetWarningsList warnings={status.data.warnings} />
-              <div className="grid gap-2 sm:grid-cols-2">
-                <BudgetSummaryLine
-                  label="Prompt tokens"
-                  value={status.data.prompt_tokens_total.toLocaleString()}
-                />
-                <BudgetSummaryLine
-                  label="Completion tokens"
-                  value={status.data.completion_tokens_total.toLocaleString()}
-                />
-                <BudgetSummaryLine
-                  label="Estimated cost"
-                  value={formatUsd(status.data.estimated_cost_usd_total, 4)}
-                />
-                <BudgetSummaryLine
-                  label="Actual cost"
-                  value={formatUsd(status.data.spent_usd, 4)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Per-agent usage (today)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AgentUsageTable agents={status.data.by_agent} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>30-day history</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!history.data ? (
-                <Skeleton className="h-40 w-full" />
-              ) : history.data.items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No historical usage yet.</p>
-              ) : (
-                <BudgetHistoryChart items={history.data.items} />
-              )}
-            </CardContent>
-          </Card>
         </>
       )}
     </div>

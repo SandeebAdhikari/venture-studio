@@ -32,6 +32,10 @@ class ComplaintPattern(BaseModel):
     dominant_persona_code: str
     complaint_count: int
     avg_severity: float
+    pattern_source: Literal["phrase_clustering", "taxonomy_fallback"] = Field(
+        default="phrase_clustering",
+        description="How the pattern was detected (phrase clustering vs taxonomy fallback).",
+    )
 
 
 class OpportunityLLMOutput(BaseModel):

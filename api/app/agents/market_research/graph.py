@@ -136,9 +136,11 @@ class MarketResearchAgent:
                     "llm_output": None,
                 }
 
+        prior_errors = state.get("validation_errors") or []
         invocation = await self._llm.research(
             context=state["context"],
             attempt=state["attempt"],
+            validation_errors=prior_errors if prior_errors else None,
         )
         invocations = list(state["invocations"])
         invocations.append(
@@ -181,13 +183,20 @@ class MarketResearchAgent:
         except MarketResearchValidationError as exc:
             errors = list(state.get("validation_errors", []))
             errors.extend(exc.errors)
+            invocations = list(state["invocations"])
+            if invocations:
+                last = dict(invocations[-1])
+                last["validation_errors"] = list(exc.errors)
+                invocations[-1] = last
             if state["attempt"] >= state["max_attempts"]:
                 return {
+                    "invocations": invocations,
                     "validation_errors": errors,
                     "error": "; ".join(exc.errors),
                     "status": "failed",
                 }
             return {
+                "invocations": invocations,
                 "validation_errors": errors,
                 "attempt": state["attempt"] + 1,
                 "llm_output": None,
@@ -244,5 +253,6 @@ class MarketResearchAgent:
             skip_reason=state.get("skip_reason"),
             error=state.get("error"),
             attempts=state.get("attempt", 0),
+            validation_errors=state.get("validation_errors", []),
             eval_logs=state.get("invocations", []),
         )

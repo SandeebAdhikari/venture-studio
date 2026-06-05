@@ -17,10 +17,15 @@ export function formatStageName(stage: string): string {
   return stage.replace(/_/g, " ");
 }
 
-export function stageShortLabel(stage: string): string {
+export function stageShortLabel(stage: string, maxLen = 12): string {
   const parts = stage.split("_").filter(Boolean);
-  if (parts.length === 0) return stage;
-  if (parts.length === 1) return parts[0];
-  const two = `${parts[0]} ${parts[1]}`;
-  return two.length > 14 ? parts[0] : two;
+  let label: string;
+  if (parts.length === 0) label = stage;
+  else if (parts.length === 1) label = parts[0];
+  else {
+    const two = `${parts[0]} ${parts[1]}`;
+    label = two.length > maxLen ? parts[0] : two;
+  }
+  if (label.length <= maxLen) return label;
+  return `${label.slice(0, Math.max(1, maxLen - 1))}…`;
 }

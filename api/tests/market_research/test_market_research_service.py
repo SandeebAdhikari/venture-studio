@@ -201,7 +201,7 @@ async def test_research_pending_processes_unresearched_opportunities(
 
     assert batch.opportunities_found >= 1
     assert batch.completed >= 1
-    assert batch.items[0].opportunity_id == opportunity.id
+    assert any(item.opportunity_id == opportunity.id for item in batch.items)
 
 
 @pytest.mark.asyncio
@@ -246,3 +246,75 @@ async def test_research_retries_malformed_response(
 
     total_briefs = await db_session.scalar(select(func.count()).select_from(MarketBrief))
     assert total_briefs == 1
+
+
+@pytest.mark.asyncio
+async def test_research_logs_failed_validation_attempts(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    research_settings: Settings,
+) -> None:
+    from app.agents.market_research.mock_client import invalid_hierarchy_research_output
+
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    mock = MockMarketResearchLLMClient(
+        [invalid_hierarchy_research_output(), invalid_hierarchy_research_output()]
+    )
+    service = MarketResearchService(repos, research_settings, llm_client=mock)
+
+    result = await service.research_opportunity(opportunity.id)
+
+    assert result.status == "failed"
+    assert mock.call_count == 2
+
+    total_briefs = await db_session.scalar(select(func.count()).select_from(MarketBrief))
+    assert total_briefs == 0
+
+    calls = (
+        await db_session.scalars(
+            select(LLMCall)
+            .where(
+                LLMCall.entity_id == opportunity.id,
+                LLMCall.graph_name == "research_market",
+            )
+            .order_by(LLMCall.attempt)
+        )
+    ).all()
+    assert len(calls) == 2
+    assert all(call.status == "error" for call in calls)
+    assert calls[0].eval_metadata.get("validation_errors") == [
+        "tam_usd must not exceed market_size_usd"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_research_succeeds_after_hierarchy_retry(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    research_settings: Settings,
+) -> None:
+    from app.agents.market_research.mock_client import invalid_hierarchy_research_output
+
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    mock = MockMarketResearchLLMClient(
+        [invalid_hierarchy_research_output(), default_mock_research_output()]
+    )
+    service = MarketResearchService(repos, research_settings, llm_client=mock)
+
+    result = await service.research_opportunity(opportunity.id)
+
+    assert result.status == "completed"
+    assert mock.call_count == 2
+    assert mock.last_validation_errors is not None
+
+    count = await db_session.scalar(
+        select(func.count())
+        .select_from(LLMCall)
+        .where(
+            LLMCall.entity_id == opportunity.id,
+            LLMCall.graph_name == "research_market",
+        )
+    )
+    assert count == 2

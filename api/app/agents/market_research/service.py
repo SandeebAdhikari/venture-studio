@@ -112,6 +112,7 @@ class MarketResearchService:
         agent_result = await self._get_agent().run(context)
 
         if agent_result.status != "completed" or agent_result.draft is None:
+            await self._persist_eval_logs(opportunity_id, agent_result)
             return agent_result
 
         model = self._last_model(agent_result) or self._settings.research_model
@@ -197,6 +198,7 @@ class MarketResearchService:
                 "market_brief_id": str(agent_result.market_brief_id)
                 if agent_result.market_brief_id
                 else None,
+                "agent_validation_errors": agent_result.validation_errors or None,
             },
         )
 

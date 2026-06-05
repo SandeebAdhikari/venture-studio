@@ -24,7 +24,29 @@ class MarketResearchLLMClient(Protocol):
         *,
         context: OpportunityResearchContext,
         attempt: int,
+        validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult: ...
+
+
+def market_research_system_prompt() -> str:
+    """System prompt for market intelligence research."""
+    return (
+        "You are a market intelligence analyst for software business opportunities. "
+        "Produce structured market sizing and industry analysis only. "
+        "Do NOT perform competitor analysis — do not name, compare, or profile specific "
+        "companies or products. "
+        "Do NOT produce business plans, MVP roadmaps, GTM strategy, or pricing advice. "
+        "Estimate market_size_usd, tam_usd, sam_usd, and industry_growth_rate_pct using "
+        "public industry knowledge and the opportunity context. "
+        "Label each supporting_evidence item with an appropriate source_type and "
+        "source_reference. Use inference_from_complaints when reasoning from complaint "
+        "patterns. Be explicit about uncertainty via confidence levels. "
+        "Market sizing hierarchy (required — outputs violating this will fail validation): "
+        "market_size_usd >= tam_usd >= sam_usd. "
+        "market_size_usd is the broadest relevant market estimate; "
+        "tam_usd is the total addressable market estimate; "
+        "sam_usd is the serviceable addressable market estimate."
+    )
 
 
 def _estimate_cost_usd(model: str, prompt_tokens: int, completion_tokens: int) -> float:
@@ -49,20 +71,16 @@ class OpenAIMarketResearchClient:
         *,
         context: OpportunityResearchContext,
         attempt: int,
+        validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult:
         started = time.perf_counter()
-        system_prompt = (
-            "You are a market intelligence analyst for software business opportunities. "
-            "Produce structured market sizing and industry analysis only. "
-            "Do NOT perform competitor analysis — do not name, compare, or profile specific "
-            "companies or products. "
-            "Do NOT produce business plans, MVP roadmaps, GTM strategy, or pricing advice. "
-            "Estimate market_size_usd, tam_usd, sam_usd, and industry_growth_rate_pct using "
-            "public industry knowledge and the opportunity context. "
-            "Label each supporting_evidence item with an appropriate source_type and "
-            "source_reference. Use inference_from_complaints when reasoning from complaint "
-            "patterns. Be explicit about uncertainty via confidence levels."
-        )
+        system_prompt = market_research_system_prompt()
+        retry_block = ""
+        if validation_errors:
+            retry_block = (
+                "\n\nPrevious validation errors (fix these in your response):\n"
+                + "\n".join(f"- {err}" for err in validation_errors)
+            )
 
         try:
             response = await self._client.chat.completions.create(
@@ -96,6 +114,7 @@ class OpenAIMarketResearchClient:
                             f"Complaint summaries:\n"
                             f"{self._format_complaints(context.complaint_summaries)}\n\n"
                             "Research market intelligence for this opportunity."
+                            f"{retry_block}"
                         ),
                     },
                 ],

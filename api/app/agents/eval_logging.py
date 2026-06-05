@@ -29,7 +29,8 @@ async def persist_agent_eval_logs(
 ) -> None:
     extra = eval_metadata_extra or {}
     for log in agent_result.eval_logs:
-        status = "success" if log.get("error") is None else "error"
+        has_validation_errors = bool(log.get("validation_errors"))
+        status = "success" if log.get("error") is None and not has_validation_errors else "error"
         cost_usd = log.get("cost_usd") or log.get("estimated_cost_usd")
         record_metrics().record_llm_request(
             graph_name=graph_name,
@@ -52,6 +53,7 @@ async def persist_agent_eval_logs(
             eval_metadata={
                 "parsed": log.get("parsed"),
                 "raw_text": log.get("raw_text"),
+                "validation_errors": log.get("validation_errors"),
                 "agent_status": agent_result.status,
                 "attempts": agent_result.attempts,
                 **extra,

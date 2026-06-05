@@ -32,14 +32,17 @@ class MockMarketResearchLLMClient:
         self._index = 0
         self._model = model
         self.call_count = 0
+        self.last_validation_errors: list[str] | None = None
 
     async def research(
         self,
         *,
         context: OpportunityResearchContext,
         attempt: int,
+        validation_errors: list[str] | None = None,
     ) -> LLMInvocationResult:
         del attempt
+        self.last_validation_errors = validation_errors
         self.call_count += 1
         response: MarketResearchLLMOutput | None = None
 
@@ -119,4 +122,11 @@ def default_mock_research_output() -> MarketResearchLLMOutput:
             "focused on multi-location ops is substantial, with digitization and labor "
             "shortages reinforcing demand."
         ),
+    )
+
+
+def invalid_hierarchy_research_output() -> MarketResearchLLMOutput:
+    """Mock output that fails market_size >= tam >= sam validation."""
+    return default_mock_research_output().model_copy(
+        update={"market_size_usd": 1_500_000_000, "tam_usd": 5_000_000_000}
     )

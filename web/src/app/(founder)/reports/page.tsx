@@ -1,26 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { ReportViewer } from "@/components/reports/report-viewer";
-import { LiveIndicator, PageHeader, ErrorState, EmptyState } from "@/components/layout/page-header";
-import { DataTable, StatusBadge, type Column } from "@/components/shared/data-table";
-import { Select } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ReportsJarvisHero } from "@/components/reports/reports-jarvis-hero";
+import { ReportsJarvisLibrary } from "@/components/reports/reports-jarvis-library";
+import { ReportsJarvisViewer } from "@/components/reports/reports-jarvis-viewer";
+import { LiveIndicator, ErrorState } from "@/components/layout/page-header";
+import { flattenReports } from "@/lib/reports/report-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePollingApi, useApi } from "@/hooks/use-api";
 import { buildQuery } from "@/lib/api/client";
-import { formatDate } from "@/lib/utils";
-import type {
-  DashboardReportSummary,
-  DashboardReportsResponse,
-  ReportMarkdownRead,
-} from "@/types/api";
+import type { DashboardReportsResponse, ReportMarkdownRead } from "@/types/api";
 
 const POLL_INTERVAL = 30_000;
+
+const BOOT_SEQUENCE = [
+  "Indexing report archive…",
+  "Loading venture summaries…",
+  "Preparing markdown renderer…",
+  "Reports console online.",
+];
 
 export default function ReportsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
+  const reduceMotion = useReducedMotion();
+  const [bootLine, setBootLine] = useState(0);
 
   const reports = usePollingApi<DashboardReportsResponse>(
     `dashboard/reports${buildQuery({ limit: 20 })}`,
@@ -31,123 +36,85 @@ export default function ReportsPage() {
     selectedId ? `reports/${selectedId}/markdown` : null,
   );
 
-  const allReports: DashboardReportSummary[] = reports.data
-    ? [
-        ...(reports.data.featured_venture_report ? [reports.data.featured_venture_report] : []),
-        ...reports.data.venture_reports,
-        ...reports.data.top_opportunity_reports,
-        ...reports.data.pipeline_reports,
-      ].filter(
-        (report, index, arr) => arr.findIndex((r) => r.id === report.id) === index,
-      )
-    : [];
+  const allReports = useMemo(
+    () => (reports.data ? flattenReports(reports.data) : []),
+    [reports.data],
+  );
 
-  const filtered = typeFilter
-    ? allReports.filter((r) => r.report_type === typeFilter)
-    : allReports;
-
-  const columns: Column<DashboardReportSummary>[] = [
-    {
-      key: "title",
-      header: "Title",
-      sortable: true,
-      sortValue: (r) => r.title.toLowerCase(),
-      render: (r) => (
-        <button
-          type="button"
-          className="text-left font-medium text-foreground hover:underline"
-          onClick={() => setSelectedId(r.id)}
-        >
-          {r.title}
-        </button>
-      ),
-    },
-    {
-      key: "type",
-      header: "Type",
-      sortable: true,
-      sortValue: (r) => r.report_type,
-      render: (r) => r.report_type.replace(/_/g, " "),
-    },
-    {
-      key: "status",
-      header: "Status",
-      sortable: true,
-      sortValue: (r) => r.status,
-      render: (r) => <StatusBadge status={r.status} />,
-    },
-    {
-      key: "created",
-      header: "Created",
-      sortable: true,
-      sortValue: (r) => r.created_at,
-      render: (r) => formatDate(r.created_at),
-    },
-  ];
+  useEffect(() => {
+    if (reduceMotion) return;
+    const id = setInterval(() => {
+      setBootLine((n) => (n + 1) % BOOT_SEQUENCE.length);
+    }, 2500);
+    return () => clearInterval(id);
+  }, [reduceMotion]);
 
   if (reports.error) {
-    return <ErrorState message={reports.error.message} onRetry={() => reports.mutate()} />;
+    return (
+      <div className="jarvis-page space-y-8">
+        <ErrorState message={reports.error.message} onRetry={() => reports.mutate()} />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Reports"
-        description="Venture recommendations, top opportunities, and pipeline summaries."
-        onRefresh={() => reports.mutate()}
-        isRefreshing={reports.isValidating}
-        actions={<LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />}
-      />
-
-      <div className="filter-panel max-w-md">
-        <p className="filter-panel-label mb-3">Filters</p>
-      <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-        <option value="">All report types</option>
-        <option value="venture_recommendation">Venture recommendation</option>
-        <option value="top_opportunities">Top opportunities</option>
-        <option value="pipeline_summary">Pipeline summary</option>
-        <option value="opportunity_brief">Opportunity brief</option>
-      </Select>
+    <div className="jarvis-page space-y-8">
+      <div className="flex flex-col gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <motion.p
+            className="font-mono text-[10px] uppercase tracking-[0.4em] text-[hsl(187_75%_58%)]"
+            animate={reduceMotion ? undefined : { opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Intelligence archive
+          </motion.p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Reports</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Venture recommendations, top opportunities, and pipeline summaries.
+          </p>
+          {!reduceMotion && (
+            <p className="mt-2 font-mono text-xs text-[hsl(187_60%_50%)]">
+              &gt; {BOOT_SEQUENCE[bootLine]}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => reports.mutate()}
+            disabled={reports.isValidating}
+            className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            Refresh
+          </button>
+          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+        </div>
       </div>
 
       {!reports.data ? (
-        <Skeleton className="h-64 w-full rounded-xl" />
-      ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Report library</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filtered.length === 0 ? (
-                <EmptyState title="No reports" description="Generate reports via the pipeline or API." />
-              ) : (
-                <DataTable
-                  data={filtered}
-                  columns={columns}
-                  rowKey={(r) => r.id}
-                  filterFn={(r, q) => r.title.toLowerCase().includes(q)}
-                  filterPlaceholder="Search reports…"
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          <div>
-            {selectedId ? (
-              <ReportViewer
-                title={markdown.data?.title ?? "Report"}
-                markdown={markdown.data?.markdown}
-                isLoading={markdown.isLoading}
-              />
-            ) : (
-              <EmptyState
-                title="Select a report"
-                description="Click a report title to view its markdown content."
-              />
-            )}
-          </div>
+          <Skeleton className="h-96 rounded-xl" />
+          <Skeleton className="h-96 rounded-xl" />
         </div>
+      ) : (
+        <>
+          <ReportsJarvisHero data={reports.data} libraryCount={allReports.length} />
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <ReportsJarvisLibrary
+              reports={allReports}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              typeFilter={typeFilter}
+              onTypeFilterChange={setTypeFilter}
+            />
+            <ReportsJarvisViewer
+              title={markdown.data?.title ?? "Report"}
+              markdown={markdown.data?.markdown}
+              isLoading={!!selectedId && markdown.isLoading}
+            />
+          </div>
+        </>
       )}
     </div>
   );

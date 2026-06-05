@@ -8,6 +8,7 @@ from uuid import UUID
 from app.agents.opportunity.graph import GRAPH_NAME, OpportunityGeneratorAgent
 from app.agents.opportunity.llm_client import OpenAIOpportunityClient, OpportunityLLMClient
 from app.agents.opportunity.patterns import TopicPatternDetector
+from app.agents.opportunity.taxonomy_fallback import resolve_generation_patterns
 from app.agents.opportunity.schemas import (
     ComplaintEvidence,
     ComplaintPattern,
@@ -61,10 +62,20 @@ class OpportunityGeneratorService:
             limit=batch_size,
         )
         evidence = [self._to_evidence(complaint) for complaint in complaints]
-        patterns = self._pattern_detector.detect(
+        phrase_patterns = self._pattern_detector.detect(
             evidence,
             min_cluster_size=self._settings.min_cluster_size,
         )
+        patterns = resolve_generation_patterns(evidence, phrase_patterns)
+        if not phrase_patterns and patterns:
+            logger.info(
+                "Taxonomy fallback patterns activated",
+                extra={
+                    "phrase_patterns": 0,
+                    "fallback_patterns": len(patterns),
+                    "topics": [pattern.topic for pattern in patterns],
+                },
+            )
 
         batch_result = GenerationBatchResult(patterns_found=len(patterns))
         evidence_by_id = {item.id: item for item in evidence}

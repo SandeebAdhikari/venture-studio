@@ -1,6 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { AgentStepRail } from "@/components/agents/agent-step-rail";
+import type { AgentStepSync } from "@/lib/agents/agent-step-sync";
 import type { DashboardAgentStatus } from "@/types/api";
 
 function totals(agents: DashboardAgentStatus[]) {
@@ -18,9 +20,10 @@ function totals(agents: DashboardAgentStatus[]) {
 interface AgentJarvisHudProps {
   agents: DashboardAgentStatus[];
   averageCoverage: number | null | undefined;
+  stepSync: AgentStepSync;
 }
 
-export function AgentJarvisHud({ agents, averageCoverage }: AgentJarvisHudProps) {
+export function AgentJarvisHud({ agents, averageCoverage, stepSync }: AgentJarvisHudProps) {
   const reduceMotion = useReducedMotion();
   const stats = totals(agents);
   const successPct =
@@ -82,17 +85,12 @@ export function AgentJarvisHud({ agents, averageCoverage }: AgentJarvisHudProps)
         ))}
       </div>
 
-      <motion.div
-        className="jarvis-scan-bar h-1 overflow-hidden rounded-full bg-muted"
-        initial={reduceMotion ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <motion.div
-          className="h-full w-1/3 rounded-full bg-[hsl(187_90%_60%)]"
-          animate={reduceMotion ? undefined : { x: ["-100%", "350%"] }}
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </motion.div>
+      <AgentStepRail
+        sync={stepSync}
+        variant="compact"
+        showPhaseLabels={false}
+        title="Mesh progress"
+      />
     </motion.div>
   );
 }

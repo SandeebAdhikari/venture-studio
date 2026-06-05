@@ -13,7 +13,9 @@ export function BudgetUtilizationBar({
   return (
     <Progress
       value={capped}
-      indicatorClassName={budgetExceeded ? "bg-muted-foreground" : undefined}
+      indicatorClassName={
+        budgetExceeded ? "bg-destructive" : "jarvis-score-fill !bg-[hsl(187_85%_55%)]"
+      }
     />
   );
 }
@@ -24,10 +26,10 @@ export function BudgetWarningsList({ warnings }: { warnings: BudgetWarning[] }) 
       {warnings.map((w) => (
         <span
           key={w.threshold_pct}
-          className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+          className={`rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
             w.triggered
-              ? "border-foreground/30 bg-foreground text-background"
-              : "border-border bg-muted text-muted-foreground"
+              ? "jarvis-status-pill jarvis-status-pill--active"
+              : "border-[hsl(187_35%_28%/0.4)] bg-muted/30 text-muted-foreground"
           }`}
         >
           {w.threshold_pct}% {w.triggered ? "triggered" : "ok"}
@@ -38,50 +40,82 @@ export function BudgetWarningsList({ warnings }: { warnings: BudgetWarning[] }) 
 }
 
 export function AgentUsageTable({ agents }: { agents: BudgetAgentUsage[] }) {
+  const maxCost = Math.max(...agents.map((a) => a.actual_cost_usd_total), 0.0001);
+  return <BudgetAgentUsageList agents={agents} maxCost={maxCost} />;
+}
+
+export function BudgetAgentUsageList({
+  agents,
+  maxCost,
+}: {
+  agents: BudgetAgentUsage[];
+  maxCost: number;
+}) {
   if (agents.length === 0) {
     return <p className="text-sm text-muted-foreground">No agent usage recorded today.</p>;
   }
+
+  const sorted = [...agents].sort((a, b) => b.actual_cost_usd_total - a.actual_cost_usd_total);
+
   return (
-    <div className="data-table-wrap overflow-x-auto">
-      <table className="data-table w-full min-w-[520px] text-sm">
-        <thead>
-          <tr>
-            <th className="px-4 py-3 text-left font-medium">Agent</th>
-            <th className="px-4 py-3 text-right font-medium">Calls</th>
-            <th className="px-4 py-3 text-right font-medium">Actual</th>
-            <th className="px-4 py-3 text-right font-medium">Estimated</th>
-          </tr>
-        </thead>
-        <tbody>
-          {agents.map((agent) => (
-            <tr key={agent.graph_name} className="border-t border-border">
-              <td className="px-4 py-3">{agent.display_name}</td>
-              <td className="px-4 py-3 text-right">{agent.calls_total}</td>
-              <td className="px-4 py-3 text-right">{formatUsd(agent.actual_cost_usd_total, 4)}</td>
-              <td className="px-4 py-3 text-right">{formatUsd(agent.estimated_cost_usd_total, 4)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ul className="space-y-3">
+      {sorted.map((agent) => {
+        const pct = Math.round((agent.actual_cost_usd_total / maxCost) * 100);
+        return (
+          <li
+            key={agent.graph_name}
+            className="rounded-xl border border-[hsl(187_30%_26%/0.4)] bg-[hsl(187_24%_10%/0.3)] px-4 py-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-foreground">{agent.display_name}</p>
+              <div className="flex gap-3 font-mono text-xs text-muted-foreground">
+                <span>{agent.calls_total} calls</span>
+                <span className="text-[hsl(187_85%_72%)]">
+                  {formatUsd(agent.actual_cost_usd_total, 4)}
+                </span>
+              </div>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted/70">
+              <div className="jarvis-score-fill h-full rounded-full" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+              Est. {formatUsd(agent.estimated_cost_usd_total, 4)}
+            </p>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
 export function BudgetHistoryChart({ items }: { items: BudgetHistoryDay[] }) {
   const max = Math.max(...items.map((i) => i.spent_usd), 0.0001);
+  const days = [...items].reverse().slice(-14);
+
   return (
-    <div className="flex h-40 items-end gap-2">
-      {[...items].reverse().slice(-14).map((day) => {
-        const height = Math.max((day.spent_usd / max) * 100, 4);
+    <div className="budget-history-chart flex h-52 items-end gap-1.5 sm:gap-2">
+      {days.map((day) => {
+        const height = Math.max((day.spent_usd / max) * 100, 6);
+        const util = Math.min(day.utilization_pct, 100);
         return (
-          <div key={day.usage_date} className="flex flex-1 flex-col items-center gap-1">
-            <div
-              className={`w-full rounded-t ${day.budget_exceeded ? "bg-muted-foreground" : "bg-foreground/80"}`}
-              style={{ height: `${height}%` }}
-              title={`${day.usage_date}: ${formatUsd(day.spent_usd, 4)}`}
-            />
-            <span className="text-[10px] text-muted-foreground">
-              {new Date(day.usage_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          <div
+            key={day.usage_date}
+            className="group flex min-w-0 flex-1 flex-col items-center gap-2"
+          >
+            <div className="relative flex h-40 w-full items-end justify-center">
+              <div
+                className={`budget-history-bar w-full max-w-[2.5rem] rounded-t-md transition-opacity group-hover:opacity-90 ${
+                  day.budget_exceeded ? "bg-destructive/85" : "jarvis-score-fill"
+                }`}
+                style={{ height: `${height}%` }}
+                title={`${day.usage_date}: ${formatUsd(day.spent_usd, 4)} (${util.toFixed(0)}%)`}
+              />
+            </div>
+            <span className="font-mono text-[9px] uppercase text-muted-foreground">
+              {new Date(day.usage_date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
             </span>
           </div>
         );

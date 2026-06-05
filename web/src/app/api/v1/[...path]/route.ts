@@ -42,12 +42,35 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
       ? undefined
       : await request.text();
 
-  const response = await fetch(url, {
-    method: request.method,
-    headers,
-    body: body || undefined,
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: request.method,
+      headers,
+      body: body || undefined,
+      cache: "no-store",
+    });
+  } catch (error) {
+    const cause = error instanceof Error ? error.cause : undefined;
+    const code =
+      cause && typeof cause === "object" && "code" in cause
+        ? String((cause as { code?: string }).code)
+        : undefined;
+    const unreachable = code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "EHOSTUNREACH";
+
+    console.error("[BFF proxy] upstream fetch failed:", url.toString(), error);
+
+    return NextResponse.json(
+      {
+        detail: unreachable
+          ? `Backend API is not reachable at ${getApiBaseUrl()}. Start it with: cd api && uvicorn app.main:app --reload --port 8000 (or docker compose up api).`
+          : "Backend API request failed.",
+        code: code ?? "UPSTREAM_FETCH_FAILED",
+        upstream: getApiBaseUrl(),
+      },
+      { status: 503 },
+    );
+  }
 
   const responseBody = await response.text();
   return new NextResponse(responseBody, {

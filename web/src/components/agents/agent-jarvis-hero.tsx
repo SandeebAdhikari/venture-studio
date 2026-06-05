@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { AgentJarvisHud } from "@/components/agents/agent-jarvis-hud";
+import type { AgentStepSync } from "@/lib/agents/agent-step-sync";
 import type { DashboardAgentStatus } from "@/types/api";
 
 const AgentJarvisCore = dynamic(
@@ -14,9 +15,10 @@ const AgentJarvisCore = dynamic(
 interface AgentJarvisHeroProps {
   agents: DashboardAgentStatus[];
   averageCoverage: number | null | undefined;
+  stepSync: AgentStepSync;
 }
 
-export function AgentJarvisHero({ agents, averageCoverage }: AgentJarvisHeroProps) {
+export function AgentJarvisHero({ agents, averageCoverage, stepSync }: AgentJarvisHeroProps) {
   const reduceMotion = useReducedMotion();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -42,11 +44,16 @@ export function AgentJarvisHero({ agents, averageCoverage }: AgentJarvisHeroProp
         <div className="relative flex items-center justify-center p-4 lg:p-6">
           <AgentJarvisCore
             agents={agents}
+            activeStep={stepSync.activeStep}
             reducedMotion={!!reduceMotion}
             isMobile={isMobile}
           />
         </div>
-        <AgentJarvisHud agents={agents} averageCoverage={averageCoverage} />
+        <AgentJarvisHud
+          agents={agents}
+          averageCoverage={averageCoverage}
+          stepSync={stepSync}
+        />
       </div>
     </motion.section>
   );

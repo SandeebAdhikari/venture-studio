@@ -44,7 +44,7 @@ export function ApprovalActions({ approval, onComplete }: ApprovalActionsProps) 
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+    <div className="jarvis-approval-actions space-y-3 rounded-xl border border-[hsl(187_40%_32%/0.4)] bg-[hsl(187_22%_8%/0.4)] p-4">
       <Textarea
         placeholder="Optional comment (required for research request)"
         value={comment}

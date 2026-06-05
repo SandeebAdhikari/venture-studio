@@ -24,6 +24,7 @@ function supportsWebGL(): boolean {
 function mountJarvisCore(
   host: HTMLDivElement,
   agents: DashboardAgentStatus[],
+  activeStep: number | null,
   reducedMotion: boolean,
   isMobile: boolean,
 ): () => void {
@@ -86,6 +87,7 @@ function mountJarvisCore(
   });
   const scanRing = new THREE.Mesh(new THREE.RingGeometry(2.1, 2.12, 64), scanMat);
   scanRing.rotation.x = -Math.PI / 2;
+  scanRing.visible = false;
   root.add(scanRing);
 
   const agentGroup = new THREE.Group();
@@ -97,6 +99,8 @@ function mountJarvisCore(
 
   agents.forEach((agent, i) => {
     const rate = agentSuccessRate(agent);
+    const step = i + 1;
+    const isActive = activeStep === step;
     const angle = (i / count) * Math.PI * 2;
     const orbit = 2.35 + rate * 0.45;
     const y = Math.sin(angle * 2) * 0.35;
@@ -104,11 +108,11 @@ function mountJarvisCore(
     const z = Math.sin(angle) * orbit;
 
     const node = new THREE.Mesh(
-      new THREE.SphereGeometry(0.06 + rate * 0.04, 12, 12),
+      new THREE.SphereGeometry(0.06 + rate * 0.04 + (isActive ? 0.03 : 0), 12, 12),
       new THREE.MeshBasicMaterial({
-        color: JARVIS,
+        color: isActive ? 0xffffff : JARVIS,
         transparent: true,
-        opacity: 0.55 + rate * 0.45,
+        opacity: isActive ? 0.95 : 0.55 + rate * 0.45,
       }),
     );
     node.position.set(x, y, z);
@@ -124,7 +128,7 @@ function mountJarvisCore(
       new THREE.LineBasicMaterial({
         color: JARVIS,
         transparent: true,
-        opacity: 0.15 + rate * 0.35,
+        opacity: isActive ? 0.75 : 0.15 + rate * 0.35,
       }),
     );
     agentGroup.add(line);
@@ -186,11 +190,11 @@ function mountJarvisCore(
       rings.forEach((ring, i) => {
         ring.rotation.z += 0.004 * (i % 2 === 0 ? 1 : -1);
       });
-      scanRing.scale.setScalar(1 + Math.sin(elapsed * 2.2) * 0.04);
-      scanMat.opacity = 0.25 + Math.sin(elapsed * 3) * 0.2;
 
       agentNodes.forEach((node, i) => {
-        const pulse = 1 + Math.sin(elapsed * 2 + i) * 0.12;
+        const step = i + 1;
+        const isActive = activeStep === step;
+        const pulse = isActive ? 1 + Math.sin(elapsed * 4) * 0.18 : 1 + Math.sin(elapsed * 2 + i) * 0.06;
         node.scale.setScalar(pulse);
       });
 
@@ -250,12 +254,14 @@ function mountJarvisCore(
 
 interface AgentJarvisCoreProps {
   agents: DashboardAgentStatus[];
+  activeStep?: number | null;
   reducedMotion?: boolean;
   isMobile?: boolean;
 }
 
 export function AgentJarvisCore({
   agents,
+  activeStep = null,
   reducedMotion = false,
   isMobile = false,
 }: AgentJarvisCoreProps) {
@@ -267,12 +273,12 @@ export function AgentJarvisCore({
 
     let dispose: (() => void) | undefined;
     try {
-      dispose = mountJarvisCore(host, agents, reducedMotion, isMobile);
+      dispose = mountJarvisCore(host, agents, activeStep, reducedMotion, isMobile);
     } catch {
       return;
     }
     return () => dispose?.();
-  }, [agents, reducedMotion, isMobile]);
+  }, [agents, activeStep, reducedMotion, isMobile]);
 
   return <div ref={hostRef} className="jarvis-core-canvas h-full min-h-[220px] w-full" />;
 }

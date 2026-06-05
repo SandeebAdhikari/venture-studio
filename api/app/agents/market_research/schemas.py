@@ -101,6 +101,7 @@ class MarketResearchResult(BaseModel):
     error: str | None = None
     draft: MarketResearchDraft | None = None
     attempts: int = 0
+    validation_errors: list[str] = Field(default_factory=list)
     eval_logs: list[dict[str, Any]] = Field(default_factory=list)
 
 

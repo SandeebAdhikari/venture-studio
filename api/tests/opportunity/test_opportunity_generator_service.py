@@ -1,5 +1,6 @@
 """Integration tests for opportunity generator service."""
 
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -278,7 +279,11 @@ async def test_generate_completes_with_configured_json_logging(
         pattern_detector=_NoPatternsDetector(),
     )
 
-    result = await service.generate(limit=50)
+    with patch(
+        "app.agents.opportunity.service.resolve_generation_patterns",
+        side_effect=lambda _evidence, phrase_patterns: phrase_patterns,
+    ):
+        result = await service.generate(limit=50)
 
     assert result.created == 0
     assert result.failed == 0
@@ -307,7 +312,11 @@ async def test_pipeline_generate_opportunities_stage_completes_with_json_logging
     )
     executor = PipelineStageExecutor(repos, services, generation_settings)
 
-    stage_result = await executor.execute(PipelineStage.GENERATE_OPPORTUNITIES)
+    with patch(
+        "app.agents.opportunity.service.resolve_generation_patterns",
+        side_effect=lambda _evidence, phrase_patterns: phrase_patterns,
+    ):
+        stage_result = await executor.execute(PipelineStage.GENERATE_OPPORTUNITIES)
 
     assert stage_result.failed is False
     assert stage_result.items_out == 0

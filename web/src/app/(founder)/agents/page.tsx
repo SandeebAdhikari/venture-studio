@@ -1,18 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { AgentActivityGrid } from "@/components/agents/agent-activity-grid";
 import { AgentJarvisHero } from "@/components/agents/agent-jarvis-hero";
 import { useDashboardSession } from "@/components/layout/session-provider";
 import { LiveIndicator, PageHeader, ErrorState, EmptyState } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePipelineLive } from "@/hooks/use-pipeline-live";
 import { usePollingApi } from "@/hooks/use-api";
+import { computeAgentStepSync } from "@/lib/agents/agent-step-sync";
 import { canAccessPage } from "@/lib/auth/rbac";
 import type { DashboardSummaryResponse } from "@/types/api";
 
-const POLL_INTERVAL = 20_000;
+const POLL_IDLE_MS = 20_000;
+const POLL_LIVE_MS = 5_000;
 
 const BOOT_SEQUENCE = [
   "Initializing research mesh…",
@@ -25,8 +28,14 @@ export default function AgentsPage() {
   const router = useRouter();
   const session = useDashboardSession();
   const reduceMotion = useReducedMotion();
-  const summary = usePollingApi<DashboardSummaryResponse>("dashboard/summary", POLL_INTERVAL);
+  const live = usePipelineLive();
+  const [summaryPollMs, setSummaryPollMs] = useState(POLL_IDLE_MS);
+  const summary = usePollingApi<DashboardSummaryResponse>("dashboard/summary", summaryPollMs);
   const [bootLine, setBootLine] = useState(0);
+
+  useEffect(() => {
+    setSummaryPollMs(live.isLive ? POLL_LIVE_MS : POLL_IDLE_MS);
+  }, [live.isLive]);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -43,6 +52,27 @@ export default function AgentsPage() {
       router.replace("/dashboard");
     }
   }, [session, router]);
+
+  const agents = summary.data?.agents ?? [];
+  const averageCoverage = summary.data?.research?.average_agent_coverage;
+
+  const stepSync = useMemo(
+    () =>
+      computeAgentStepSync(
+        live.pipeline?.latest_detail?.stage_runs,
+        live.pipeline?.stage_order ?? [],
+        agents,
+        live.isLive,
+        live.activeAgentKey,
+      ),
+    [
+      live.pipeline?.latest_detail?.stage_runs,
+      live.pipeline?.stage_order,
+      agents,
+      live.isLive,
+      live.activeAgentKey,
+    ],
+  );
 
   if (session && !hasAccess) {
     return (
@@ -61,9 +91,6 @@ export default function AgentsPage() {
       </div>
     );
   }
-
-  const agents = summary.data?.agents ?? [];
-  const averageCoverage = summary.data?.research?.average_agent_coverage;
 
   return (
     <div className="jarvis-page space-y-8">
@@ -94,13 +121,16 @@ export default function AgentsPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => summary.mutate()}
+            onClick={() => {
+              summary.mutate();
+              live.mutate();
+            }}
             disabled={summary.isValidating}
             className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
           >
             Refresh
           </button>
-          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+          <LiveIndicator intervalSeconds={summaryPollMs / 1000} />
         </div>
       </div>
 
@@ -117,14 +147,18 @@ export default function AgentsPage() {
         <ErrorState message="Unable to load agent activity." onRetry={() => summary.mutate()} />
       ) : (
         <>
-          <AgentJarvisHero agents={agents} averageCoverage={averageCoverage} />
+          <AgentJarvisHero
+            agents={agents}
+            averageCoverage={averageCoverage}
+            stepSync={stepSync}
+          />
 
           <motion.div
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35 }}
           >
-            <AgentActivityGrid agents={agents} />
+            <AgentActivityGrid agents={agents} stepSync={stepSync} />
           </motion.div>
         </>
       )}

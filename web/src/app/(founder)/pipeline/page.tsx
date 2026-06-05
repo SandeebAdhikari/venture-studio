@@ -12,7 +12,8 @@ import { usePollingApi } from "@/hooks/use-api";
 import { buildQuery } from "@/lib/api/client";
 import type { DashboardPipelineResponse } from "@/types/api";
 
-const POLL_INTERVAL = 10_000;
+const POLL_IDLE_MS = 10_000;
+const POLL_LIVE_MS = 3_000;
 
 const BOOT_SEQUENCE = [
   "Connecting to orchestrator…",
@@ -26,11 +27,16 @@ export default function PipelinePage() {
   const limit = 20;
   const reduceMotion = useReducedMotion();
   const [bootLine, setBootLine] = useState(0);
+  const [pollMs, setPollMs] = useState(POLL_IDLE_MS);
 
   const pipeline = usePollingApi<DashboardPipelineResponse>(
     `dashboard/pipeline${buildQuery({ limit, offset, include_stages: true })}`,
-    POLL_INTERVAL,
+    pollMs,
   );
+
+  useEffect(() => {
+    setPollMs(pipeline.data?.running ? POLL_LIVE_MS : POLL_IDLE_MS);
+  }, [pipeline.data?.running]);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -81,7 +87,7 @@ export default function PipelinePage() {
           >
             Refresh
           </button>
-          <LiveIndicator intervalSeconds={POLL_INTERVAL / 1000} />
+          <LiveIndicator intervalSeconds={pollMs / 1000} />
         </div>
       </div>
 
@@ -117,6 +123,8 @@ export default function PipelinePage() {
               <PipelineJarvisStages
                 stages={pipeline.data.latest_detail.stage_runs}
                 stageOrder={pipeline.data.stage_order}
+                isLive={!!pipeline.data.running}
+                runningRunId={pipeline.data.running?.id ?? null}
               />
             </motion.section>
           )}

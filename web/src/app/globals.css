@@ -312,6 +312,42 @@ body {
   );
 }
 
+.jarvis-filmstrip-track-fill {
+  background: linear-gradient(90deg, hsl(187 85% 55%), hsl(187 95% 65%));
+  box-shadow: 0 0 10px hsl(187 90% 55% / 0.45);
+}
+
+.agent-step-rail-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--agent-steps, 8), minmax(2rem, 1fr));
+  align-items: start;
+  gap: 0;
+}
+
+.agent-step-rail-track {
+  margin-left: calc(100% / var(--agent-steps, 8) / 2);
+  margin-right: calc(100% / var(--agent-steps, 8) / 2);
+  background: linear-gradient(
+    90deg,
+    hsl(187 60% 45% / 0.12),
+    hsl(187 90% 60% / 0.35),
+    hsl(187 60% 45% / 0.12)
+  );
+}
+
+.agent-step-rail-track-fill {
+  margin-left: calc(100% / var(--agent-steps, 8) / 2);
+  width: calc(var(--step-fill, 0%) * (1 - 1 / var(--agent-steps, 8)));
+  max-width: calc(100% - 100% / var(--agent-steps, 8));
+  background: linear-gradient(90deg, hsl(187 85% 55%), hsl(187 95% 65%));
+  box-shadow: 0 0 10px hsl(187 90% 55% / 0.4);
+  transition: width 0.45s ease;
+}
+
+.jarvis-stage-node--synced {
+  opacity: 1;
+}
+
 .jarvis-filmstrip-node {
   display: flex;
   flex-direction: column;
@@ -375,6 +411,90 @@ body {
 .jarvis-stage-index-row--active {
   background: hsl(187 32% 16% / 0.5);
   box-shadow: inset 2px 0 0 hsl(187 85% 55%);
+}
+
+.jarvis-opp-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--rank-count, 1), minmax(3.25rem, 1fr));
+  align-items: start;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.jarvis-opp-podium-slot--first {
+  min-height: 8.5rem;
+  box-shadow: 0 0 32px hsl(187 90% 50% / 0.12);
+}
+
+.jarvis-opp-podium-slot--active {
+  border-color: hsl(187 60% 45% / 0.55);
+  box-shadow: inset 0 0 0 1px hsl(187 70% 50% / 0.25);
+}
+
+.jarvis-opp-podium-slot--active .jarvis-rank-badge {
+  box-shadow: 0 0 20px hsl(187 90% 55% / 0.4);
+}
+
+.jarvis-rank-node--gold {
+  border-color: hsl(187 85% 58% / 0.85) !important;
+  box-shadow: 0 0 18px hsl(187 95% 55% / 0.45);
+}
+
+.jarvis-opp-lens {
+  background:
+    radial-gradient(ellipse 55% 50% at 0% 0%, hsl(187 80% 40% / 0.1), transparent),
+    hsl(var(--card) / 0.5);
+}
+
+.jarvis-report-viewer {
+  scrollbar-width: thin;
+}
+
+.jarvis-approval-actions textarea {
+  background: hsl(var(--background) / 0.6);
+  border-color: hsl(187 35% 28% / 0.45);
+}
+
+.budget-jarvis-hero {
+  box-shadow:
+    0 0 0 1px hsl(187 50% 40% / 0.1),
+    0 28px 80px hsl(0 0% 0% / 0.35);
+}
+
+.budget-hero-scan {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    hsl(187 90% 60% / 0.04) 50%,
+    transparent 60%
+  );
+  animation: budget-hero-scan 8s ease-in-out infinite;
+}
+
+@keyframes budget-hero-scan {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateX(-30%);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(30%);
+  }
+}
+
+.budget-gauge-svg {
+  display: block;
+}
+
+.budget-history-bar {
+  box-shadow: 0 0 12px hsl(187 90% 55% / 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-hero-scan {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
