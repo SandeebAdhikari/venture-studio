@@ -51,26 +51,6 @@ DEVTOOLS_BENCHMARK_CORPUS: list[dict] = [
         "expected_fingerprint": None,
     },
     {
-        "title": "Ask HN: Are we forcing LLMs to be State Machines?",
-        "summary": (
-            "The user expresses frustration with the challenges of integrating AI agents into "
-            "customer service workflows, highlighting the difficulty in managing user intent."
-        ),
-        "verbatim_quote": (
-            "It feels like I spend 80% of my engineering effort building guardrails to "
-            "prevent hallucinations or catastrophic logic failures, and only 20% actually "
-            "shipping features."
-        ),
-        "severity": 4,
-        "domain_code": "saas_b2b",
-        "category_code": "performance",
-        "persona_code": "developer",
-        "business_function_code": "observability",
-        "jtbd_code": "deploy_software",
-        "consequence_code": "engineering_friction",
-        "expected_fingerprint": None,
-    },
-    {
         "title": "Ask HN: Is manually discovering and configuring MCP servers the only way?",
         "summary": (
             "The user expresses frustration with the time-consuming process of discovering "
@@ -229,7 +209,7 @@ def test_extracts_agentic_code_trust_gap() -> None:
 
 
 def test_extracts_mcp_discovery_overhead() -> None:
-    row = DEVTOOLS_BENCHMARK_CORPUS[3]
+    row = DEVTOOLS_BENCHMARK_CORPUS[2]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -240,7 +220,7 @@ def test_extracts_mcp_discovery_overhead() -> None:
 
 
 def test_extracts_cicd_yaml_complexity_from_summary() -> None:
-    row = DEVTOOLS_BENCHMARK_CORPUS[4]
+    row = DEVTOOLS_BENCHMARK_CORPUS[3]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -251,7 +231,7 @@ def test_extracts_cicd_yaml_complexity_from_summary() -> None:
 
 
 def test_extracts_pipeline_template_rigidity() -> None:
-    row = DEVTOOLS_BENCHMARK_CORPUS[5]
+    row = DEVTOOLS_BENCHMARK_CORPUS[4]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -262,7 +242,7 @@ def test_extracts_pipeline_template_rigidity() -> None:
 
 
 def test_extracts_local_dev_performance() -> None:
-    row = DEVTOOLS_BENCHMARK_CORPUS[7]
+    row = DEVTOOLS_BENCHMARK_CORPUS[6]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -273,7 +253,7 @@ def test_extracts_local_dev_performance() -> None:
 
 
 def test_extracts_openapi_spec_friction() -> None:
-    row = DEVTOOLS_BENCHMARK_CORPUS[8]
+    row = DEVTOOLS_BENCHMARK_CORPUS[7]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -284,7 +264,7 @@ def test_extracts_openapi_spec_friction() -> None:
 
 
 def test_extracts_platform_api_dx_friction() -> None:
-    row = DEVTOOLS_BENCHMARK_CORPUS[9]
+    row = DEVTOOLS_BENCHMARK_CORPUS[8]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],

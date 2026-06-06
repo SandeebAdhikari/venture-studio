@@ -38,6 +38,12 @@ MECHANISM_FINGERPRINTS: Final[frozenset[str]] = frozenset(
         "local_dev_performance",
         "platform_api_dx_friction",
         "openapi_spec_friction",
+        "coding_agent_api_spec_gap",
+        "mcp_context_budget_overflow",
+        "llm_guardrail_engineering_tax",
+        "ai_eval_pipeline_gap",
+        "inference_cost_governance",
+        "gpu_compute_access_unreliability",
     }
 )
 
@@ -107,6 +113,52 @@ _MECHANISM_RULES: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
             "discovering and configuring mcp servers",
             "time-consuming and not \"agentic\"",
             "time-consuming and not agentic",
+        ),
+    ),
+    (
+        "coding_agent_api_spec_gap",
+        (
+            "coding agents struggle to get the current openai api spec",
+            "struggle to get the current openai api spec",
+            "difficulty in accessing the official openai api specification",
+        ),
+    ),
+    (
+        "mcp_context_budget_overflow",
+        (
+            "cross the input context length limit",
+            "blows up the context window",
+            "mcp sources can give a huge output",
+        ),
+    ),
+    (
+        "llm_guardrail_engineering_tax",
+        (
+            "80% of my engineering effort building guardrails",
+            "building guardrails to prevent hallucinations",
+        ),
+    ),
+    (
+        "ai_eval_pipeline_gap",
+        (
+            "build a proper evaluation pipeline for months",
+            "every tool we've tested has significant limitations",
+        ),
+    ),
+    (
+        "inference_cost_governance",
+        (
+            "claude bill has become astronomical",
+            "3x our saas's cloud spend",
+            "rapidly cutting ai tool spend",
+        ),
+    ),
+    (
+        "gpu_compute_access_unreliability",
+        (
+            "performance are all over the place compared to what's listed",
+            "renting gpus a handful of times and hosts, bandwidth",
+            "paid google colab options don't work",
         ),
     ),
     (
