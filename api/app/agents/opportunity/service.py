@@ -7,6 +7,7 @@ from uuid import UUID
 
 from app.agents.opportunity.graph import GRAPH_NAME, OpportunityGeneratorAgent
 from app.agents.opportunity.llm_client import OpenAIOpportunityClient, OpportunityLLMClient
+from app.agents.opportunity.mechanism_fingerprints import enrich_complaint_evidence
 from app.agents.opportunity.patterns import TopicPatternDetector
 from app.agents.opportunity.taxonomy_fallback import resolve_generation_patterns
 from app.agents.opportunity.schemas import (
@@ -201,18 +202,20 @@ class OpportunityGeneratorService:
 
     @staticmethod
     def _to_evidence(complaint) -> ComplaintEvidence:
-        return ComplaintEvidence(
-            id=complaint.id,
-            summary=complaint.summary,
-            verbatim_quote=complaint.verbatim_quote,
-            severity=complaint.severity,
-            domain_code=complaint.domain.code,
-            category_code=complaint.category.code,
-            persona_code=complaint.persona.code,
-            product_mentions=list(complaint.product_mentions or []),
-            business_function_code=complaint.business_function_code,
-            jtbd_code=complaint.jtbd_code,
-            consequence_code=complaint.consequence_code,
+        return enrich_complaint_evidence(
+            ComplaintEvidence(
+                id=complaint.id,
+                summary=complaint.summary,
+                verbatim_quote=complaint.verbatim_quote,
+                severity=complaint.severity,
+                domain_code=complaint.domain.code,
+                category_code=complaint.category.code,
+                persona_code=complaint.persona.code,
+                product_mentions=list(complaint.product_mentions or []),
+                business_function_code=complaint.business_function_code,
+                jtbd_code=complaint.jtbd_code,
+                consequence_code=complaint.consequence_code,
+            )
         )
 
     @staticmethod

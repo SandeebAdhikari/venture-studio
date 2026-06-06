@@ -23,7 +23,13 @@ class ClassificationLLMOutput(BaseModel):
     )
     industry: str = Field(description="Industry/domain code from the allowed taxonomy.")
     customer_type: str = Field(description="Customer persona code from the allowed taxonomy.")
-    problem_category: str = Field(description="Complaint category code from the allowed taxonomy.")
+    problem_category: str = Field(
+        description=(
+            "Complaint theme code from the allowed taxonomy ONLY "
+            "(pricing, security, missing_feature, workflow, …). "
+            "Never use billing or billing_operations here — those are not valid problem_category codes."
+        ),
+    )
     severity_score: int = Field(ge=1, le=5, description="Severity from 1 (mild) to 5 (blocker).")
     summary: str = Field(description="Neutral 1-2 sentence summary of the complaint.")
     verbatim_quote: str = Field(
@@ -32,10 +38,20 @@ class ClassificationLLMOutput(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the classification.")
     product_mentions: list[str] = Field(default_factory=list)
     business_function_code: str = Field(
-        description="Closed-vocabulary business function code for founder signal clustering.",
+        description=(
+            "Founder signal: business function code (e.g. payment_processor, billing_operations). "
+            "Not a problem_category."
+        ),
     )
-    jtbd_code: str = Field(description="Closed-vocabulary job-to-be-done code.")
-    consequence_code: str = Field(description="Closed-vocabulary economic consequence code.")
+    jtbd_code: str = Field(
+        description="Founder signal: job-to-be-done code (e.g. accept_payments). Not a problem_category.",
+    )
+    consequence_code: str = Field(
+        description=(
+            "Founder signal: economic consequence code (e.g. revenue_interruption). "
+            "Not a problem_category."
+        ),
+    )
 
 
 class ClassificationResult(BaseModel):

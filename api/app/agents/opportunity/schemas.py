@@ -20,6 +20,7 @@ class ComplaintEvidence(BaseModel):
     business_function_code: str | None = None
     jtbd_code: str | None = None
     consequence_code: str | None = None
+    mechanism_fingerprint: str | None = None
 
 
 class ComplaintPattern(BaseModel):
@@ -44,13 +45,18 @@ class ComplaintPattern(BaseModel):
         default="phrase_clustering",
         description="How the pattern was detected (phrase, token, founder signal, or taxonomy fallback).",
     )
-    founder_grouping_variant: Literal["A", "B", "C", "D"] | None = Field(
+    founder_grouping_variant: Literal["A", "B", "C", "D", "E"] | None = Field(
         default=None,
         description="Founder signal grouping variant when pattern_source is founder_signal_clustering.",
     )
     business_function_code: str | None = None
     jtbd_code: str | None = None
     consequence_code: str | None = None
+    mechanism_fingerprint: str | None = None
+    singleton_exception_reason: str | None = Field(
+        default=None,
+        description="When set, pattern formed via founder-grade singleton exception.",
+    )
 
 
 class OpportunityLLMOutput(BaseModel):

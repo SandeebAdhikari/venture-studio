@@ -1,6 +1,7 @@
 """Validation for LLM classification output."""
 
 from app.agents.classification.founder_signals import validate_founder_signal_codes
+from app.agents.classification.problem_category_alignment import normalize_problem_category
 from app.agents.classification.schemas import ClassificationLLMOutput
 from app.agents.classification.source_text import verbatim_quote_in_source
 from app.agents.classification.taxonomy import CUSTOMER_TYPES, INDUSTRIES, PROBLEM_CATEGORIES
@@ -20,6 +21,14 @@ class ClassificationValidator:
         source_text: str,
     ) -> ClassificationLLMOutput:
         errors: list[str] = []
+
+        normalized_category = normalize_problem_category(
+            output.problem_category,
+            summary=output.summary,
+            verbatim_quote=output.verbatim_quote,
+        )
+        if normalized_category != output.problem_category:
+            output = output.model_copy(update={"problem_category": normalized_category})
 
         if output.problem_category not in PROBLEM_CATEGORIES:
             errors.append(f"invalid problem_category: {output.problem_category}")

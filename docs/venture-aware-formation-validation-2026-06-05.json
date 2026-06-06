@@ -1,0 +1,501 @@
+{
+  "experiment": "venture_aware_formation_stripe_billing",
+  "generated_at": "2026-06-05T22:49:57.302673+00:00",
+  "corpus": "stripe_billing_corpus_validation",
+  "lane_relevant_complaints": 15,
+  "min_cluster_size": 3,
+  "baseline_comparison": {
+    "phrase_patterns": 0,
+    "token_patterns": 0,
+    "legacy_variant_b_patterns": 2,
+    "venture_aware_patterns": 3,
+    "production_resolve_patterns": 3,
+    "production_pattern_source": "founder_signal_clustering",
+    "production_grouping_variant": "E"
+  },
+  "mechanism_fingerprint_inventory": [
+    {
+      "complaint_id": "ed75d5bb-622d-473e-81c7-4665b2181820",
+      "mechanism_fingerprint": null,
+      "severity": 4,
+      "quote_specificity_passes": false,
+      "business_function_code": "checkout_optimization",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "customer_loss"
+    },
+    {
+      "complaint_id": "c80adb68-44b5-49e6-b47f-be8982d9a054",
+      "mechanism_fingerprint": "low_upfront_processor_onboarding",
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "margin_erosion"
+    },
+    {
+      "complaint_id": "a3f26dc4-bcda-4040-a83f-6c79e6f36ae1",
+      "mechanism_fingerprint": null,
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "invoice_collection",
+      "jtbd_code": "collect_invoices",
+      "consequence_code": "operational_overhead"
+    },
+    {
+      "complaint_id": "948e6176-2c11-4006-b010-98bcc312c273",
+      "mechanism_fingerprint": "chargeback_defense",
+      "severity": 4,
+      "quote_specificity_passes": true,
+      "business_function_code": "fraud_prevention",
+      "jtbd_code": "prevent_fraud",
+      "consequence_code": "margin_erosion"
+    },
+    {
+      "complaint_id": "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+      "mechanism_fingerprint": "high_risk_deplatforming",
+      "severity": 4,
+      "quote_specificity_passes": true,
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "revenue_interruption"
+    },
+    {
+      "complaint_id": "57577e0b-2b86-4176-8e59-042361a3b77d",
+      "mechanism_fingerprint": "marketplace_fraud_screening",
+      "severity": 4,
+      "quote_specificity_passes": false,
+      "business_function_code": "fraud_prevention",
+      "jtbd_code": "prevent_fraud",
+      "consequence_code": "fraud_loss"
+    },
+    {
+      "complaint_id": "988dadac-1460-4606-bcc3-505b7b7c3981",
+      "mechanism_fingerprint": "gateway_orchestration",
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "subscription_management",
+      "jtbd_code": "manage_subscriptions",
+      "consequence_code": "revenue_interruption"
+    },
+    {
+      "complaint_id": "1aac2925-1030-4896-96e3-0a50f485c8c3",
+      "mechanism_fingerprint": null,
+      "severity": 4,
+      "quote_specificity_passes": false,
+      "business_function_code": "subscription_management",
+      "jtbd_code": "manage_subscriptions",
+      "consequence_code": "margin_erosion"
+    },
+    {
+      "complaint_id": "f776acef-53cb-4465-97cf-bc3cb235a7c1",
+      "mechanism_fingerprint": null,
+      "severity": 4,
+      "quote_specificity_passes": false,
+      "business_function_code": "invoice_collection",
+      "jtbd_code": "collect_invoices",
+      "consequence_code": "operational_overhead"
+    },
+    {
+      "complaint_id": "4e3de199-4f95-4f7a-bcb6-c0ab1d1e83c4",
+      "mechanism_fingerprint": "api_monetization",
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "billing_operations",
+      "jtbd_code": "automate_billing",
+      "consequence_code": "engineering_friction"
+    },
+    {
+      "complaint_id": "df278195-acc0-45d8-9b10-a94bf92d23f4",
+      "mechanism_fingerprint": "checkout_friction_fraud_tradeoff",
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "fraud_prevention",
+      "jtbd_code": "prevent_fraud",
+      "consequence_code": "fraud_loss"
+    },
+    {
+      "complaint_id": "b5205e50-1044-4b8c-aaac-c2898fc25065",
+      "mechanism_fingerprint": null,
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "checkout_optimization",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "customer_loss"
+    },
+    {
+      "complaint_id": "4281360c-288c-43b9-a70e-48ba450f271d",
+      "mechanism_fingerprint": "usage_metering_per_subscription",
+      "severity": 4,
+      "quote_specificity_passes": true,
+      "business_function_code": "subscription_management",
+      "jtbd_code": "manage_subscriptions",
+      "consequence_code": "revenue_interruption"
+    },
+    {
+      "complaint_id": "7e1446aa-d438-4460-bcad-d5f9ccaee94f",
+      "mechanism_fingerprint": "pci_vault_recurring",
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "operational_risk"
+    },
+    {
+      "complaint_id": "a4d30dbe-dbee-4762-b576-c4c520ed1d17",
+      "mechanism_fingerprint": "geo_payment_availability",
+      "severity": 3,
+      "quote_specificity_passes": false,
+      "business_function_code": "payment_processor",
+      "jtbd_code": "accept_payments",
+      "consequence_code": "revenue_interruption"
+    }
+  ],
+  "cluster_inventory": [
+    {
+      "cluster_key": "billing_operations|automate_billing|engineering_friction|api_monetization",
+      "mechanism_fingerprint": "api_monetization",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "4e3de199-4f95-4f7a-bcb6-c0ab1d1e83c4"
+      ],
+      "severities": [
+        3
+      ]
+    },
+    {
+      "cluster_key": "fraud_prevention|prevent_fraud|fraud_loss|checkout_friction_fraud_tradeoff",
+      "mechanism_fingerprint": "checkout_friction_fraud_tradeoff",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "df278195-acc0-45d8-9b10-a94bf92d23f4"
+      ],
+      "severities": [
+        3
+      ]
+    },
+    {
+      "cluster_key": "fraud_prevention|prevent_fraud|fraud_loss|marketplace_fraud_screening",
+      "mechanism_fingerprint": "marketplace_fraud_screening",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "57577e0b-2b86-4176-8e59-042361a3b77d"
+      ],
+      "severities": [
+        4
+      ]
+    },
+    {
+      "cluster_key": "fraud_prevention|prevent_fraud|margin_erosion|chargeback_defense",
+      "mechanism_fingerprint": "chargeback_defense",
+      "cluster_size": 1,
+      "formation_status": "singleton_exception",
+      "singleton_exception_reason": "severity>=4; mechanism=chargeback_defense; quote_specificity=high",
+      "complaint_ids": [
+        "948e6176-2c11-4006-b010-98bcc312c273"
+      ],
+      "severities": [
+        4
+      ]
+    },
+    {
+      "cluster_key": "payment_processor|accept_payments|margin_erosion|low_upfront_processor_onboarding",
+      "mechanism_fingerprint": "low_upfront_processor_onboarding",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "c80adb68-44b5-49e6-b47f-be8982d9a054"
+      ],
+      "severities": [
+        3
+      ]
+    },
+    {
+      "cluster_key": "payment_processor|accept_payments|operational_risk|pci_vault_recurring",
+      "mechanism_fingerprint": "pci_vault_recurring",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "7e1446aa-d438-4460-bcad-d5f9ccaee94f"
+      ],
+      "severities": [
+        3
+      ]
+    },
+    {
+      "cluster_key": "payment_processor|accept_payments|revenue_interruption|geo_payment_availability",
+      "mechanism_fingerprint": "geo_payment_availability",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "a4d30dbe-dbee-4762-b576-c4c520ed1d17"
+      ],
+      "severities": [
+        3
+      ]
+    },
+    {
+      "cluster_key": "payment_processor|accept_payments|revenue_interruption|high_risk_deplatforming",
+      "mechanism_fingerprint": "high_risk_deplatforming",
+      "cluster_size": 1,
+      "formation_status": "singleton_exception",
+      "singleton_exception_reason": "severity>=4; mechanism=high_risk_deplatforming; quote_specificity=high",
+      "complaint_ids": [
+        "191e82f8-18a1-4d17-9bb1-2adff6aabe87"
+      ],
+      "severities": [
+        4
+      ]
+    },
+    {
+      "cluster_key": "subscription_management|manage_subscriptions|revenue_interruption|gateway_orchestration",
+      "mechanism_fingerprint": "gateway_orchestration",
+      "cluster_size": 1,
+      "formation_status": "singleton_below_threshold",
+      "singleton_exception_reason": null,
+      "complaint_ids": [
+        "988dadac-1460-4606-bcc3-505b7b7c3981"
+      ],
+      "severities": [
+        3
+      ]
+    },
+    {
+      "cluster_key": "subscription_management|manage_subscriptions|revenue_interruption|usage_metering_per_subscription",
+      "mechanism_fingerprint": "usage_metering_per_subscription",
+      "cluster_size": 1,
+      "formation_status": "singleton_exception",
+      "singleton_exception_reason": "severity>=4; mechanism=usage_metering_per_subscription; quote_specificity=high",
+      "complaint_ids": [
+        "4281360c-288c-43b9-a70e-48ba450f271d"
+      ],
+      "severities": [
+        4
+      ]
+    }
+  ],
+  "pattern_inventory": {
+    "venture_aware": [
+      {
+        "topic": "Fraud Prevention \u2014 Prevent Fraud \u2014 Margin Erosion",
+        "cluster_key": "fraud_prevention|prevent_fraud|margin_erosion|chargeback_defense",
+        "mechanism_fingerprint": "chargeback_defense",
+        "founder_grouping_variant": "E",
+        "singleton_exception_reason": "severity>=4; mechanism=chargeback_defense; quote_specificity=high",
+        "complaint_ids": [
+          "948e6176-2c11-4006-b010-98bcc312c273"
+        ],
+        "complaint_count": 1,
+        "pattern_source": "founder_signal_clustering"
+      },
+      {
+        "topic": "Payment Processor \u2014 Accept Payments \u2014 Revenue Interruption",
+        "cluster_key": "payment_processor|accept_payments|revenue_interruption|high_risk_deplatforming",
+        "mechanism_fingerprint": "high_risk_deplatforming",
+        "founder_grouping_variant": "E",
+        "singleton_exception_reason": "severity>=4; mechanism=high_risk_deplatforming; quote_specificity=high",
+        "complaint_ids": [
+          "191e82f8-18a1-4d17-9bb1-2adff6aabe87"
+        ],
+        "complaint_count": 1,
+        "pattern_source": "founder_signal_clustering"
+      },
+      {
+        "topic": "Subscription Management \u2014 Manage Subscriptions \u2014 Revenue Interruption",
+        "cluster_key": "subscription_management|manage_subscriptions|revenue_interruption|usage_metering_per_subscription",
+        "mechanism_fingerprint": "usage_metering_per_subscription",
+        "founder_grouping_variant": "E",
+        "singleton_exception_reason": "severity>=4; mechanism=usage_metering_per_subscription; quote_specificity=high",
+        "complaint_ids": [
+          "4281360c-288c-43b9-a70e-48ba450f271d"
+        ],
+        "complaint_count": 1,
+        "pattern_source": "founder_signal_clustering"
+      }
+    ],
+    "legacy_variant_b": [
+      {
+        "topic": "Payment Processor \u2014 Accept Payments",
+        "cluster_key": "payment_processor|accept_payments",
+        "mechanism_fingerprint": null,
+        "founder_grouping_variant": "B",
+        "singleton_exception_reason": null,
+        "complaint_ids": [
+          "c80adb68-44b5-49e6-b47f-be8982d9a054",
+          "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+          "7e1446aa-d438-4460-bcad-d5f9ccaee94f",
+          "a4d30dbe-dbee-4762-b576-c4c520ed1d17"
+        ],
+        "complaint_count": 4,
+        "pattern_source": "founder_signal_clustering"
+      },
+      {
+        "topic": "Subscription Management \u2014 Manage Subscriptions",
+        "cluster_key": "subscription_management|manage_subscriptions",
+        "mechanism_fingerprint": null,
+        "founder_grouping_variant": "B",
+        "singleton_exception_reason": null,
+        "complaint_ids": [
+          "988dadac-1460-4606-bcc3-505b7b7c3981",
+          "1aac2925-1030-4896-96e3-0a50f485c8c3",
+          "4281360c-288c-43b9-a70e-48ba450f271d"
+        ],
+        "complaint_count": 3,
+        "pattern_source": "founder_signal_clustering"
+      }
+    ],
+    "production": [
+      {
+        "topic": "Fraud Prevention \u2014 Prevent Fraud \u2014 Margin Erosion",
+        "cluster_key": "fraud_prevention|prevent_fraud|margin_erosion|chargeback_defense",
+        "mechanism_fingerprint": "chargeback_defense",
+        "founder_grouping_variant": "E",
+        "singleton_exception_reason": "severity>=4; mechanism=chargeback_defense; quote_specificity=high",
+        "complaint_ids": [
+          "948e6176-2c11-4006-b010-98bcc312c273"
+        ],
+        "complaint_count": 1,
+        "pattern_source": "founder_signal_clustering"
+      },
+      {
+        "topic": "Payment Processor \u2014 Accept Payments \u2014 Revenue Interruption",
+        "cluster_key": "payment_processor|accept_payments|revenue_interruption|high_risk_deplatforming",
+        "mechanism_fingerprint": "high_risk_deplatforming",
+        "founder_grouping_variant": "E",
+        "singleton_exception_reason": "severity>=4; mechanism=high_risk_deplatforming; quote_specificity=high",
+        "complaint_ids": [
+          "191e82f8-18a1-4d17-9bb1-2adff6aabe87"
+        ],
+        "complaint_count": 1,
+        "pattern_source": "founder_signal_clustering"
+      },
+      {
+        "topic": "Subscription Management \u2014 Manage Subscriptions \u2014 Revenue Interruption",
+        "cluster_key": "subscription_management|manage_subscriptions|revenue_interruption|usage_metering_per_subscription",
+        "mechanism_fingerprint": "usage_metering_per_subscription",
+        "founder_grouping_variant": "E",
+        "singleton_exception_reason": "severity>=4; mechanism=usage_metering_per_subscription; quote_specificity=high",
+        "complaint_ids": [
+          "4281360c-288c-43b9-a70e-48ba450f271d"
+        ],
+        "complaint_count": 1,
+        "pattern_source": "founder_signal_clustering"
+      }
+    ]
+  },
+  "singleton_exceptions": [
+    {
+      "cluster_key": "fraud_prevention|prevent_fraud|margin_erosion|chargeback_defense",
+      "mechanism_fingerprint": "chargeback_defense",
+      "cluster_size": 1,
+      "formation_status": "singleton_exception",
+      "singleton_exception_reason": "severity>=4; mechanism=chargeback_defense; quote_specificity=high",
+      "complaint_ids": [
+        "948e6176-2c11-4006-b010-98bcc312c273"
+      ],
+      "severities": [
+        4
+      ]
+    },
+    {
+      "cluster_key": "payment_processor|accept_payments|revenue_interruption|high_risk_deplatforming",
+      "mechanism_fingerprint": "high_risk_deplatforming",
+      "cluster_size": 1,
+      "formation_status": "singleton_exception",
+      "singleton_exception_reason": "severity>=4; mechanism=high_risk_deplatforming; quote_specificity=high",
+      "complaint_ids": [
+        "191e82f8-18a1-4d17-9bb1-2adff6aabe87"
+      ],
+      "severities": [
+        4
+      ]
+    },
+    {
+      "cluster_key": "subscription_management|manage_subscriptions|revenue_interruption|usage_metering_per_subscription",
+      "mechanism_fingerprint": "usage_metering_per_subscription",
+      "cluster_size": 1,
+      "formation_status": "singleton_exception",
+      "singleton_exception_reason": "severity>=4; mechanism=usage_metering_per_subscription; quote_specificity=high",
+      "complaint_ids": [
+        "4281360c-288c-43b9-a70e-48ba450f271d"
+      ],
+      "severities": [
+        4
+      ]
+    }
+  ],
+  "opportunity_inventory": {
+    "patterns_eligible_for_generation": 3,
+    "singleton_exception_patterns": 3,
+    "min_cluster_patterns": 0,
+    "expected_opportunities_if_one_per_pattern": 3,
+    "note": "Formation-only validation; opportunity LLM generation not invoked."
+  },
+  "manual_theme_coverage": {
+    "R1": {
+      "label": "Processor access / selection",
+      "complaint_ids": [
+        "191e82f8-18a1-4d17-9bb1-2adff6aabe87",
+        "c80adb68-44b5-49e6-b47f-be8982d9a054",
+        "a4d30dbe-dbee-4762-b576-c4c520ed1d17",
+        "7e1446aa-d438-4460-bcad-d5f9ccaee94f"
+      ],
+      "matched_production_patterns": [
+        "payment_processor|accept_payments|revenue_interruption|high_risk_deplatforming"
+      ]
+    },
+    "R2": {
+      "label": "Fraud / disputes",
+      "complaint_ids": [
+        "948e6176-2c11-4006-b010-98bcc312c273",
+        "57577e0b-2b86-4176-8e59-042361a3b77d",
+        "df278195-acc0-45d8-9b10-a94bf92d23f4"
+      ],
+      "matched_production_patterns": [
+        "fraud_prevention|prevent_fraud|margin_erosion|chargeback_defense"
+      ]
+    },
+    "R3": {
+      "label": "Billing model implementation",
+      "complaint_ids": [
+        "4281360c-288c-43b9-a70e-48ba450f271d",
+        "988dadac-1460-4606-bcc3-505b7b7c3981",
+        "4e3de199-4f95-4f7a-bcb6-c0ab1d1e83c4"
+      ],
+      "matched_production_patterns": [
+        "subscription_management|manage_subscriptions|revenue_interruption|usage_metering_per_subscription"
+      ]
+    },
+    "R4": {
+      "label": "Checkout friction",
+      "complaint_ids": [
+        "ed75d5bb-622d-473e-81c7-4665b2181820",
+        "b5205e50-1044-4b8c-aaac-c2898fc25065"
+      ],
+      "matched_production_patterns": []
+    },
+    "R5": {
+      "label": "Invoice operations",
+      "complaint_ids": [
+        "f776acef-53cb-4465-97cf-bc3cb235a7c1",
+        "a3f26dc4-bcda-4040-a83f-6c79e6f36ae1"
+      ],
+      "matched_production_patterns": []
+    },
+    "R6": {
+      "label": "Platform billing mandate",
+      "complaint_ids": [
+        "1aac2925-1030-4896-96e3-0a50f485c8c3"
+      ],
+      "matched_production_patterns": []
+    }
+  }
+}

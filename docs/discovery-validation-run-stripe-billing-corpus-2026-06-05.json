@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-06-05T18:46:05.209226+00:00",
+  "captured_at": "2026-06-06T00:07:39.053150+00:00",
   "label": "stripe-billing-corpus-validation",
   "experiment_name": "Stripe Billing Corpus Validation",
   "query_selection": {
@@ -18,18 +18,23 @@
     "experiment_name": "stripe_billing_corpus_validation",
     "source_name": "production-hn-saas",
     "previous_config": {
-      "query": "Ask HN frustrated Stripe",
+      "query": "Ask HN Stripe billing",
       "keywords": [
         "frustrated",
         "frustrating",
         "painful",
         "broken",
+        "struggle",
         "stripe",
         "billing",
         "subscription",
         "invoice",
+        "chargeback",
         "webhook",
-        "payment"
+        "payment",
+        "payout",
+        "refund",
+        "alternative"
       ],
       "max_pages": 3,
       "hits_per_page": 30,
@@ -65,16 +70,16 @@
   },
   "collection_metrics": {
     "signals_collected": 89,
-    "complaints_extracted": 22,
-    "lane_relevant_complaints": 15,
-    "complaint_precision_pct": 68.2,
-    "complaint_yield_pct": 24.7,
-    "not_a_complaint_count": 61,
-    "grounding_failure_count": 5,
+    "complaints_extracted": 19,
+    "lane_relevant_complaints": 13,
+    "complaint_precision_pct": 68.4,
+    "complaint_yield_pct": 21.3,
+    "not_a_complaint_count": 66,
+    "grounding_failure_count": 4,
     "signal_processing_status": {
-      "classified": 22,
-      "skipped": 61,
-      "failed": 6
+      "skipped": 66,
+      "classified": 19,
+      "failed": 4
     }
   },
   "recurring_vocabulary": {
@@ -89,24 +94,24 @@
       "payment": 86
     },
     "all_complaints": {
-      "stripe": 14,
-      "billing": 11,
-      "subscription": 8,
-      "invoice": 8,
-      "chargeback": 3,
+      "stripe": 16,
+      "billing": 15,
+      "subscription": 11,
+      "invoice": 9,
+      "chargeback": 0,
       "payout": 0,
       "webhook": 0,
-      "payment": 14
+      "payment": 12
     },
     "lane_relevant_complaints": {
-      "stripe": 14,
+      "stripe": 15,
       "billing": 11,
-      "subscription": 8,
+      "subscription": 10,
       "invoice": 4,
-      "chargeback": 2,
+      "chargeback": 0,
       "payout": 0,
       "webhook": 0,
-      "payment": 10
+      "payment": 8
     }
   },
   "top_lane_relevant_complaints": [
@@ -115,45 +120,72 @@
       "domain": "saas_b2c",
       "category": "pricing",
       "persona": "founder",
-      "severity": 4,
-      "summary": "The user expresses dissatisfaction with Recurly's pricing and limited customization options, leading to a potential migration back to Stripe. They are concerned about losing customer data during the m",
-      "verbatim_excerpt": "Recurly is expensive. It's nearly our largest software line item. 2. Recurly checkout/customization is limited - we're losing many customers in the checkout process and Stripe checkout looks very good"
-    },
-    {
-      "thread_title": "Ask HN: Stripe equivalent in the EU?",
-      "domain": "fintech",
-      "category": "pricing",
-      "persona": "founder",
       "severity": 3,
-      "summary": "The user is seeking alternatives to Stripe for payment processing in the EU due to high upfront costs. They express frustration with the current options available.",
-      "verbatim_excerpt": "the up front costs are relatively high."
+      "summary": "The user expresses dissatisfaction with Recurly's high costs and limited checkout customization, prompting consideration of a migration back to Stripe billing.",
+      "verbatim_excerpt": "Recurly is expensive. It's nearly our largest software line item."
     },
     {
-      "thread_title": "Ask HN: How do you deal with clients that don't pay on time",
+      "thread_title": "Ask HN: Why can't OpenAI, Cursor, Fyxer etc. send their invoices per email?",
       "domain": "saas_b2b",
-      "category": "pricing",
-      "persona": "founder",
+      "category": "missing_feature",
+      "persona": "other",
       "severity": 3,
-      "summary": "The user is experiencing issues with a client who consistently pays invoices late and refuses to use the recommended billing method.",
-      "verbatim_excerpt": "We have a client that never pays their monthly invoice on time and they don't want to use our stripe recurring billing."
-    },
-    {
-      "thread_title": "Ask HN: Stripe and Chargebacks",
-      "domain": "saas_b2b",
-      "category": "pricing",
-      "persona": "founder",
-      "severity": 4,
-      "summary": "The user expresses frustration over unexpected chargeback fees imposed by Stripe, despite having a low chargeback rate and clear cancellation policies. They feel unfairly treated by both Stripe and th",
-      "verbatim_excerpt": "Why are we getting fscked sideways by Stripe, BoA & the customer ?"
+      "summary": "The user is frustrated with the lack of email automation for invoice delivery from SaaS platforms using Stripe Billing.",
+      "verbatim_excerpt": "Every month I need to log in in to our SaaS to download invoices."
     },
     {
       "thread_title": "Ask HN: Kicked off Stripe. Where else can I go?",
       "domain": "saas_b2b",
+      "category": "security",
+      "persona": "founder",
+      "severity": 4,
+      "summary": "The user was classified as high risk and removed from Stripe, seeking alternatives for SaaS billing.",
+      "verbatim_excerpt": "I just got kicked off Stripe; classified as high risk."
+    },
+    {
+      "thread_title": "Ask HN: High Biases in Stripe-Radar?",
+      "domain": "fintech",
+      "category": "security",
+      "persona": "founder",
+      "severity": 4,
+      "summary": "The user is experiencing issues with Stripe-Radar blocking payments due to high-risk classifications, which they believe are biased based on geographical distance. This is impacting their ability to p",
+      "verbatim_excerpt": "the Stripe-Radar is hindering the subscriptions. Yesterday, we experienced 2-digit \"Blocked\" payments because of \"High Risk\"."
+    },
+    {
+      "thread_title": "Ask HN: Why most SaaS companies are leaving money on table",
+      "domain": "saas_b2b",
+      "category": "missing_feature",
+      "persona": "developer",
+      "severity": 4,
+      "summary": "The user expresses frustration over the lack of subscription management support for various payment methods, which limits revenue potential.",
+      "verbatim_excerpt": "Why there isn't any subscription management product which supports all of these gateways?"
+    },
+    {
+      "thread_title": "Ask HN: A payment processor that pre-charges metered use",
+      "domain": "education",
+      "category": "missing_feature",
+      "persona": "founder",
+      "severity": 3,
+      "summary": "The user is looking for a payment processor that can handle metered billing for lessons, which Stripe and PayPal do not currently support.",
+      "verbatim_excerpt": "Is there a processor (ideally as easy to work with as Stripe) that supports this type of billing?"
+    },
+    {
+      "thread_title": "Ask HN: How is this legal that you must use Google Billing for Android apps?",
+      "domain": "other",
       "category": "pricing",
       "persona": "founder",
       "severity": 4,
-      "summary": "The user expresses frustration about being removed from Stripe and seeks alternative SaaS billing options.",
-      "verbatim_excerpt": "I just got kicked off Stripe; classified as high risk. Not really interested in trying to salvage this. Where else can I go for SaaS billing?"
+      "summary": "The user expresses frustration over the mandatory use of Google Play Billing for Android app subscriptions, highlighting the high fees and lack of alternatives.",
+      "verbatim_excerpt": "How is this legal that if I want to publish an Android app on Play Market and charge for subscriptions, I must use Google Play Billing and pay 30% to Google? This is insane (because there are no alter"
+    },
+    {
+      "thread_title": "Ask HN: Are Yearly Subscriptions Hard?",
+      "domain": "saas_b2b",
+      "category": "missing_feature",
+      "persona": "developer",
+      "severity": 4,
+      "summary": "The user expresses frustration with the lack of Stripe support for handling yearly subscriptions with monthly overage invoices, leading to complicated manual processes.",
+      "verbatim_excerpt": "There doesn't seem to be a Stripe-native way to have invoices for overages being sent at the month end. We have to do a ton of billing date/math, keep track of the overages, of when we billed for them"
     },
     {
       "thread_title": "Ask HN: Tips on preventing credit card fraud through Stripe?",
@@ -161,61 +193,16 @@
       "category": "security",
       "persona": "founder",
       "severity": 4,
-      "summary": "The user is seeking advice on preventing credit card fraud on their online selling platform, indicating a significant security concern.",
+      "summary": "The user is seeking advice on preventing credit card fraud on their online selling platform, indicating they have experienced unauthorized transactions.",
       "verbatim_excerpt": "Any suggestions ?"
-    },
-    {
-      "thread_title": "Ask HN: Why most SaaS companies are leaving money on table",
-      "domain": "saas_b2b",
-      "category": "missing_feature",
-      "persona": "developer",
-      "severity": 3,
-      "summary": "The user expresses frustration over the lack of subscription management products that support various payment methods, particularly in regions with limited credit card usage.",
-      "verbatim_excerpt": "Why there isn't any subscription management product which supports all of these gateways?"
-    },
-    {
-      "thread_title": "Ask HN: How is this legal that you must use Google Billing for Android apps?",
-      "domain": "saas_b2c",
-      "category": "pricing",
-      "persona": "founder",
-      "severity": 4,
-      "summary": "The user is frustrated with the requirement to use Google Play Billing for Android apps, which incurs a 30% fee. They are seeking alternatives to avoid this cost.",
-      "verbatim_excerpt": "How is this legal that if I want to publish an Android app on Play Market and charge for subscriptions, I must use Google Play Billing and pay 30% to Google? This is insane (because there are no alter"
-    },
-    {
-      "thread_title": "Ask HN: What is the easiest and cheapest way to manage payments not manually?",
-      "domain": "fintech",
-      "category": "workflow",
-      "persona": "founder",
-      "severity": 4,
-      "summary": "The user is experiencing significant challenges with managing invoices and payments manually, leading to inefficiencies and increased workload. They are exploring automated billing solutions to allevi",
-      "verbatim_excerpt": "I have a problem with invoices. Especially at the end of the month it's like an increasing headache."
-    },
-    {
-      "thread_title": "Ask HN: Simplest Method to Monetize an API with Stripe?",
-      "domain": "devtools",
-      "category": "missing_feature",
-      "persona": "developer",
-      "severity": 3,
-      "summary": "The user is seeking a simpler method to monetize an API with Stripe, expressing frustration with existing complex solutions.",
-      "verbatim_excerpt": "I want a simple solution to manage API keys, users and billing."
-    },
-    {
-      "thread_title": "Ask HN: What measures can I take to reduce fraud when taking online payments?",
-      "domain": "saas_b2c",
-      "category": "security",
-      "persona": "founder",
-      "severity": 3,
-      "summary": "The user is seeking advice on reducing fraud in online payments while using Stripe for subscriptions. They are concerned about the risks associated with collecting minimal payment information.",
-      "verbatim_excerpt": "I am concerned that the fewer details collected in the payment form, the greater the chance of a given transaction being fraudulent."
     },
     {
       "thread_title": "Ask HN: Our payment processor collects unnecessary information",
       "domain": "saas_b2b",
-      "category": "pricing",
+      "category": "security",
       "persona": "founder",
       "severity": 3,
-      "summary": "The user expresses concern about the unnecessary information required by their payment processor, which may deter customers from completing subscriptions.",
+      "summary": "The user expresses concern about unnecessary information collection by their payment processor, which may deter customers from completing subscriptions.",
       "verbatim_excerpt": "However since the payment page is hosted on their end, they force our customers to enter their billing address, zip code and phone number, for a SaaS product geared towards mobile developers we feel t"
     },
     {
@@ -224,25 +211,25 @@
       "category": "missing_feature",
       "persona": "founder",
       "severity": 4,
-      "summary": "The user is facing challenges with Stripe's inability to track usage-based billing per subscription, which is crucial for their business model. They are exploring alternatives but are encountering dif",
-      "verbatim_excerpt": "Stripe does not allow me to track usage ( such as how much GB of data is used ) per subscription."
+      "summary": "The user is frustrated with Stripe's inability to track usage-based billing per subscription, which is crucial for their business model.",
+      "verbatim_excerpt": "But Stripe does not allow me to track usage ( such as how much GB of data is used ) per subscription."
     },
     {
       "thread_title": "Ask HN: Bootstrap compatible Canadian Credit Card processing",
-      "domain": "fintech",
-      "category": "pricing",
+      "domain": "saas_b2c",
+      "category": "missing_feature",
       "persona": "founder",
       "severity": 3,
-      "summary": "The user is seeking a credit card processing solution that meets specific criteria for their web app but is struggling to find options that fit their budget and requirements.",
-      "verbatim_excerpt": "I'm trying to find a credit card processor that supports recurring billing or has a 'credit card vault' where they store the cards so I don't need to worry about PCI compliance."
+      "summary": "The user is seeking a credit card processor that supports recurring billing without high fees, expressing frustration over the lack of suitable options in Canada.",
+      "verbatim_excerpt": "Ideally I'd like a stripe-like service (or Stripe, please come to Canada soon!)."
     },
     {
       "thread_title": "Ask HN: Do you still pay with Paypal?",
-      "domain": "fintech",
+      "domain": "saas_b2b",
       "category": "pricing",
       "persona": "founder",
       "severity": 3,
-      "summary": "The user is facing challenges with payment processing options in South Africa, particularly regarding foreign currency transactions and high fees from alternative processors.",
+      "summary": "The user is facing challenges with payment processing options in South Africa, particularly regarding currency limitations and high fees from alternatives like Paddle.",
       "verbatim_excerpt": "Unfortunately Stripe and Braintree isn't available where I live (South Africa), making accepting payments (subscriptions) in an international market a bit more difficult."
     }
   ],
@@ -259,21 +246,30 @@
     }
   },
   "opportunity_results": {
-    "opportunities_generated": 0,
-    "opportunity_titles": [],
+    "opportunities_generated": 8,
+    "opportunity_titles": [
+      "Reduce Subscription Management Costs to Combat Margin Erosion",
+      "Reinstate Deplatformed Payment Processors for High-Risk SaaS",
+      "Reduce Stripe-Radar False Positives Blocking Subscriptions",
+      "Subscription management supporting multiple payment gateways",
+      "Bypass Google Play Billing to Reduce 30% Subscription Fees",
+      "Streamlined Checkout for SaaS Products Without Unnecessary Customer Data",
+      "Usage Tracking for Subscription Billing in Stripe",
+      "Enable Subscription Payments in South Africa"
+    ],
     "generate_stage_metadata": {
       "outcome": "completed",
       "skipped": 0
     }
   },
   "pipeline": {
-    "pipeline_run_id": "eb5aa805-e082-4a51-9419-5fe66d45b604",
-    "status": "completed",
-    "stages_completed": 14,
-    "duration_seconds": 286.763681
+    "pipeline_run_id": "ff0819e6-5fde-45f6-a87f-ccc4b9711d91",
+    "status": "partial",
+    "stages_completed": 7,
+    "duration_seconds": 912.54942
   },
   "verify": {
-    "passed": true,
+    "passed": false,
     "checks": [
       {
         "name": "no_mock_opportunities",
@@ -328,74 +324,43 @@
       {
         "name": "fresh_complaints",
         "ok": true,
-        "count": 22
+        "count": 19
       },
       {
-        "name": "empty_discovery_opportunities",
+        "name": "fresh_opportunities",
         "ok": true,
-        "count": 0
+        "count": 8
+      },
+      {
+        "name": "fresh_completed_market_briefs",
+        "ok": true,
+        "count": 8
       },
       {
         "name": "fresh_ranking",
-        "ok": true
+        "ok": false
       },
       {
         "name": "fresh_venture_report",
-        "ok": true
-      },
-      {
-        "name": "empty_discovery_pipeline_completed",
-        "ok": true,
-        "status": "completed"
+        "ok": false
       }
     ],
-    "errors": [],
+    "errors": [
+      "No current executive ranking",
+      "No venture recommendation report"
+    ],
     "artifacts": {
-      "complaints": 22,
-      "opportunities": 0,
-      "completed_market_briefs": 0,
-      "current_ranking": {
-        "id": "788a1979-8f31-47af-8577-51ae26ebe222",
-        "created_at": "2026-06-05 18:41:18.453557+00:00",
-        "ranking_metadata": {
-          "approval_status": "pending",
-          "pipeline_run_id": "eb5aa805-e082-4a51-9419-5fe66d45b604",
-          "min_agent_coverage": 1,
-          "approval_request_id": "283c7727-c432-4508-8096-c884cb5e48a2",
-          "founder_profile_name": "Default Solo Technical Founder",
-          "discovery_validation_mode": true
-        }
-      },
-      "latest_venture_report": {
-        "id": "6708025f-c36f-4094-ac69-7726b4cf3caf",
-        "title": "Venture Discovery Report \u2014 2026-06-05",
-        "created_at": "2026-06-05 18:41:18.453557+00:00",
-        "report_metadata": {
-          "top_n": 5,
-          "engine": "venture_report_v1",
-          "outcome": "empty_discovery",
-          "generated_at": "2026-06-05T18:46:05.181367+00:00",
-          "pipeline_run_id": "eb5aa805-e082-4a51-9419-5fe66d45b604",
-          "discovery_funnel": {
-            "patterns_found": 0,
-            "signals_collected": 0,
-            "complaints_extracted": 22,
-            "opportunities_generated": 0,
-            "ranked_opportunity_count": 0
-          },
-          "opportunity_count": 0,
-          "founder_profile_id": "c52e20d1-a86f-4531-a807-804718c99088",
-          "executive_ranking_run_id": "788a1979-8f31-47af-8577-51ae26ebe222",
-          "discovery_validation_mode": true,
-          "executive_ranking_version": 1
-        }
-      }
+      "complaints": 19,
+      "opportunities": 8,
+      "completed_market_briefs": 8,
+      "current_ranking": null,
+      "latest_venture_report": null
     },
-    "empty_discovery": true,
+    "empty_discovery": false,
     "pipeline_run": {
-      "status": "completed",
-      "started_at": "2026-06-05 18:41:18.808876+00:00",
-      "finished_at": "2026-06-05 18:46:05.198438+00:00",
+      "status": "partial",
+      "started_at": "2026-06-05 23:52:26.555868+00:00",
+      "finished_at": "2026-06-06 00:07:38.657953+00:00",
       "config_snapshot": {
         "force": true,
         "top_n": null,
@@ -413,6 +378,8 @@
       }
     },
     "top_ranked": [],
-    "llm_models_seen": []
+    "llm_models_seen": [
+      "gpt-4o-mini"
+    ]
   }
 }

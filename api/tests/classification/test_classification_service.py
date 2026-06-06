@@ -112,9 +112,116 @@ async def test_classify_signal_persists_complaint(
     complaint = await repos.complaints.get_by_signal_id(signal_id)
     assert complaint is not None
     assert complaint.summary == result.classification.summary
+    assert complaint.business_function_code == "billing_operations"
+    assert complaint.jtbd_code == "automate_billing"
+    assert complaint.consequence_code == "margin_erosion"
+    assert result.classification.business_function_code == complaint.business_function_code
+    assert result.classification.jtbd_code == complaint.jtbd_code
+    assert result.classification.consequence_code == complaint.consequence_code
 
     signal = await repos.signals.get_by_id(signal_id)
     assert signal.processing_status == "classified"
+
+
+@pytest.mark.asyncio
+async def test_classify_signal_persists_founder_signals_through_reload(
+    db_session: AsyncSession,
+    enabled_source: Source,
+    classification_settings: Settings,
+) -> None:
+    body = "Why are we getting fscked sideways by Stripe, BoA & the customer ?"
+    signal_id = await _insert_pending_signal(
+        db_session,
+        enabled_source,
+        title="Ask HN: Stripe and Chargebacks",
+        body=body,
+    )
+    repos = get_repositories(db_session)
+    mock = MockClassificationLLMClient(
+        [
+            ClassificationLLMOutput(
+                is_complaint=True,
+                industry="fintech",
+                customer_type="founder",
+                problem_category="pricing",
+                severity_score=4,
+                summary="Frustration over Stripe chargeback fees and dispute handling.",
+                verbatim_quote=body,
+                confidence=0.91,
+                product_mentions=["Stripe"],
+                business_function_code="fraud_prevention",
+                jtbd_code="prevent_fraud",
+                consequence_code="margin_erosion",
+            )
+        ]
+    )
+    service = ComplaintClassificationService(repos, classification_settings, llm_client=mock)
+
+    result = await service.classify_signal(signal_id)
+
+    assert result.status == "classified"
+    assert result.complaint_id is not None
+
+    db_session.expire_all()
+    complaint = await repos.complaints.get_by_id(result.complaint_id)
+    assert complaint is not None
+    assert complaint.business_function_code == "fraud_prevention"
+    assert complaint.jtbd_code == "prevent_fraud"
+    assert complaint.consequence_code == "margin_erosion"
+
+
+@pytest.mark.asyncio
+async def test_classify_signal_normalizes_billing_problem_category_for_deplatforming(
+    db_session: AsyncSession,
+    enabled_source: Source,
+    classification_settings: Settings,
+) -> None:
+    body = (
+        "I just got kicked off Stripe; classified as high risk. "
+        "Not really interested in trying to salvage this. "
+        "Where else can I go for SaaS billing?"
+    )
+    signal_id = await _insert_pending_signal(
+        db_session,
+        enabled_source,
+        title="Ask HN: Kicked off Stripe. Where else can I go?",
+        body=body,
+    )
+    repos = get_repositories(db_session)
+    mock = MockClassificationLLMClient(
+        [
+            ClassificationLLMOutput(
+                is_complaint=True,
+                industry="fintech",
+                customer_type="founder",
+                problem_category="billing",
+                severity_score=4,
+                summary="Founder was removed from Stripe as high risk and needs billing alternatives.",
+                verbatim_quote=(
+                    "I just got kicked off Stripe; classified as high risk. "
+                    "Not really interested in trying to salvage this. "
+                    "Where else can I go for SaaS billing?"
+                ),
+                confidence=0.91,
+                product_mentions=["Stripe"],
+                business_function_code="payment_processor",
+                jtbd_code="accept_payments",
+                consequence_code="revenue_interruption",
+            )
+        ]
+    )
+    service = ComplaintClassificationService(repos, classification_settings, llm_client=mock)
+
+    result = await service.classify_signal(signal_id)
+
+    assert result.status == "classified"
+    assert result.complaint_id is not None
+    assert result.classification is not None
+    assert result.classification.problem_category == "security"
+
+    complaint = await repos.complaints.get_by_signal_id(signal_id)
+    assert complaint is not None
+    assert complaint.business_function_code == "payment_processor"
 
 
 @pytest.mark.asyncio

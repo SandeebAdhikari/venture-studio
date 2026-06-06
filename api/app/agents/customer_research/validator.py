@@ -2,6 +2,7 @@
 
 from app.agents.customer_research.grounding import (
     canonicalize_representative_complaints,
+    normalize_complaint_indices,
     representative_quote_grounded,
 )
 from app.agents.customer_research.metrics import SENTIMENT_LABEL_RANGES
@@ -26,6 +27,7 @@ class CustomerResearchValidator:
         *,
         context: OpportunityCustomerContext,
     ) -> CustomerResearchLLMOutput:
+        output = normalize_complaint_indices(output, context)
         output = canonicalize_representative_complaints(output, context)
         errors: list[str] = []
         max_index = len(context.complaint_evidence) - 1

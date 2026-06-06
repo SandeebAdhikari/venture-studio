@@ -303,6 +303,16 @@ body {
   padding: 0.75rem 0.5rem 0.25rem;
 }
 
+.jarvis-filmstrip-grid[data-dense="true"] {
+  grid-template-columns: repeat(var(--stage-count, 1), minmax(2.85rem, 1fr));
+}
+
+.jarvis-filmstrip-grid[data-dense="true"] .jarvis-stage-node {
+  height: 2rem;
+  width: 2rem;
+  font-size: 0.5625rem;
+}
+
 .jarvis-filmstrip-track {
   margin-left: calc(100% / var(--stage-count) / 2);
   margin-right: calc(100% / var(--stage-count) / 2);

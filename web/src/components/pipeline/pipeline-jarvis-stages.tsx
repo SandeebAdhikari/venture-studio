@@ -15,7 +15,7 @@ import {
 import { cn, formatDuration } from "@/lib/utils";
 import type { DashboardPipelineStageSummary } from "@/types/api";
 
-/** Stages through this step are shown when collapsed; expand to see research + report stages. */
+/** Stages through this step are shown in the index list when collapsed. Filmstrip always shows all stages. */
 const COLLAPSED_STAGE_UP_TO = "market_research";
 
 function visibleStages(
@@ -66,7 +66,7 @@ export function PipelineJarvisStages({
   const [pinned, setPinned] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  const stagesShown = useMemo(
+  const indexStagesShown = useMemo(
     () => visibleStages(ordered, expanded),
     [ordered, expanded],
   );
@@ -76,23 +76,13 @@ export function PipelineJarvisStages({
     return ordered.length - (cutoff + 1);
   }, [ordered]);
   const canExpandStages = hiddenStageCount > 0;
-  const visibleRunningIndex =
+  const runningIndex =
     runningStage != null
-      ? stagesShown.findIndex((stage) => stage.stage === runningStage.stage)
+      ? ordered.findIndex((stage) => stage.stage === runningStage.stage)
       : -1;
 
-  const activeKey = selectedStage ?? defaultSelected(stagesShown)?.stage ?? null;
+  const activeKey = selectedStage ?? defaultSelected(ordered)?.stage ?? null;
   const active = ordered.find((s) => s.stage === activeKey) ?? null;
-
-  useEffect(() => {
-    if (expanded) return;
-    if (!activeKey) return;
-    const isVisible = stagesShown.some((stage) => stage.stage === activeKey);
-    if (!isVisible) {
-      setSelectedStage(stagesShown[stagesShown.length - 1]?.stage ?? null);
-      setPinned(false);
-    }
-  }, [expanded, activeKey, stagesShown]);
 
   useEffect(() => {
     setPinned(false);
@@ -102,16 +92,12 @@ export function PipelineJarvisStages({
   useEffect(() => {
     if (pinned) return;
     if (isLive && runningStage) {
-      if (!expanded && !stagesShown.some((s) => s.stage === runningStage.stage)) {
-        setExpanded(true);
-        return;
-      }
       setSelectedStage(runningStage.stage);
       return;
     }
-    const pick = defaultSelected(stagesShown);
+    const pick = defaultSelected(ordered);
     if (pick) setSelectedStage(pick.stage);
-  }, [ordered, pinned, isLive, runningStage, expanded, stagesShown]);
+  }, [ordered, pinned, isLive, runningStage]);
 
   return (
     <div className="jarvis-pipeline-stages">
@@ -153,7 +139,7 @@ export function PipelineJarvisStages({
         className="jarvis-stage-filmstrip relative mb-6 rounded-xl border border-[hsl(187_35%_28%/0.35)] bg-[hsl(187_22%_8%/0.35)] px-3 py-3 sm:px-5"
         style={
           {
-            "--stage-count": stagesShown.length,
+            "--stage-count": ordered.length,
             "--track-fill": `${trackFillPct}%`,
           } as CSSProperties
         }
@@ -162,6 +148,7 @@ export function PipelineJarvisStages({
           className="jarvis-filmstrip-grid relative"
           role="tablist"
           aria-label="Pipeline stages"
+          data-dense={ordered.length > 10 ? "true" : undefined}
         >
           <div className="jarvis-filmstrip-track pointer-events-none absolute inset-x-0 top-[1.625rem] z-0 hidden h-px sm:block" />
           <div
@@ -172,14 +159,14 @@ export function PipelineJarvisStages({
             }}
             aria-hidden
           />
-          {stagesShown.map((stage) => {
-            const globalIndex = ordered.findIndex((s) => s.stage === stage.stage);
+          {ordered.map((stage, index) => {
             const isSelected = stage.stage === activeKey;
             const inProcess = stage.status === "running";
             const isDone =
               stage.status === "completed" ||
               stage.status === "failed" ||
               stage.status === "skipped";
+            const labelMax = ordered.length > 10 ? 7 : 10;
             return (
               <button
                 key={stage.stage}
@@ -200,7 +187,7 @@ export function PipelineJarvisStages({
                     isDone && !inProcess ? "jarvis-stage-node--synced" : ""
                   }`}
                 >
-                  {String(globalIndex + 1).padStart(2, "0")}
+                  {String(index + 1).padStart(2, "0")}
                   {inProcess && !reduceMotion && (
                     <span className="jarvis-stage-ping absolute inset-0 rounded-full" aria-hidden />
                   )}
@@ -209,18 +196,18 @@ export function PipelineJarvisStages({
                   className="jarvis-filmstrip-label mt-2 block w-full text-center font-mono text-[8px] uppercase leading-tight tracking-wide text-muted-foreground group-hover:text-foreground sm:text-[9px]"
                   title={formatStageName(stage.stage)}
                 >
-                  {stageShortLabel(stage.stage, 10)}
+                  {stageShortLabel(stage.stage, labelMax)}
                 </span>
               </button>
             );
           })}
         </div>
 
-        {isLive && visibleRunningIndex >= 0 && !reduceMotion && (
+        {isLive && runningIndex >= 0 && !reduceMotion && (
           <motion.div
             className="jarvis-schematic-pulse pointer-events-none absolute top-[1.55rem] z-20 hidden h-1.5 w-6 rounded-full bg-[hsl(187_95%_62%)] sm:block"
             animate={{
-              left: `calc((100% / ${stagesShown.length}) * ${visibleRunningIndex} + (100% / ${stagesShown.length}) / 2 - 12px)`,
+              left: `calc((100% / ${ordered.length}) * ${runningIndex} + (100% / ${ordered.length}) / 2 - 12px)`,
             }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
             aria-hidden
@@ -235,7 +222,7 @@ export function PipelineJarvisStages({
       )}
 
       <ul className="mt-6 space-y-1 border-t border-border/50 pt-5" aria-label="Stage index">
-        {stagesShown.map((stage) => {
+        {indexStagesShown.map((stage) => {
           const isSelected = stage.stage === activeKey;
           return (
             <li key={stage.stage}>

@@ -8,6 +8,7 @@ from app.agents.customer_research.schemas import (
     CustomerResearchLLMOutput,
     OpportunityCustomerContext,
     RepresentativeComplaintOutput,
+    SupportingEvidenceOutput,
 )
 
 
@@ -16,6 +17,39 @@ def representative_quote_grounded(*, generated: str, evidence_quote: str) -> boo
     if verbatim_quote_in_source(quote=generated, source_text=evidence_quote):
         return True
     return verbatim_quote_in_source(quote=evidence_quote, source_text=generated)
+
+
+def normalize_complaint_indices(
+    output: CustomerResearchLLMOutput,
+    context: OpportunityCustomerContext,
+) -> CustomerResearchLLMOutput:
+    """Coerce invalid complaint_index values to 0 for singleton opportunities only."""
+    if len(context.complaint_evidence) != 1:
+        return output
+
+    max_index = 0
+
+    def _coerce(index: int | None) -> int | None:
+        if index is None:
+            return None
+        if 0 <= index <= max_index:
+            return index
+        return 0
+
+    representative = [
+        complaint.model_copy(update={"complaint_index": _coerce(complaint.complaint_index)})
+        for complaint in output.representative_complaints
+    ]
+    supporting = [
+        item.model_copy(update={"complaint_index": _coerce(item.complaint_index)})
+        for item in output.supporting_evidence
+    ]
+    return output.model_copy(
+        update={
+            "representative_complaints": representative,
+            "supporting_evidence": supporting,
+        }
+    )
 
 
 def canonicalize_representative_complaints(

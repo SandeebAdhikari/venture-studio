@@ -14,6 +14,7 @@ from app.agents.opportunity.founder_signal_clustering import (
     PATTERN_SOURCE_FOUNDER_SIGNAL,
     detect_founder_signal_patterns,
 )
+from app.agents.opportunity.venture_aware_clustering import detect_venture_aware_patterns
 from app.agents.opportunity.schemas import ComplaintEvidence, ComplaintPattern
 
 MIN_FALLBACK_COMPLAINT_COUNT = 4
@@ -105,6 +106,13 @@ def resolve_generation_patterns(
     )
     if token_patterns:
         return token_patterns
+
+    venture_patterns = detect_venture_aware_patterns(
+        evidence,
+        min_cluster_size=min_cluster_size,
+    )
+    if venture_patterns:
+        return venture_patterns
 
     founder_patterns = detect_founder_signal_patterns(
         evidence,

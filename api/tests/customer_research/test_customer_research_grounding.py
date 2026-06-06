@@ -6,6 +6,7 @@ import pytest
 
 from app.agents.customer_research.grounding import (
     canonicalize_representative_complaints,
+    normalize_complaint_indices,
     representative_quote_grounded,
 )
 from app.agents.customer_research.mock_client import default_mock_customer_research_output
@@ -133,6 +134,36 @@ def test_validator_accepts_normalized_quote_without_canonicalization() -> None:
     assert result.representative_complaints[0].verbatim_quote == generated
 
 
+def test_normalize_singleton_complaint_index_coerces_uuid_prefix() -> None:
+    ctx = _context(_evidence_item(index=0, quote="Stripe chargeback fees are unfair."))
+    output = default_mock_customer_research_output()
+    output.representative_complaints[0].complaint_index = 926
+    output.supporting_evidence[0].complaint_index = 926
+
+    normalized = normalize_complaint_indices(output, ctx)
+    assert normalized.representative_complaints[0].complaint_index == 0
+    assert normalized.supporting_evidence[0].complaint_index == 0
+
+    result = CustomerResearchValidator().validate(normalized, context=ctx)
+    assert result.representative_complaints[0].complaint_index == 0
+
+
+def test_normalize_does_not_coerce_indices_for_multi_complaint_opportunity() -> None:
+    ctx = _context(
+        _evidence_item(index=0, quote="First evidence quote."),
+        _evidence_item(index=1, quote="Second evidence quote."),
+    )
+    output = default_mock_customer_research_output()
+    output.representative_complaints[0].complaint_index = 5
+
+    normalized = normalize_complaint_indices(output, ctx)
+    assert normalized.representative_complaints[0].complaint_index == 5
+
+    with pytest.raises(CustomerResearchValidationError) as exc_info:
+        CustomerResearchValidator().validate(normalized, context=ctx)
+    assert any("out of range" in err for err in exc_info.value.errors)
+
+
 def test_validator_rejects_missing_complaint_index_when_evidence_provided() -> None:
     ctx = _context(_evidence_item(index=0, quote="Real quote from HN."))
     output = default_mock_customer_research_output()
@@ -152,7 +183,10 @@ def test_validator_rejects_missing_complaint_index_when_evidence_provided() -> N
 
 
 def test_validator_rejects_out_of_range_complaint_index() -> None:
-    ctx = _context(_evidence_item(index=0, quote="Only evidence quote."))
+    ctx = _context(
+        _evidence_item(index=0, quote="First evidence quote."),
+        _evidence_item(index=1, quote="Second evidence quote."),
+    )
     output = default_mock_customer_research_output()
     output.representative_complaints[0].complaint_index = 3
 

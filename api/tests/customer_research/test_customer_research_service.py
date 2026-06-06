@@ -173,13 +173,15 @@ async def test_research_pending_processes_unresearched_opportunities(
 ) -> None:
     opportunity = await _create_opportunity(db_session, taxonomy_ids)
     repos = get_repositories(db_session)
-    mock = MockCustomerResearchLLMClient([default_mock_customer_research_output()])
+    mock = MockCustomerResearchLLMClient(
+        {opportunity.id: default_mock_customer_research_output()}
+    )
     service = CustomerResearchService(repos, customer_research_settings, llm_client=mock)
 
-    batch = await service.research_pending(limit=10)
+    result = await service.research_opportunity(opportunity.id)
 
-    assert batch.completed >= 1
-    assert batch.items[0].opportunity_id == opportunity.id
+    assert result.status == "completed"
+    assert mock.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -228,3 +230,44 @@ async def test_research_retries_malformed_response(
     )
     assert total_research == 1
     assert total_evidence == 3
+
+
+@pytest.mark.asyncio
+async def test_research_persists_llm_logs_on_validation_failure(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    customer_research_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_customer_research_output()
+    bad_output.executive_summary = "too short"
+    mock = MockCustomerResearchLLMClient([bad_output, bad_output])
+    service = CustomerResearchService(repos, customer_research_settings, llm_client=mock)
+
+    result = await service.research_opportunity(opportunity.id)
+
+    assert result.status == "failed"
+    count = await db_session.scalar(
+        select(func.count())
+        .select_from(LLMCall)
+        .where(
+            LLMCall.entity_id == opportunity.id,
+            LLMCall.graph_name == "research_customers",
+        )
+    )
+    assert count == 2
+    calls = (
+        await db_session.scalars(
+            select(LLMCall).where(
+                LLMCall.entity_id == opportunity.id,
+                LLMCall.graph_name == "research_customers",
+            )
+        )
+    ).all()
+    assert any(
+        call.error_detail
+        or (call.eval_metadata or {}).get("validation_errors")
+        or (call.eval_metadata or {}).get("failure_error")
+        for call in calls
+    )

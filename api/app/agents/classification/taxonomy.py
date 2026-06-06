@@ -50,7 +50,9 @@ CUSTOMER_TYPES: frozenset[str] = frozenset(
 
 def taxonomy_prompt_block() -> str:
     return (
+        "Taxonomy namespace (problem_category — complaint theme only):\n"
         f"problem_category must be one of: {', '.join(sorted(PROBLEM_CATEGORIES))}\n"
+        "Never use 'billing' or 'billing_operations' as problem_category.\n"
         f"industry must be one of: {', '.join(sorted(INDUSTRIES))}\n"
         f"customer_type must be one of: {', '.join(sorted(CUSTOMER_TYPES))}\n"
         "Do not use job titles outside this list (e.g. employee, employer, manager).\n"

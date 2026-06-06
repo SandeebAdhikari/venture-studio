@@ -58,7 +58,10 @@ class OpenAICustomerResearchClient:
             "reviews, and social platforms. "
             "Do NOT perform market sizing, competitor analysis, or business planning. "
             "Score pain (0-100), urgency (0-100), and frequency (0-100). "
-            "Select representative complaints grounded in the evidence using complaint_index. "
+            "Use complaint_index (the integer label on each evidence row) to reference "
+            "complaints in representative_complaints and supporting_evidence. "
+            "complaint_index is NOT complaint_id — never use UUID values as complaint_index. "
+            "When only one complaint is listed, the only valid complaint_index is 0. "
             "Provide supporting_evidence with evidence_type from: complaint, discussion, "
             "review, forum, social. "
             "Set cares_verdict to yes, partial, or no based on whether customers genuinely "
@@ -89,8 +92,9 @@ class OpenAICustomerResearchClient:
                             f"Frequency signal: {context.frequency_signal}\n"
                             f"Gap: {context.gap}\n"
                             f"Confidence: {context.confidence_score:.2f}\n\n"
-                            f"Complaint evidence:\n"
+                            f"Complaint evidence (use complaint_index only — not complaint_id):\n"
                             f"{self._format_evidence(context)}\n\n"
+                            "Example for a single complaint: complaint_index=0 in all fields.\n"
                             "Determine whether customers care about this problem."
                         ),
                     },
@@ -148,7 +152,8 @@ class OpenAICustomerResearchClient:
         lines: list[str] = []
         for item in context.complaint_evidence:
             lines.append(
-                f"{item.index}. complaint_id={item.complaint_id} "
+                f"complaint_index={item.index} "
+                f"(reference id={item.complaint_id} — do NOT use as complaint_index) "
                 f"source={item.source_type}/{item.source_name} url={item.url} "
                 f"severity={item.severity} summary={item.summary!r} "
                 f"quote={item.verbatim_quote!r}"

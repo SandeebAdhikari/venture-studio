@@ -42,7 +42,7 @@ CONSEQUENCE_CODES: frozenset[str] = frozenset(
     }
 )
 
-FounderGroupingVariant = Literal["A", "B", "C", "D"]
+FounderGroupingVariant = Literal["A", "B", "C", "D", "E"]
 
 DEFAULT_FOUNDER_SIGNAL_VARIANT: FounderGroupingVariant = "B"
 
@@ -52,10 +52,11 @@ BLOCKED_FOUNDER_SIGNAL_CODES: frozenset[str] = frozenset()
 
 def founder_signals_prompt_block() -> str:
     return (
-        "Founder signal codes (closed vocabulary — pick the best fit, never invent codes):\n"
+        "Founder signal namespace (separate from problem_category — never mix these fields):\n"
         f"business_function_code must be one of: {', '.join(sorted(BUSINESS_FUNCTION_CODES))}\n"
         f"jtbd_code must be one of: {', '.join(sorted(JTBD_CODES))}\n"
         f"consequence_code must be one of: {', '.join(sorted(CONSEQUENCE_CODES))}\n"
+        "billing_operations belongs here as business_function_code only — not problem_category.\n"
         "When is_complaint is false, still return valid codes that best describe the text."
     )
 
@@ -110,3 +111,20 @@ def format_founder_cluster_key(
     if consequence_code is not None:
         parts.append(consequence_code)
     return "|".join(parts)
+
+
+def format_venture_cluster_key(
+    *,
+    business_function_code: str,
+    jtbd_code: str,
+    consequence_code: str,
+    mechanism_fingerprint: str,
+) -> str:
+    return "|".join(
+        [
+            business_function_code,
+            jtbd_code,
+            consequence_code,
+            mechanism_fingerprint,
+        ]
+    )

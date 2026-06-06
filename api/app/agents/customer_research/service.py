@@ -128,6 +128,7 @@ class CustomerResearchService:
         agent_result = await self._get_agent().run(context)
 
         if agent_result.status != "completed" or agent_result.draft is None:
+            await self._persist_eval_logs(opportunity_id, agent_result)
             return agent_result
 
         model = self._last_model(agent_result) or self._settings.customer_research_model
@@ -159,9 +160,34 @@ class CustomerResearchService:
             )
         )
 
-        await self._persist_eval_logs(opportunity_id, agent_result, research.id)
+        await self._persist_eval_logs(opportunity_id, agent_result, research_id=research.id)
         agent_result.customer_research_id = research.id
         return agent_result
+
+    async def _persist_eval_logs(
+        self,
+        opportunity_id: UUID,
+        agent_result: CustomerResearchResult,
+        research_id: UUID | None = None,
+    ) -> None:
+        from app.agents.eval_logging import persist_agent_eval_logs
+
+        extra: dict[str, str] = {}
+        if research_id is not None:
+            extra["customer_research_id"] = str(research_id)
+        if agent_result.error:
+            extra["failure_error"] = agent_result.error
+
+        await persist_agent_eval_logs(
+            self._repos,
+            budget=self._budget,
+            entity_type="opportunity",
+            entity_id=opportunity_id,
+            graph_name=GRAPH_NAME,
+            default_model=self._settings.customer_research_model,
+            agent_result=agent_result,
+            eval_metadata_extra=extra or None,
+        )
 
     async def get_research(self, research_id: UUID) -> CustomerResearchDetail:
         research = await self._repos.customer_research.get_by_id_with_evidence(research_id)
@@ -201,25 +227,6 @@ class CustomerResearchService:
             raise NotFoundError("opportunity", opportunity_id)
         items = await self._repos.customer_research.list_for_opportunity(opportunity_id)
         return [CustomerResearchRead.from_entity(item) for item in items]
-
-    async def _persist_eval_logs(
-        self,
-        opportunity_id: UUID,
-        agent_result: CustomerResearchResult,
-        research_id: UUID,
-    ) -> None:
-        from app.agents.eval_logging import persist_agent_eval_logs
-
-        await persist_agent_eval_logs(
-            self._repos,
-            budget=self._budget,
-            entity_type="opportunity",
-            entity_id=opportunity_id,
-            graph_name=GRAPH_NAME,
-            default_model=self._settings.customer_research_model,
-            agent_result=agent_result,
-            eval_metadata_extra={"customer_research_id": str(research_id)},
-        )
 
     @staticmethod
     def _build_context(opportunity) -> OpportunityCustomerContext:

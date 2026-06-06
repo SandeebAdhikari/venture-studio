@@ -93,7 +93,7 @@ def test_missing_founder_signals_are_skipped() -> None:
     assert detect_founder_signal_patterns(evidence, emit_logs=False) == []
 
 
-def test_resolve_generation_patterns_uses_founder_signal_before_fallback() -> None:
+def test_resolve_generation_patterns_uses_founder_signal_when_venture_inapplicable() -> None:
     evidence = [
         _evidence(
             business_function_code="fraud_prevention",

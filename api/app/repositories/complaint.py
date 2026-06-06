@@ -108,6 +108,9 @@ class ComplaintRepository(BaseRepository[Complaint]):
             product_mentions=data.product_mentions,
             llm_model=data.llm_model,
             llm_confidence=data.llm_confidence,
+            business_function_code=data.business_function_code,
+            jtbd_code=data.jtbd_code,
+            consequence_code=data.consequence_code,
         )
         return await self.add(entity)
 
