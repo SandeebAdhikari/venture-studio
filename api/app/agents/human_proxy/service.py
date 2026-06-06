@@ -138,6 +138,7 @@ class HumanProxyService:
         agent_result = await self._get_agent().run(context)
 
         if agent_result.status != "completed" or agent_result.draft is None:
+            await self._persist_eval_logs(opportunity_id, agent_result)
             return agent_result
 
         model = self._last_model(agent_result) or self._settings.human_proxy_model
@@ -323,9 +324,17 @@ class HumanProxyService:
         self,
         opportunity_id: UUID,
         agent_result: HumanProxyResult,
-        evaluation_id: UUID,
+        evaluation_id: UUID | None = None,
     ) -> None:
         from app.agents.eval_logging import persist_agent_eval_logs
+
+        extra: dict[str, object] = {}
+        if evaluation_id is not None:
+            extra["human_proxy_evaluation_id"] = str(evaluation_id)
+        if agent_result.error:
+            extra["failure_error"] = agent_result.error
+        if agent_result.draft is not None:
+            extra["evaluation_metrics"] = agent_result.draft.evaluation_metrics
 
         await persist_agent_eval_logs(
             self._repos,
@@ -335,12 +344,7 @@ class HumanProxyService:
             graph_name=GRAPH_NAME,
             default_model=self._settings.human_proxy_model,
             agent_result=agent_result,
-            eval_metadata_extra={
-                "human_proxy_evaluation_id": str(evaluation_id),
-                "evaluation_metrics": agent_result.draft.evaluation_metrics
-                if agent_result.draft
-                else None,
-            },
+            eval_metadata_extra=extra or None,
         )
 
     @staticmethod

@@ -122,6 +122,7 @@ class ProductStrategyService:
         agent_result = await self._get_agent().run(context)
 
         if agent_result.status != "completed" or agent_result.draft is None:
+            await self._persist_eval_logs(opportunity_id, agent_result)
             return agent_result
 
         model = self._last_model(agent_result) or self._settings.product_strategy_model
@@ -251,9 +252,15 @@ class ProductStrategyService:
         self,
         opportunity_id: UUID,
         agent_result: ProductStrategyResult,
-        strategy_id: UUID,
+        strategy_id: UUID | None = None,
     ) -> None:
         from app.agents.eval_logging import persist_agent_eval_logs
+
+        extra: dict[str, object] = {}
+        if strategy_id is not None:
+            extra["product_strategy_id"] = str(strategy_id)
+        if agent_result.error:
+            extra["failure_error"] = agent_result.error
 
         await persist_agent_eval_logs(
             self._repos,
@@ -263,7 +270,7 @@ class ProductStrategyService:
             graph_name=GRAPH_NAME,
             default_model=self._settings.product_strategy_model,
             agent_result=agent_result,
-            eval_metadata_extra={"product_strategy_id": str(strategy_id)},
+            eval_metadata_extra=extra or None,
         )
 
     @staticmethod

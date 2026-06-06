@@ -11,12 +11,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
+COPY app ./app
 RUN pip install .
 
 COPY alembic.ini ./
 COPY alembic ./alembic
-COPY app ./app
 COPY scripts ./scripts
 
 RUN chmod +x scripts/docker-entrypoint.sh scripts/verify-deployment.sh

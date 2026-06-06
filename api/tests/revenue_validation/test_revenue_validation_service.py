@@ -285,3 +285,66 @@ async def test_validate_retries_malformed_response(
     )
     assert total_validations == 1
     assert total_evidence == 3
+
+
+@pytest.mark.asyncio
+async def test_validate_opportunity_succeeds_with_uuid_derived_complaint_index(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    revenue_validation_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_revenue_validation_output(include_competitor_pricing=False)
+    bad_output.supporting_evidence[0].complaint_index = 926
+    bad_output.supporting_evidence[1].complaint_index = 37
+    mock = MockRevenueValidationLLMClient([bad_output])
+    service = RevenueValidationService(repos, revenue_validation_settings, llm_client=mock)
+
+    result = await service.validate_opportunity(opportunity.id)
+
+    assert result.status == "completed"
+    assert result.revenue_validation_id is not None
+    assert result.draft is not None
+    assert result.draft.supporting_evidence[0].complaint_index == 0
+
+
+@pytest.mark.asyncio
+async def test_validate_persists_llm_logs_on_validation_failure(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    revenue_validation_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_revenue_validation_output(include_competitor_pricing=False)
+    bad_output.executive_summary = "too short"
+    mock = MockRevenueValidationLLMClient([bad_output, bad_output])
+    service = RevenueValidationService(repos, revenue_validation_settings, llm_client=mock)
+
+    result = await service.validate_opportunity(opportunity.id)
+
+    assert result.status == "failed"
+    count = await db_session.scalar(
+        select(func.count())
+        .select_from(LLMCall)
+        .where(
+            LLMCall.entity_id == opportunity.id,
+            LLMCall.graph_name == "validate_revenue",
+        )
+    )
+    assert count == 2
+    calls = (
+        await db_session.scalars(
+            select(LLMCall).where(
+                LLMCall.entity_id == opportunity.id,
+                LLMCall.graph_name == "validate_revenue",
+            )
+        )
+    ).all()
+    assert any(
+        call.error_detail
+        or (call.eval_metadata or {}).get("validation_errors")
+        or (call.eval_metadata or {}).get("failure_error")
+        for call in calls
+    )

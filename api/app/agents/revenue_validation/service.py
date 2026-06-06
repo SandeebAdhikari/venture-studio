@@ -123,6 +123,7 @@ class RevenueValidationService:
         agent_result = await self._get_agent().run(context)
 
         if agent_result.status != "completed" or agent_result.draft is None:
+            await self._persist_eval_logs(opportunity_id, agent_result)
             return agent_result
 
         model = self._last_model(agent_result) or self._settings.revenue_validation_model
@@ -274,9 +275,17 @@ class RevenueValidationService:
         self,
         opportunity_id: UUID,
         agent_result: RevenueValidationResult,
-        validation_id: UUID,
+        validation_id: UUID | None = None,
     ) -> None:
         from app.agents.eval_logging import persist_agent_eval_logs
+
+        extra: dict[str, object] = {}
+        if validation_id is not None:
+            extra["revenue_validation_id"] = str(validation_id)
+        if agent_result.error:
+            extra["failure_error"] = agent_result.error
+        if agent_result.draft is not None:
+            extra["evaluation_metrics"] = agent_result.draft.evaluation_metrics
 
         await persist_agent_eval_logs(
             self._repos,
@@ -286,12 +295,7 @@ class RevenueValidationService:
             graph_name=GRAPH_NAME,
             default_model=self._settings.revenue_validation_model,
             agent_result=agent_result,
-            eval_metadata_extra={
-                "revenue_validation_id": str(validation_id),
-                "evaluation_metrics": agent_result.draft.evaluation_metrics
-                if agent_result.draft
-                else None,
-            },
+            eval_metadata_extra=extra or None,
         )
 
     @staticmethod

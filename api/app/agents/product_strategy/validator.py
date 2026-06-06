@@ -1,5 +1,6 @@
 """Validation for product strategy LLM output."""
 
+from app.agents.product_strategy.grounding import normalize_evidence_indices
 from app.agents.product_strategy.schemas import OpportunityPlanningContext, ProductStrategyLLMOutput
 
 
@@ -18,6 +19,7 @@ class ProductStrategyValidator:
         *,
         context: OpportunityPlanningContext,
     ) -> ProductStrategyLLMOutput:
+        output = normalize_evidence_indices(output, context)
         errors: list[str] = []
         max_complaint_index = len(context.complaint_evidence) - 1
 

@@ -170,13 +170,21 @@ class ProductStrategyAgent:
         except ProductStrategyValidationError as exc:
             errors = list(state.get("validation_errors", []))
             errors.extend(exc.errors)
+            invocations = list(state["invocations"])
+            if invocations:
+                last = dict(invocations[-1])
+                last["validation_errors"] = list(exc.errors)
+                last["error"] = "; ".join(exc.errors)
+                invocations[-1] = last
             if state["attempt"] >= state["max_attempts"]:
                 return {
+                    "invocations": invocations,
                     "validation_errors": errors,
                     "error": "; ".join(exc.errors),
                     "status": "failed",
                 }
             return {
+                "invocations": invocations,
                 "validation_errors": errors,
                 "attempt": state["attempt"] + 1,
                 "llm_output": None,

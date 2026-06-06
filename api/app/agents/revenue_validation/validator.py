@@ -1,5 +1,6 @@
 """Validation for revenue validation LLM output."""
 
+from app.agents.revenue_validation.grounding import normalize_evidence_indices
 from app.agents.revenue_validation.schemas import (
     OpportunityRevenueContext,
     RevenueValidationLLMOutput,
@@ -21,6 +22,7 @@ class RevenueValidationValidator:
         *,
         context: OpportunityRevenueContext,
     ) -> RevenueValidationLLMOutput:
+        output = normalize_evidence_indices(output, context)
         errors: list[str] = []
         max_complaint_index = len(context.complaint_evidence) - 1
         max_competitor_index = len(context.competitor_pricing) - 1

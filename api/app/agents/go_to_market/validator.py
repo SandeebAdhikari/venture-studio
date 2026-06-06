@@ -1,5 +1,6 @@
 """Validation for go-to-market LLM output."""
 
+from app.agents.go_to_market.grounding import normalize_evidence_indices
 from app.agents.go_to_market.schemas import GoToMarketLLMOutput, OpportunityGTMContext
 
 
@@ -18,6 +19,7 @@ class GoToMarketValidator:
         *,
         context: OpportunityGTMContext,
     ) -> GoToMarketLLMOutput:
+        output = normalize_evidence_indices(output, context)
         errors: list[str] = []
         max_complaint_index = len(context.complaint_evidence) - 1
 

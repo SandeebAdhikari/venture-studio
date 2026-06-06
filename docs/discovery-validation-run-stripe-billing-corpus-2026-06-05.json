@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-06-06T00:07:39.053150+00:00",
+  "captured_at": "2026-06-06T04:28:21.730103+00:00",
   "label": "stripe-billing-corpus-validation",
   "experiment_name": "Stripe Billing Corpus Validation",
   "query_selection": {
@@ -70,16 +70,16 @@
   },
   "collection_metrics": {
     "signals_collected": 89,
-    "complaints_extracted": 19,
+    "complaints_extracted": 18,
     "lane_relevant_complaints": 13,
-    "complaint_precision_pct": 68.4,
-    "complaint_yield_pct": 21.3,
+    "complaint_precision_pct": 72.2,
+    "complaint_yield_pct": 20.2,
     "not_a_complaint_count": 66,
-    "grounding_failure_count": 4,
+    "grounding_failure_count": 5,
     "signal_processing_status": {
+      "classified": 18,
       "skipped": 66,
-      "classified": 19,
-      "failed": 4
+      "failed": 5
     }
   },
   "recurring_vocabulary": {
@@ -94,24 +94,24 @@
       "payment": 86
     },
     "all_complaints": {
-      "stripe": 16,
-      "billing": 15,
-      "subscription": 11,
-      "invoice": 9,
+      "stripe": 14,
+      "billing": 14,
+      "subscription": 9,
+      "invoice": 5,
       "chargeback": 0,
       "payout": 0,
       "webhook": 0,
-      "payment": 12
+      "payment": 11
     },
     "lane_relevant_complaints": {
-      "stripe": 15,
-      "billing": 11,
-      "subscription": 10,
-      "invoice": 4,
+      "stripe": 13,
+      "billing": 12,
+      "subscription": 9,
+      "invoice": 1,
       "chargeback": 0,
       "payout": 0,
       "webhook": 0,
-      "payment": 8
+      "payment": 7
     }
   },
   "top_lane_relevant_complaints": [
@@ -128,18 +128,18 @@
       "thread_title": "Ask HN: Why can't OpenAI, Cursor, Fyxer etc. send their invoices per email?",
       "domain": "saas_b2b",
       "category": "missing_feature",
-      "persona": "other",
+      "persona": "ops_admin",
       "severity": 3,
-      "summary": "The user is frustrated with the lack of email automation for invoice delivery from SaaS platforms using Stripe Billing.",
-      "verbatim_excerpt": "Every month I need to log in in to our SaaS to download invoices."
+      "summary": "The user is frustrated with the lack of automated email invoicing from SaaS platforms that use Stripe Billing.",
+      "verbatim_excerpt": "If OpenAI, Cursor, Fyxer (and countless others) can't send invoices to their end users via email, it's because it's not that straightforward."
     },
     {
       "thread_title": "Ask HN: Kicked off Stripe. Where else can I go?",
       "domain": "saas_b2b",
       "category": "security",
       "persona": "founder",
-      "severity": 4,
-      "summary": "The user was classified as high risk and removed from Stripe, seeking alternatives for SaaS billing.",
+      "severity": 5,
+      "summary": "The user was classified as high risk and removed from Stripe, expressing a need for alternative SaaS billing solutions.",
       "verbatim_excerpt": "I just got kicked off Stripe; classified as high risk."
     },
     {
@@ -148,7 +148,7 @@
       "category": "security",
       "persona": "founder",
       "severity": 4,
-      "summary": "The user is experiencing issues with Stripe-Radar blocking payments due to high-risk classifications, which they believe are biased based on geographical distance. This is impacting their ability to p",
+      "summary": "The user is experiencing issues with Stripe-Radar blocking transactions due to high-risk classifications, which they believe are biased based on geographical distance.",
       "verbatim_excerpt": "the Stripe-Radar is hindering the subscriptions. Yesterday, we experienced 2-digit \"Blocked\" payments because of \"High Risk\"."
     },
     {
@@ -179,22 +179,22 @@
       "verbatim_excerpt": "How is this legal that if I want to publish an Android app on Play Market and charge for subscriptions, I must use Google Play Billing and pay 30% to Google? This is insane (because there are no alter"
     },
     {
-      "thread_title": "Ask HN: Are Yearly Subscriptions Hard?",
-      "domain": "saas_b2b",
-      "category": "missing_feature",
-      "persona": "developer",
-      "severity": 4,
-      "summary": "The user expresses frustration with the lack of Stripe support for handling yearly subscriptions with monthly overage invoices, leading to complicated manual processes.",
-      "verbatim_excerpt": "There doesn't seem to be a Stripe-native way to have invoices for overages being sent at the month end. We have to do a ton of billing date/math, keep track of the overages, of when we billed for them"
-    },
-    {
       "thread_title": "Ask HN: Tips on preventing credit card fraud through Stripe?",
       "domain": "ecommerce",
       "category": "security",
       "persona": "founder",
       "severity": 4,
-      "summary": "The user is seeking advice on preventing credit card fraud on their online selling platform, indicating they have experienced unauthorized transactions.",
+      "summary": "The user is seeking advice on preventing credit card fraud on their online selling platform, indicating a significant concern about unauthorized transactions.",
       "verbatim_excerpt": "Any suggestions ?"
+    },
+    {
+      "thread_title": "Ask HN: Help me find out what problems NFT creators and collectors have?",
+      "domain": "creator_economy",
+      "category": "ux_ui",
+      "persona": "founder",
+      "severity": 3,
+      "summary": "The user highlights challenges faced by NFT creators and collectors, particularly regarding the poor user experience in crypto billing and the lack of platforms to showcase NFT collections.",
+      "verbatim_excerpt": "It is hard to create, sell or buy an NFT because of the poor UX of crypto billings."
     },
     {
       "thread_title": "Ask HN: Our payment processor collects unnecessary information",
@@ -211,8 +211,8 @@
       "category": "missing_feature",
       "persona": "founder",
       "severity": 4,
-      "summary": "The user is frustrated with Stripe's inability to track usage-based billing per subscription, which is crucial for their business model.",
-      "verbatim_excerpt": "But Stripe does not allow me to track usage ( such as how much GB of data is used ) per subscription."
+      "summary": "The user is frustrated with Stripe's inability to track usage-based billing for subscriptions, which is crucial for their business model.",
+      "verbatim_excerpt": "But Stripe does not allow me to track the usage on a per subscription granularity."
     },
     {
       "thread_title": "Ask HN: Bootstrap compatible Canadian Credit Card processing",
@@ -220,16 +220,16 @@
       "category": "missing_feature",
       "persona": "founder",
       "severity": 3,
-      "summary": "The user is seeking a credit card processor that supports recurring billing without high fees, expressing frustration over the lack of suitable options in Canada.",
+      "summary": "The user is seeking a credit card processor that supports recurring billing without monthly fees, highlighting the lack of suitable options in Canada.",
       "verbatim_excerpt": "Ideally I'd like a stripe-like service (or Stripe, please come to Canada soon!)."
     },
     {
       "thread_title": "Ask HN: Do you still pay with Paypal?",
-      "domain": "saas_b2b",
+      "domain": "saas_b2c",
       "category": "pricing",
       "persona": "founder",
       "severity": 3,
-      "summary": "The user is facing challenges with payment processing options in South Africa, particularly regarding currency limitations and high fees from alternatives like Paddle.",
+      "summary": "The user is facing challenges with payment processing options available in South Africa, particularly regarding currency limitations and high fees from alternatives like Paddle.",
       "verbatim_excerpt": "Unfortunately Stripe and Braintree isn't available where I live (South Africa), making accepting payments (subscriptions) in an international market a bit more difficult."
     }
   ],
@@ -249,13 +249,13 @@
     "opportunities_generated": 8,
     "opportunity_titles": [
       "Reduce Subscription Management Costs to Combat Margin Erosion",
-      "Reinstate Deplatformed Payment Processors for High-Risk SaaS",
-      "Reduce Stripe-Radar False Positives Blocking Subscriptions",
+      "Alternative Payment Processing for High-Risk Accounts",
+      "Eliminate Blocked Payments from Stripe-Radar High Risk Classifications",
       "Subscription management supporting multiple payment gateways",
-      "Bypass Google Play Billing to Reduce 30% Subscription Fees",
-      "Streamlined Checkout for SaaS Products Without Unnecessary Customer Data",
-      "Usage Tracking for Subscription Billing in Stripe",
-      "Enable Subscription Payments in South Africa"
+      "Eliminate 30% Google Play Billing Fees for Android App Subscriptions",
+      "Reduce Unnecessary Customer Information Collection During Checkout",
+      "Track usage-based billing for subscriptions in Stripe",
+      "Accept International Payments in South Africa Without High Fees"
     ],
     "generate_stage_metadata": {
       "outcome": "completed",
@@ -263,13 +263,13 @@
     }
   },
   "pipeline": {
-    "pipeline_run_id": "ff0819e6-5fde-45f6-a87f-ccc4b9711d91",
-    "status": "partial",
-    "stages_completed": 7,
-    "duration_seconds": 912.54942
+    "pipeline_run_id": "f2a2190f-eac2-4d8c-9783-07d8f23c474b",
+    "status": "completed",
+    "stages_completed": 14,
+    "duration_seconds": 783.247171
   },
   "verify": {
-    "passed": false,
+    "passed": true,
     "checks": [
       {
         "name": "no_mock_opportunities",
@@ -324,7 +324,7 @@
       {
         "name": "fresh_complaints",
         "ok": true,
-        "count": 19
+        "count": 18
       },
       {
         "name": "fresh_opportunities",
@@ -338,29 +338,54 @@
       },
       {
         "name": "fresh_ranking",
-        "ok": false
+        "ok": true
       },
       {
         "name": "fresh_venture_report",
-        "ok": false
+        "ok": true
       }
     ],
-    "errors": [
-      "No current executive ranking",
-      "No venture recommendation report"
-    ],
+    "errors": [],
     "artifacts": {
-      "complaints": 19,
+      "complaints": 18,
       "opportunities": 8,
       "completed_market_briefs": 8,
-      "current_ranking": null,
-      "latest_venture_report": null
+      "current_ranking": {
+        "id": "5b9f6af0-c104-4163-82af-780b0df6d0a7",
+        "created_at": "2026-06-06 04:15:18.485157+00:00",
+        "ranking_metadata": {
+          "approval_status": "pending",
+          "pipeline_run_id": "f2a2190f-eac2-4d8c-9783-07d8f23c474b",
+          "min_agent_coverage": 1,
+          "approval_request_id": "9ae94c00-bfbb-4513-8db4-4a99611a4388",
+          "founder_profile_name": "Default Solo Technical Founder",
+          "discovery_validation_mode": true
+        }
+      },
+      "latest_venture_report": {
+        "id": "52d015d7-59d3-4e41-9d41-5abe17a9bdab",
+        "title": "Venture Recommendation Report \u2014 2026-06-06",
+        "created_at": "2026-06-06 04:15:18.485157+00:00",
+        "report_metadata": {
+          "top_n": 5,
+          "engine": "venture_report_v1",
+          "generated_at": "2026-06-06T04:28:21.377106+00:00",
+          "approval_status": "pending",
+          "pipeline_run_id": "f2a2190f-eac2-4d8c-9783-07d8f23c474b",
+          "opportunity_count": 5,
+          "founder_profile_id": "c52e20d1-a86f-4531-a807-804718c99088",
+          "approval_request_id": "68d5ab53-98d2-4654-bb9d-714407d8b265",
+          "executive_ranking_run_id": "5b9f6af0-c104-4163-82af-780b0df6d0a7",
+          "discovery_validation_mode": true,
+          "executive_ranking_version": 1
+        }
+      }
     },
     "empty_discovery": false,
     "pipeline_run": {
-      "status": "partial",
-      "started_at": "2026-06-05 23:52:26.555868+00:00",
-      "finished_at": "2026-06-06 00:07:38.657953+00:00",
+      "status": "completed",
+      "started_at": "2026-06-06 04:15:18.557580+00:00",
+      "finished_at": "2026-06-06 04:28:21.711622+00:00",
       "config_snapshot": {
         "force": true,
         "top_n": null,
@@ -377,7 +402,26 @@
         "validation_ranking_run_id": null
       }
     },
-    "top_ranked": [],
+    "top_ranked": [
+      {
+        "title": "Eliminate 30% Google Play Billing Fees for Android App Subscriptions",
+        "llm_model": "gpt-4o-mini",
+        "rank": 1,
+        "final_opportunity_score": 67
+      },
+      {
+        "title": "Accept International Payments in South Africa Without High Fees",
+        "llm_model": "gpt-4o-mini",
+        "rank": 2,
+        "final_opportunity_score": 57
+      },
+      {
+        "title": "Eliminate Blocked Payments from Stripe-Radar High Risk Classifications",
+        "llm_model": "gpt-4o-mini",
+        "rank": 3,
+        "final_opportunity_score": 55
+      }
+    ],
     "llm_models_seen": [
       "gpt-4o-mini"
     ]

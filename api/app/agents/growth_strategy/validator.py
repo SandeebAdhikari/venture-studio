@@ -1,5 +1,6 @@
 """Validation for growth strategy LLM output."""
 
+from app.agents.growth_strategy.grounding import normalize_evidence_indices
 from app.agents.growth_strategy.schemas import GrowthStrategyLLMOutput, OpportunityGrowthContext
 
 
@@ -18,6 +19,7 @@ class GrowthStrategyValidator:
         *,
         context: OpportunityGrowthContext,
     ) -> GrowthStrategyLLMOutput:
+        output = normalize_evidence_indices(output, context)
         errors: list[str] = []
         max_complaint_index = len(context.complaint_evidence) - 1
 

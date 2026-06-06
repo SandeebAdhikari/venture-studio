@@ -58,7 +58,9 @@ class OpenAIProductStrategyClient:
             "estimated timeline, and technical risks using only the provided opportunity context. "
             "Do NOT perform market sizing, revenue validation, or competitor analysis. "
             "Focus only on product planning and roadmap structure. "
-            "Use complaint_index to ground evidence references."
+            "Use complaint_index (integer label on each complaint row) in supporting_evidence. "
+            "complaint_index is NOT complaint_id — never use UUID values as complaint_index. "
+            "When only one complaint is listed, the only valid complaint_index is 0."
         )
 
         try:
@@ -86,7 +88,9 @@ class OpenAIProductStrategyClient:
                             f"Existing alternatives: {context.existing_alternatives}\n"
                             f"Gap: {context.gap}\n"
                             f"Confidence: {context.confidence_score:.2f}\n\n"
-                            f"Complaint evidence:\n{self._format_complaints(context)}\n\n"
+                            "Complaint evidence (use complaint_index only — not complaint_id):\n"
+                            f"{self._format_complaints(context)}\n\n"
+                            "Example for a single complaint: complaint_index=0 in all fields.\n"
                             "Create a product strategy plan."
                         ),
                     },

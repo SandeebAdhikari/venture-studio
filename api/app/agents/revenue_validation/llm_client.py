@@ -58,7 +58,13 @@ class OpenAIRevenueValidationClient:
             "buyer profiles, and purchasing frequency using only provided evidence. "
             "Do NOT perform market sizing, competitor deep-dives, or business planning. "
             "Focus only on willingness-to-pay, pricing recommendations, and revenue confidence. "
-            "Use complaint_index and competitor_index to ground evidence references."
+            "Use complaint_index (integer label on each complaint row) and competitor_index "
+            "(integer label on each competitor row) in supporting_evidence. "
+            "complaint_index is NOT complaint_id — never use UUID values as complaint_index. "
+            "competitor_index is NOT competitor_profile_id — never use UUID values as "
+            "competitor_index. "
+            "When only one complaint is listed, the only valid complaint_index is 0. "
+            "When only one competitor is listed, the only valid competitor_index is 0."
         )
 
         try:
@@ -85,8 +91,12 @@ class OpenAIRevenueValidationClient:
                             f"Existing alternatives: {context.existing_alternatives}\n"
                             f"Gap: {context.gap}\n"
                             f"Confidence: {context.confidence_score:.2f}\n\n"
-                            f"Complaint evidence:\n{self._format_complaints(context)}\n\n"
-                            f"Competitor pricing:\n{self._format_competitors(context)}\n\n"
+                            f"Complaint evidence (use complaint_index only — not complaint_id):\n"
+                            f"{self._format_complaints(context)}\n\n"
+                            f"Competitor pricing (use competitor_index only — not profile id):\n"
+                            f"{self._format_competitors(context)}\n\n"
+                            "Example for a single complaint: complaint_index=0 in all fields.\n"
+                            "Example for a single competitor: competitor_index=0 when referenced.\n"
                             "Validate revenue potential and willingness to pay."
                         ),
                     },
@@ -145,7 +155,9 @@ class OpenAIRevenueValidationClient:
         for item in context.complaint_evidence:
             products = ", ".join(item.product_mentions) if item.product_mentions else "none"
             lines.append(
-                f"{item.index}. summary={item.summary!r} severity={item.severity} "
+                f"complaint_index={item.index} "
+                f"(reference id={item.complaint_id} — do NOT use as complaint_index) "
+                f"summary={item.summary!r} severity={item.severity} "
                 f"products={products} quote={item.verbatim_quote!r}"
             )
         return "\n".join(lines)
@@ -157,7 +169,9 @@ class OpenAIRevenueValidationClient:
         lines = []
         for item in context.competitor_pricing:
             lines.append(
-                f"{item.index}. name={item.name} positioning={item.positioning!r} "
+                f"competitor_index={item.index} "
+                f"(reference id={item.competitor_profile_id} — do NOT use as competitor_index) "
+                f"name={item.name} positioning={item.positioning!r} "
                 f"pricing={item.pricing_model}"
             )
         return "\n".join(lines)

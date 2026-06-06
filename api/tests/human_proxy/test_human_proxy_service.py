@@ -266,6 +266,69 @@ async def test_create_profile_and_evaluate_with_custom_profile(
 
 
 @pytest.mark.asyncio
+async def test_evaluate_opportunity_succeeds_with_uuid_derived_complaint_index(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    human_proxy_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_human_proxy_output()
+    bad_output.supporting_evidence[0].complaint_index = 926
+    bad_output.supporting_evidence[1].complaint_index = 37
+    mock = MockHumanProxyLLMClient([bad_output])
+    service = HumanProxyService(repos, human_proxy_settings, llm_client=mock)
+
+    result = await service.evaluate_opportunity(opportunity.id)
+
+    assert result.status == "completed"
+    assert result.human_proxy_evaluation_id is not None
+    assert result.draft is not None
+    assert result.draft.supporting_evidence[0].complaint_index == 0
+
+
+@pytest.mark.asyncio
+async def test_evaluate_persists_llm_logs_on_validation_failure(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    human_proxy_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_human_proxy_output()
+    bad_output.executive_summary = "too short"
+    mock = MockHumanProxyLLMClient([bad_output, bad_output])
+    service = HumanProxyService(repos, human_proxy_settings, llm_client=mock)
+
+    result = await service.evaluate_opportunity(opportunity.id)
+
+    assert result.status == "failed"
+    count = await db_session.scalar(
+        select(func.count())
+        .select_from(LLMCall)
+        .where(
+            LLMCall.entity_id == opportunity.id,
+            LLMCall.graph_name == "evaluate_human_proxy",
+        )
+    )
+    assert count == 2
+    calls = (
+        await db_session.scalars(
+            select(LLMCall).where(
+                LLMCall.entity_id == opportunity.id,
+                LLMCall.graph_name == "evaluate_human_proxy",
+            )
+        )
+    ).all()
+    assert any(
+        call.error_detail
+        or (call.eval_metadata or {}).get("validation_errors")
+        or (call.eval_metadata or {}).get("failure_error")
+        for call in calls
+    )
+
+
+@pytest.mark.asyncio
 async def test_list_history_returns_versions(
     db_session: AsyncSession,
     taxonomy_ids: tuple[UUID, UUID, UUID],

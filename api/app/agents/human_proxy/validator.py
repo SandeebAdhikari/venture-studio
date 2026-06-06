@@ -1,5 +1,6 @@
 """Validation for human proxy LLM output."""
 
+from app.agents.human_proxy.grounding import normalize_evidence_indices
 from app.agents.human_proxy.schemas import HumanProxyLLMOutput, OpportunityProxyContext
 
 
@@ -18,6 +19,7 @@ class HumanProxyValidator:
         *,
         context: OpportunityProxyContext,
     ) -> HumanProxyLLMOutput:
+        output = normalize_evidence_indices(output, context)
         errors: list[str] = []
         max_complaint_index = len(context.complaint_evidence) - 1
 

@@ -113,6 +113,7 @@ class GoToMarketService:
         agent_result = await self._get_agent().run(context)
 
         if agent_result.status != "completed" or agent_result.draft is None:
+            await self._persist_eval_logs(opportunity_id, agent_result)
             return agent_result
 
         model = self._last_model(agent_result) or self._settings.go_to_market_model
@@ -244,9 +245,15 @@ class GoToMarketService:
         self,
         opportunity_id: UUID,
         agent_result: GoToMarketResult,
-        plan_id: UUID,
+        plan_id: UUID | None = None,
     ) -> None:
         from app.agents.eval_logging import persist_agent_eval_logs
+
+        extra: dict[str, object] = {}
+        if plan_id is not None:
+            extra["gtm_plan_id"] = str(plan_id)
+        if agent_result.error:
+            extra["failure_error"] = agent_result.error
 
         await persist_agent_eval_logs(
             self._repos,
@@ -256,7 +263,7 @@ class GoToMarketService:
             graph_name=GRAPH_NAME,
             default_model=self._settings.go_to_market_model,
             agent_result=agent_result,
-            eval_metadata_extra={"gtm_plan_id": str(plan_id)},
+            eval_metadata_extra=extra or None,
         )
 
     @staticmethod

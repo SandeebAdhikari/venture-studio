@@ -228,3 +228,66 @@ async def test_plan_retries_malformed_response(
     total_evidence = await db_session.scalar(select(func.count()).select_from(GTMPlanEvidence))
     assert total_plans == 1
     assert total_evidence == 3
+
+
+@pytest.mark.asyncio
+async def test_plan_opportunity_succeeds_with_uuid_derived_complaint_index(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    go_to_market_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_go_to_market_output()
+    bad_output.supporting_evidence[0].complaint_index = 926
+    bad_output.supporting_evidence[1].complaint_index = 37
+    mock = MockGoToMarketLLMClient([bad_output])
+    service = GoToMarketService(repos, go_to_market_settings, llm_client=mock)
+
+    result = await service.plan_opportunity(opportunity.id)
+
+    assert result.status == "completed"
+    assert result.gtm_plan_id is not None
+    assert result.draft is not None
+    assert result.draft.supporting_evidence[0].complaint_index == 0
+
+
+@pytest.mark.asyncio
+async def test_plan_persists_llm_logs_on_validation_failure(
+    db_session: AsyncSession,
+    taxonomy_ids: tuple[UUID, UUID, UUID],
+    go_to_market_settings: Settings,
+) -> None:
+    opportunity = await _create_opportunity(db_session, taxonomy_ids)
+    repos = get_repositories(db_session)
+    bad_output = default_mock_go_to_market_output()
+    bad_output.gtm_report = "too short"
+    mock = MockGoToMarketLLMClient([bad_output, bad_output])
+    service = GoToMarketService(repos, go_to_market_settings, llm_client=mock)
+
+    result = await service.plan_opportunity(opportunity.id)
+
+    assert result.status == "failed"
+    count = await db_session.scalar(
+        select(func.count())
+        .select_from(LLMCall)
+        .where(
+            LLMCall.entity_id == opportunity.id,
+            LLMCall.graph_name == "plan_go_to_market",
+        )
+    )
+    assert count == 2
+    calls = (
+        await db_session.scalars(
+            select(LLMCall).where(
+                LLMCall.entity_id == opportunity.id,
+                LLMCall.graph_name == "plan_go_to_market",
+            )
+        )
+    ).all()
+    assert any(
+        call.error_detail
+        or (call.eval_metadata or {}).get("validation_errors")
+        or (call.eval_metadata or {}).get("failure_error")
+        for call in calls
+    )
