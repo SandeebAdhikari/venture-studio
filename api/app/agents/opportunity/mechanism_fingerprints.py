@@ -26,6 +26,11 @@ MECHANISM_FINGERPRINTS: Final[frozenset[str]] = frozenset(
         "hosted_checkout_friction",
         "invoice_workflow_scaling",
         "payment_compliance_friction",
+        "vulnerability_disclosure_workflow",
+        "endpoint_security_negligence",
+        "session_fixation_exposure",
+        "incident_response_coordination",
+        "credential_exposure_detection",
     }
 )
 
@@ -41,6 +46,44 @@ _THIN_QUOTE_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
 
 # First matching rule wins — list more specific venture wedges before broad phrases.
 _MECHANISM_RULES: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
+    (
+        "session_fixation_exposure",
+        (
+            "session fixation vulnerability",
+            "session id is the user",
+            "session id is the user's email",
+        ),
+    ),
+    (
+        "vulnerability_disclosure_workflow",
+        (
+            "reporting a security vulnerability",
+            "risked termination and i should tell someone first",
+            "reprimanded for reporting a security vulnerability",
+        ),
+    ),
+    (
+        "endpoint_security_negligence",
+        (
+            "reported that vulnerability immediately",
+            "would look into it and reply. he did not",
+            "look into it and reply. he did not",
+        ),
+    ),
+    (
+        "incident_response_coordination",
+        (
+            "ransomware attack",
+            "criminally negligent in their data security",
+        ),
+    ),
+    (
+        "credential_exposure_detection",
+        (
+            "email accounts has been broken into",
+            "suspect malware on my laptop",
+        ),
+    ),
     (
         "processor_account_deplatforming",
         (
