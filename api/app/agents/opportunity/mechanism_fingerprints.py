@@ -31,6 +31,13 @@ MECHANISM_FINGERPRINTS: Final[frozenset[str]] = frozenset(
         "session_fixation_exposure",
         "incident_response_coordination",
         "credential_exposure_detection",
+        "agentic_code_trust_gap",
+        "mcp_discovery_overhead",
+        "cicd_yaml_complexity",
+        "pipeline_template_rigidity",
+        "local_dev_performance",
+        "platform_api_dx_friction",
+        "openapi_spec_friction",
     }
 )
 
@@ -65,6 +72,9 @@ _MECHANISM_RULES: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
     (
         "endpoint_security_negligence",
         (
+            "found a security vulnerability in a web page",
+            "easily-guessable url",
+            "gives away a file containing a password",
             "reported that vulnerability immediately",
             "would look into it and reply. he did not",
             "look into it and reply. he did not",
@@ -82,6 +92,57 @@ _MECHANISM_RULES: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
         (
             "email accounts has been broken into",
             "suspect malware on my laptop",
+        ),
+    ),
+    (
+        "agentic_code_trust_gap",
+        (
+            "0 trust in the quality of the generated code",
+            "absolutely 0 trust in the quality of the generated code",
+        ),
+    ),
+    (
+        "mcp_discovery_overhead",
+        (
+            "discovering and configuring mcp servers",
+            "time-consuming and not \"agentic\"",
+            "time-consuming and not agentic",
+        ),
+    ),
+    (
+        "cicd_yaml_complexity",
+        (
+            "reliance on yaml configurations",
+            "complexity of existing ci/cd tools",
+        ),
+    ),
+    (
+        "pipeline_template_rigidity",
+        (
+            "lack of freedom for the developers",
+            "templated build pipelines for ci/cd",
+            "pushback because of it",
+        ),
+    ),
+    (
+        "local_dev_performance",
+        (
+            "loading a page in the rails app from the host machine is just too damn slow",
+            "5 to 10+ seconds to refresh the page",
+        ),
+    ),
+    (
+        "platform_api_dx_friction",
+        (
+            "fed up with their terrible developer experience",
+            "built integrations for hubspot",
+        ),
+    ),
+    (
+        "openapi_spec_friction",
+        (
+            "writing the open api spec in yaml is tedious",
+            "open api documentation constantly while writing the spec",
         ),
     ),
     (

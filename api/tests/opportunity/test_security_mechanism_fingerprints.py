@@ -10,67 +10,70 @@ from app.agents.opportunity.mechanism_fingerprints import (
 from app.agents.opportunity.schemas import ComplaintEvidence
 from app.agents.opportunity.venture_aware_clustering import detect_venture_aware_patterns
 
-# Cross-corpus Security run (b7803eaf) — classified complaint evidence.
-SECURITY_CORPUS: list[dict] = [
+# Security benchmark run f2ed171c — classified complaint evidence.
+SECURITY_BENCHMARK_CORPUS: list[dict] = [
     {
-        "title": "Internal vuln report reprimanded",
+        "title": "Ask HN: Found security vulnerability at work. rebuked. was I wrong?",
         "summary": (
-            "The user feels they were unfairly reprimanded for reporting a security "
-            "vulnerability they discovered in their company's test environment."
+            "The user feels they were unfairly reprimanded for identifying a security "
+            "vulnerability in their company's test environment and believes they acted "
+            "responsibly by reporting it."
         ),
         "verbatim_quote": (
             "Instead I was told that I risked termination and I should tell someone first."
         ),
-        "severity": 4,
+        "severity": 3,
         "business_function_code": "fraud_prevention",
         "jtbd_code": "prevent_fraud",
         "consequence_code": "operational_risk",
     },
     {
-        "title": "Unpatched vulnerability ignored",
+        "title": "Ask HN: Security vulnerability in deployment – what to do?",
         "summary": (
-            "The user is facing a critical security vulnerability that has not been "
-            "addressed despite multiple follow-ups."
+            "The user has identified a critical security vulnerability in a deployed web "
+            "page and is seeking guidance on how to address the lack of response from the "
+            "person responsible for the deployment."
         ),
         "verbatim_quote": (
-            "I reported that vulnerability immediately to the person deploying it and "
-            "he answered he would look into it and reply. He did not."
+            "I found a security vulnerability in a web page I developed, which was "
+            "deployed by another person: A GET to an easily-guessable URL gives away a "
+            "file containing a password with which one can login and modify content."
         ),
-        "severity": 4,
+        "severity": 5,
         "business_function_code": "deployment",
         "jtbd_code": "prevent_fraud",
         "consequence_code": "operational_risk",
     },
     {
-        "title": "Phishing legitimacy check",
+        "title": "Ask HN: Altrec security breach letter?",
         "summary": (
-            "The user expresses concern over a potential security breach involving "
-            "their personal information and questions the legitimacy of the communication."
+            "The user expresses concern over a potential security breach involving their "
+            "personal information and questions the legitimacy of the communication from "
+            "Altrec regarding the incident."
         ),
         "verbatim_quote": "Is this on the level?",
-        "severity": 3,
-        "business_function_code": "fraud_prevention",
-        "jtbd_code": "prevent_fraud",
-        "consequence_code": "customer_loss",
-    },
-    {
-        "title": "Employer ransomware negligence",
-        "summary": (
-            "The user expresses concern over severe data security negligence by a former "
-            "employer, a health insurance company, following a ransomware attack that "
-            "compromised customer data."
-        ),
-        "verbatim_quote": (
-            "I believe my former employer may be criminally negligent in their data "
-            "security and I'm seeking advice on how to proceed, or if anything can be done."
-        ),
         "severity": 4,
         "business_function_code": "fraud_prevention",
         "jtbd_code": "prevent_fraud",
         "consequence_code": "customer_loss",
     },
     {
-        "title": "Session fixation in interview app",
+        "title": "Ask HN: Security negligence by former employer, a health insurance co.?",
+        "summary": (
+            "The user expresses concern over severe data security negligence by a former "
+            "employer, a health insurance company, following a ransomware attack that "
+            "compromised sensitive personal data of millions."
+        ),
+        "verbatim_quote": (
+            "This situation seems to reflect severe negligence, if not intentional disregard."
+        ),
+        "severity": 5,
+        "business_function_code": "fraud_prevention",
+        "jtbd_code": "prevent_fraud",
+        "consequence_code": "customer_loss",
+    },
+    {
+        "title": "Ask HN: Security vulnerability discovered during interview",
         "summary": (
             "The user discovered a potential security vulnerability during an interview, "
             "specifically a session fixation issue that could lead to data breaches."
@@ -84,22 +87,19 @@ SECURITY_CORPUS: list[dict] = [
         "jtbd_code": "prevent_fraud",
         "consequence_code": "operational_risk",
     },
-    {
-        "title": "Personal endpoint compromise",
-        "summary": (
-            "The user is concerned about potential malware on their laptop and seeks "
-            "recommendations for security software."
-        ),
-        "verbatim_quote": (
-            "Looks like one of my email accounts has been broken into, and I suspect "
-            "malware on my laptop..."
-        ),
-        "severity": 4,
-        "business_function_code": "fraud_prevention",
-        "jtbd_code": "prevent_fraud",
-        "consequence_code": "operational_risk",
-    },
 ]
+
+# Prior cross-corpus corpus — retains unpatched-vuln follow-up phrasing.
+UNPATCHED_VULN_COMPLAINT = {
+    "summary": (
+        "The user is facing a critical security vulnerability that has not been "
+        "addressed despite multiple follow-ups."
+    ),
+    "verbatim_quote": (
+        "I reported that vulnerability immediately to the person deploying it and "
+        "he answered he would look into it and reply. He did not."
+    ),
+}
 
 
 def _security_evidence(row: dict) -> ComplaintEvidence:
@@ -117,12 +117,12 @@ def _security_evidence(row: dict) -> ComplaintEvidence:
     )
 
 
-def _security_corpus_evidence() -> list[ComplaintEvidence]:
-    return [_security_evidence(row) for row in SECURITY_CORPUS]
+def _benchmark_corpus_evidence() -> list[ComplaintEvidence]:
+    return [_security_evidence(row) for row in SECURITY_BENCHMARK_CORPUS]
 
 
 def test_extracts_vulnerability_disclosure_workflow() -> None:
-    row = SECURITY_CORPUS[0]
+    row = SECURITY_BENCHMARK_CORPUS[0]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -132,8 +132,8 @@ def test_extracts_vulnerability_disclosure_workflow() -> None:
     )
 
 
-def test_extracts_endpoint_security_negligence() -> None:
-    row = SECURITY_CORPUS[1]
+def test_extracts_endpoint_security_negligence_deployment_vuln() -> None:
+    row = SECURITY_BENCHMARK_CORPUS[1]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -143,8 +143,18 @@ def test_extracts_endpoint_security_negligence() -> None:
     )
 
 
+def test_extracts_endpoint_security_negligence_unpatched_followup() -> None:
+    assert (
+        extract_mechanism_fingerprint(
+            verbatim_quote=UNPATCHED_VULN_COMPLAINT["verbatim_quote"],
+            summary=UNPATCHED_VULN_COMPLAINT["summary"],
+        )
+        == "endpoint_security_negligence"
+    )
+
+
 def test_extracts_incident_response_coordination() -> None:
-    row = SECURITY_CORPUS[3]
+    row = SECURITY_BENCHMARK_CORPUS[3]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -155,7 +165,7 @@ def test_extracts_incident_response_coordination() -> None:
 
 
 def test_extracts_session_fixation_exposure() -> None:
-    row = SECURITY_CORPUS[4]
+    row = SECURITY_BENCHMARK_CORPUS[4]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -165,19 +175,8 @@ def test_extracts_session_fixation_exposure() -> None:
     )
 
 
-def test_extracts_credential_exposure_detection() -> None:
-    row = SECURITY_CORPUS[5]
-    assert (
-        extract_mechanism_fingerprint(
-            verbatim_quote=row["verbatim_quote"],
-            summary=row["summary"],
-        )
-        == "credential_exposure_detection"
-    )
-
-
 def test_thin_phishing_quote_does_not_match_security_fingerprint() -> None:
-    row = SECURITY_CORPUS[2]
+    row = SECURITY_BENCHMARK_CORPUS[2]
     assert (
         extract_mechanism_fingerprint(
             verbatim_quote=row["verbatim_quote"],
@@ -185,6 +184,8 @@ def test_thin_phishing_quote_does_not_match_security_fingerprint() -> None:
         )
         is None
     )
+    member = enrich_complaint_evidence(_security_evidence(row))
+    assert evaluate_singleton_exception(member) is None
 
 
 def test_generic_security_keyword_does_not_match() -> None:
@@ -197,6 +198,23 @@ def test_generic_security_keyword_does_not_match() -> None:
     )
 
 
+def test_generic_breach_and_hack_do_not_match() -> None:
+    assert (
+        extract_mechanism_fingerprint(
+            verbatim_quote="There was a breach at our company last week.",
+            summary="Security breach concern.",
+        )
+        is None
+    )
+    assert (
+        extract_mechanism_fingerprint(
+            verbatim_quote="Someone might hack our servers.",
+            summary="Hack prevention question.",
+        )
+        is None
+    )
+
+
 def test_stripe_fingerprint_unchanged_after_security_rules() -> None:
     quote = "I just got kicked off Stripe; classified as high risk."
     assert extract_mechanism_fingerprint(verbatim_quote=quote) == (
@@ -204,11 +222,11 @@ def test_stripe_fingerprint_unchanged_after_security_rules() -> None:
     )
 
 
-def test_security_corpus_venture_aware_replay() -> None:
-    evidence = [enrich_complaint_evidence(item) for item in _security_corpus_evidence()]
+def test_security_benchmark_v11_venture_aware_replay() -> None:
+    evidence = [enrich_complaint_evidence(item) for item in _benchmark_corpus_evidence()]
 
     outcomes = []
-    for row, member in zip(SECURITY_CORPUS, evidence, strict=True):
+    for row, member in zip(SECURITY_BENCHMARK_CORPUS, evidence, strict=True):
         singleton = evaluate_singleton_exception(member)
         outcomes.append(
             {
@@ -222,42 +240,36 @@ def test_security_corpus_venture_aware_replay() -> None:
 
     assert outcomes == [
         {
-            "title": "Internal vuln report reprimanded",
+            "title": "Ask HN: Found security vulnerability at work. rebuked. was I wrong?",
             "mechanism_fingerprint": "vulnerability_disclosure_workflow",
             "singleton_exception": True,
         },
         {
-            "title": "Unpatched vulnerability ignored",
+            "title": "Ask HN: Security vulnerability in deployment – what to do?",
             "mechanism_fingerprint": "endpoint_security_negligence",
             "singleton_exception": True,
         },
         {
-            "title": "Phishing legitimacy check",
+            "title": "Ask HN: Altrec security breach letter?",
             "mechanism_fingerprint": None,
             "singleton_exception": False,
         },
         {
-            "title": "Employer ransomware negligence",
+            "title": "Ask HN: Security negligence by former employer, a health insurance co.?",
             "mechanism_fingerprint": "incident_response_coordination",
             "singleton_exception": True,
         },
         {
-            "title": "Session fixation in interview app",
+            "title": "Ask HN: Security vulnerability discovered during interview",
             "mechanism_fingerprint": "session_fixation_exposure",
             "singleton_exception": True,
         },
-        {
-            "title": "Personal endpoint compromise",
-            "mechanism_fingerprint": "credential_exposure_detection",
-            "singleton_exception": True,
-        },
     ]
-    assert len(patterns) == 5
+    assert len(patterns) == 4
     assert {p.mechanism_fingerprint for p in patterns} == {
         "vulnerability_disclosure_workflow",
         "endpoint_security_negligence",
         "incident_response_coordination",
         "session_fixation_exposure",
-        "credential_exposure_detection",
     }
     assert all(p.singleton_exception_reason for p in patterns)
