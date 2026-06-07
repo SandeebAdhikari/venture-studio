@@ -29,7 +29,10 @@ async def worker_startup(ctx: dict) -> None:
     init_observability(settings)
     init_db(settings)
     init_redis(settings)
-    ctx["settings"] = settings
+
+    from app.founder_fit.matrix_loader import init_mechanism_requirement_matrix
+
+    init_mechanism_requirement_matrix()
     ctx["redis"] = get_redis_client()
     ctx["worker_id"] = uuid4().hex
 

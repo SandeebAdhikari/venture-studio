@@ -22,6 +22,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36,<3",
     "uvicorn[standard]>=0.32.0,<1",
     "prometheus-client>=0.21.0,<1",
+    "pyyaml>=6.0.0,<7",
 ]
 
 [project.optional-dependencies]
@@ -44,6 +45,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+force-include = { "app/founder_fit/data/mechanism_requirement_matrix_cm_v1.yaml" = "app/founder_fit/data/mechanism_requirement_matrix_cm_v1.yaml" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

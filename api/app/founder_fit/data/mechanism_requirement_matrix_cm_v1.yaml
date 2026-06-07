@@ -1,0 +1,1007 @@
+matrix_version: cm_v1
+specs:
+- fingerprint: processor_account_deplatforming
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - fraud_risk_ops
+  - compliance_regulatory
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.55
+    min_viable: 70
+    critical: true
+  - family: fraud_risk_ops
+    role: secondary
+    weight: 0.25
+    min_viable: 50
+    critical: false
+  - family: compliance_regulatory
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: true
+    regulatory_sensitive: false
+    security_sensitive: false
+    notes: High-risk processor deplatforming wedge
+  audit: &id001
+    approved_by: ff_cm_3
+    effective_from: '2026-06-07'
+    supersedes: null
+- fingerprint: radar_false_positive_blocking
+  matrix_version: cm_v1
+  families:
+  - fraud_risk_ops
+  - payments_billing
+  - backend_api
+  requirements:
+  - family: fraud_risk_ops
+    role: primary
+    weight: 0.55
+    min_viable: 65
+    critical: true
+  - family: payments_billing
+    role: secondary
+    weight: 0.3
+    min_viable: 55
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+    notes: Radar false-positive blocking
+  audit: *id001
+- fingerprint: geo_payment_availability
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - backend_api
+  - compliance_regulatory
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.6
+    min_viable: 65
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.25
+    min_viable: 45
+    critical: false
+  - family: compliance_regulatory
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: low_upfront_processor_onboarding
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - compliance_regulatory
+  - backend_api
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.5
+    min_viable: 60
+    critical: true
+  - family: compliance_regulatory
+    role: secondary
+    weight: 0.3
+    min_viable: 55
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: true
+    security_sensitive: false
+  audit: *id001
+- fingerprint: pci_vault_recurring
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - security_engineering
+  - database_storage
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.5
+    min_viable: 70
+    critical: true
+  - family: security_engineering
+    role: secondary
+    weight: 0.35
+    min_viable: 55
+    critical: false
+  - family: database_storage
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: true
+  audit: *id001
+- fingerprint: chargeback_defense
+  matrix_version: cm_v1
+  families:
+  - fraud_risk_ops
+  - payments_billing
+  - backend_api
+  requirements:
+  - family: fraud_risk_ops
+    role: primary
+    weight: 0.55
+    min_viable: 65
+    critical: true
+  - family: payments_billing
+    role: secondary
+    weight: 0.35
+    min_viable: 55
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.1
+    min_viable: 35
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: marketplace_fraud_screening
+  matrix_version: cm_v1
+  families:
+  - fraud_risk_ops
+  - backend_api
+  - payments_billing
+  requirements:
+  - family: fraud_risk_ops
+    role: primary
+    weight: 0.5
+    min_viable: 65
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: payments_billing
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: checkout_friction_fraud_tradeoff
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - fraud_risk_ops
+  - web_fullstack
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.45
+    min_viable: 60
+    critical: true
+  - family: fraud_risk_ops
+    role: secondary
+    weight: 0.35
+    min_viable: 55
+    critical: false
+  - family: web_fullstack
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: usage_metering_per_subscription
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - backend_api
+  - database_storage
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.5
+    min_viable: 65
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: database_storage
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: gateway_orchestration
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - backend_api
+  - devops_cicd
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.45
+    min_viable: 65
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.4
+    min_viable: 55
+    critical: false
+  - family: devops_cicd
+    role: optional
+    weight: 0.15
+    min_viable: 35
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: api_monetization
+  matrix_version: cm_v1
+  families:
+  - backend_api
+  - payments_billing
+  - web_fullstack
+  requirements:
+  - family: backend_api
+    role: primary
+    weight: 0.45
+    min_viable: 55
+    critical: true
+  - family: payments_billing
+    role: secondary
+    weight: 0.4
+    min_viable: 55
+    critical: false
+  - family: web_fullstack
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: processor_fee_optimization
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - python_data
+  - backend_api
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.45
+    min_viable: 55
+    critical: true
+  - family: python_data
+    role: secondary
+    weight: 0.35
+    min_viable: 50
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: medium
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: platform_billing_lock_in
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - backend_api
+  - devops_cicd
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.55
+    min_viable: 60
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: devops_cicd
+    role: optional
+    weight: 0.15
+    min_viable: 35
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: hosted_checkout_friction
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - web_fullstack
+  - backend_api
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.4
+    min_viable: 55
+    critical: true
+  - family: web_fullstack
+    role: secondary
+    weight: 0.4
+    min_viable: 55
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: invoice_workflow_scaling
+  matrix_version: cm_v1
+  families:
+  - payments_billing
+  - backend_api
+  - database_storage
+  requirements:
+  - family: payments_billing
+    role: primary
+    weight: 0.45
+    min_viable: 60
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.35
+    min_viable: 50
+    critical: false
+  - family: database_storage
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: payment_compliance_friction
+  matrix_version: cm_v1
+  families:
+  - compliance_regulatory
+  - payments_billing
+  - security_engineering
+  requirements:
+  - family: compliance_regulatory
+    role: primary
+    weight: 0.5
+    min_viable: 65
+    critical: true
+  - family: payments_billing
+    role: secondary
+    weight: 0.35
+    min_viable: 55
+    critical: false
+  - family: security_engineering
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: true
+    security_sensitive: true
+  audit: *id001
+- fingerprint: vulnerability_disclosure_workflow
+  matrix_version: cm_v1
+  families:
+  - security_engineering
+  - compliance_regulatory
+  - backend_api
+  requirements:
+  - family: security_engineering
+    role: primary
+    weight: 0.55
+    min_viable: 60
+    critical: true
+  - family: compliance_regulatory
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: true
+    security_sensitive: true
+  audit: *id001
+- fingerprint: endpoint_security_negligence
+  matrix_version: cm_v1
+  families:
+  - security_engineering
+  - web_fullstack
+  - backend_api
+  requirements:
+  - family: security_engineering
+    role: primary
+    weight: 0.5
+    min_viable: 60
+    critical: true
+  - family: web_fullstack
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: true
+  audit: *id001
+- fingerprint: session_fixation_exposure
+  matrix_version: cm_v1
+  families:
+  - security_engineering
+  - web_fullstack
+  - backend_api
+  requirements:
+  - family: security_engineering
+    role: primary
+    weight: 0.55
+    min_viable: 65
+    critical: true
+  - family: web_fullstack
+    role: secondary
+    weight: 0.3
+    min_viable: 55
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: true
+  audit: *id001
+- fingerprint: incident_response_coordination
+  matrix_version: cm_v1
+  families:
+  - security_engineering
+  - devops_cicd
+  - compliance_regulatory
+  requirements:
+  - family: security_engineering
+    role: primary
+    weight: 0.5
+    min_viable: 60
+    critical: true
+  - family: devops_cicd
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: compliance_regulatory
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: true
+  audit: *id001
+- fingerprint: credential_exposure_detection
+  matrix_version: cm_v1
+  families:
+  - security_engineering
+  - fraud_risk_ops
+  - devops_cicd
+  requirements:
+  - family: security_engineering
+    role: primary
+    weight: 0.55
+    min_viable: 60
+    critical: true
+  - family: fraud_risk_ops
+    role: secondary
+    weight: 0.25
+    min_viable: 45
+    critical: false
+  - family: devops_cicd
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: medium
+    corpus_evidence: []
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: true
+  audit: *id001
+- fingerprint: agentic_code_trust_gap
+  matrix_version: cm_v1
+  families:
+  - agent_tooling
+  - web_fullstack
+  - ai_ml_operations
+  requirements:
+  - family: agent_tooling
+    role: primary
+    weight: 0.5
+    min_viable: 60
+    critical: true
+  - family: web_fullstack
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: ai_ml_operations
+    role: optional
+    weight: 0.2
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - devtools
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: mcp_discovery_overhead
+  matrix_version: cm_v1
+  families:
+  - agent_tooling
+  - devops_cicd
+  - backend_api
+  requirements:
+  - family: agent_tooling
+    role: primary
+    weight: 0.55
+    min_viable: 60
+    critical: true
+  - family: devops_cicd
+    role: secondary
+    weight: 0.25
+    min_viable: 45
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - devtools
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: cicd_yaml_complexity
+  matrix_version: cm_v1
+  families:
+  - devops_cicd
+  - backend_api
+  - cloud_infra_compute
+  requirements:
+  - family: devops_cicd
+    role: primary
+    weight: 0.6
+    min_viable: 65
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.25
+    min_viable: 45
+    critical: false
+  - family: cloud_infra_compute
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - devtools
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: pipeline_template_rigidity
+  matrix_version: cm_v1
+  families:
+  - devops_cicd
+  - cloud_infra_compute
+  - backend_api
+  requirements:
+  - family: devops_cicd
+    role: primary
+    weight: 0.55
+    min_viable: 60
+    critical: true
+  - family: cloud_infra_compute
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - devtools
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: local_dev_performance
+  matrix_version: cm_v1
+  families:
+  - devops_cicd
+  - cloud_infra_compute
+  - web_fullstack
+  requirements:
+  - family: devops_cicd
+    role: primary
+    weight: 0.5
+    min_viable: 55
+    critical: true
+  - family: cloud_infra_compute
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: web_fullstack
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: medium
+    corpus_evidence:
+    - devtools
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: platform_api_dx_friction
+  matrix_version: cm_v1
+  families:
+  - backend_api
+  - devops_cicd
+  - web_fullstack
+  requirements:
+  - family: backend_api
+    role: primary
+    weight: 0.55
+    min_viable: 60
+    critical: true
+  - family: devops_cicd
+    role: secondary
+    weight: 0.25
+    min_viable: 45
+    critical: false
+  - family: web_fullstack
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - devtools
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: openapi_spec_friction
+  matrix_version: cm_v1
+  families:
+  - backend_api
+  - agent_tooling
+  - web_fullstack
+  requirements:
+  - family: backend_api
+    role: primary
+    weight: 0.5
+    min_viable: 55
+    critical: true
+  - family: agent_tooling
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: web_fullstack
+    role: optional
+    weight: 0.2
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - devtools
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: coding_agent_api_spec_gap
+  matrix_version: cm_v1
+  families:
+  - agent_tooling
+  - backend_api
+  - ai_ml_operations
+  requirements:
+  - family: agent_tooling
+    role: primary
+    weight: 0.45
+    min_viable: 60
+    critical: true
+  - family: backend_api
+    role: secondary
+    weight: 0.4
+    min_viable: 55
+    critical: false
+  - family: ai_ml_operations
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: mcp_context_budget_overflow
+  matrix_version: cm_v1
+  families:
+  - agent_tooling
+  - ai_ml_operations
+  - backend_api
+  requirements:
+  - family: agent_tooling
+    role: primary
+    weight: 0.5
+    min_viable: 60
+    critical: true
+  - family: ai_ml_operations
+    role: secondary
+    weight: 0.35
+    min_viable: 55
+    critical: false
+  - family: backend_api
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: llm_guardrail_engineering_tax
+  matrix_version: cm_v1
+  families:
+  - ai_ml_operations
+  - agent_tooling
+  - python_data
+  requirements:
+  - family: ai_ml_operations
+    role: primary
+    weight: 0.55
+    min_viable: 65
+    critical: true
+  - family: agent_tooling
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: python_data
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: ai_eval_pipeline_gap
+  matrix_version: cm_v1
+  families:
+  - ai_ml_operations
+  - python_data
+  - devops_cicd
+  requirements:
+  - family: ai_ml_operations
+    role: primary
+    weight: 0.55
+    min_viable: 65
+    critical: true
+  - family: python_data
+    role: secondary
+    weight: 0.3
+    min_viable: 55
+    critical: false
+  - family: devops_cicd
+    role: optional
+    weight: 0.15
+    min_viable: 40
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: inference_cost_governance
+  matrix_version: cm_v1
+  families:
+  - ai_ml_operations
+  - cloud_infra_compute
+  - python_data
+  requirements:
+  - family: ai_ml_operations
+    role: primary
+    weight: 0.5
+    min_viable: 60
+    critical: true
+  - family: cloud_infra_compute
+    role: secondary
+    weight: 0.35
+    min_viable: 55
+    critical: false
+  - family: python_data
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001
+- fingerprint: gpu_compute_access_unreliability
+  matrix_version: cm_v1
+  families:
+  - cloud_infra_compute
+  - devops_cicd
+  - ai_ml_operations
+  requirements:
+  - family: cloud_infra_compute
+    role: primary
+    weight: 0.55
+    min_viable: 65
+    critical: true
+  - family: devops_cicd
+    role: secondary
+    weight: 0.3
+    min_viable: 50
+    critical: false
+  - family: ai_ml_operations
+    role: optional
+    weight: 0.15
+    min_viable: 45
+    critical: false
+  metadata:
+    confidence: high
+    corpus_evidence:
+    - ai_infrastructure
+    cross_domain: false
+    regulatory_sensitive: false
+    security_sensitive: false
+  audit: *id001

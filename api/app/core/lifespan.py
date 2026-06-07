@@ -29,6 +29,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db(settings)
     init_redis(settings)
 
+    from app.founder_fit.matrix_loader import init_mechanism_requirement_matrix
+
+    init_mechanism_requirement_matrix()
+
     from app.db.session import get_session_factory
     from app.observability.alerting.engine import init_alerting
     from app.observability.alerting.monitor import start_alert_monitor, stop_alert_monitor
