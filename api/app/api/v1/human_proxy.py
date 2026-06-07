@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from app.agents.human_proxy.schemas import HumanProxyBatchResult, HumanProxyResult
+from app.agents.human_proxy.schemas import HumanProxyBatchResult, HumanProxyReevalResult, HumanProxyResult
 from app.api.deps import Services
 from app.api.pagination import Pagination
 from app.db.enums import FounderRecommendation, HumanProxyEvaluationStatus
@@ -91,6 +91,34 @@ async def generate_human_proxy_evaluation_batch(
         limit=limit,
         force=force,
         founder_profile_id=founder_profile_id,
+    )
+
+
+@router.post(
+    "/reevaluate-current",
+    response_model=HumanProxyReevalResult,
+    status_code=status.HTTP_201_CREATED,
+    summary="Re-evaluate current legacy human proxy evaluations with the modern pipeline",
+)
+async def reevaluate_current_human_proxy_evaluations(
+    services: Services,
+    founder_profile_id: Annotated[
+        UUID | None,
+        Query(description="Limit re-evaluation to one founder profile"),
+    ] = None,
+    legacy_only: Annotated[
+        bool,
+        Query(description="Only re-evaluate rows with scale_version=legacy"),
+    ] = True,
+    dry_run: Annotated[
+        bool,
+        Query(description="Identify targets without invoking the LLM"),
+    ] = False,
+) -> HumanProxyReevalResult:
+    return await services.human_proxy.reevaluate_current(
+        founder_profile_id=founder_profile_id,
+        legacy_only=legacy_only,
+        dry_run=dry_run,
     )
 
 

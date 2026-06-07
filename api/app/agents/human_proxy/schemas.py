@@ -151,6 +151,15 @@ class HumanProxyBatchResult(BaseModel):
             self.failed += 1
 
 
+class HumanProxyReevalResult(HumanProxyBatchResult):
+    """Batch outcome for HP-REEVAL-1 scale migration re-runs."""
+
+    profiles_processed: int = 0
+    targets_identified: int = 0
+    skipped_century_v1: int = 0
+    dry_run: bool = False
+
+
 class LLMInvocationResult(BaseModel):
     parsed: HumanProxyLLMOutput | None = None
     raw_text: str | None = None

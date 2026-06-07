@@ -140,6 +140,24 @@ class HumanProxyEvaluationRepository(BaseRepository[HumanProxyEvaluation]):
         )
         return [row[0] for row in result.all()]
 
+    async def list_current_evaluations(
+        self,
+        *,
+        founder_profile_id: UUID | None = None,
+        scale_version: str | None = None,
+    ) -> list[HumanProxyEvaluation]:
+        query = select(HumanProxyEvaluation).where(HumanProxyEvaluation.is_current.is_(True))
+        if founder_profile_id is not None:
+            query = query.where(HumanProxyEvaluation.founder_profile_id == founder_profile_id)
+        if scale_version is not None:
+            query = query.where(HumanProxyEvaluation.scale_version == scale_version)
+        query = query.order_by(
+            HumanProxyEvaluation.founder_profile_id.asc(),
+            HumanProxyEvaluation.opportunity_id.asc(),
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
     async def create(self, data: HumanProxyEvaluationCreate) -> HumanProxyEvaluation:
         await self.session.execute(
             update(HumanProxyEvaluation)

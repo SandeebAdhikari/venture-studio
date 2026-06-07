@@ -11,6 +11,7 @@ from app.agents.human_proxy.schemas import (
     ComplaintEvidenceItem,
     FounderProfileContext,
     HumanProxyBatchResult,
+    HumanProxyReevalResult,
     HumanProxyResult,
     OpportunityProxyContext,
 )
@@ -24,6 +25,7 @@ from app.schemas.filters import HumanProxyEvaluationListFilter
 from app.schemas.founder_profile import FounderProfileCreate, FounderProfileRead
 from app.schemas.human_proxy_evaluation import (
     SCALE_VERSION_CENTURY_V1,
+    SCALE_VERSION_LEGACY,
     HumanProxyEvaluationCreate,
     HumanProxyEvaluationDetail,
     HumanProxyEvaluationEvidenceCreate,
@@ -105,12 +107,106 @@ class HumanProxyService:
         )
         return batch_result
 
+    async def reevaluate_current(
+        self,
+        *,
+        founder_profile_id: UUID | None = None,
+        opportunity_ids: list[UUID] | None = None,
+        legacy_only: bool = True,
+        dry_run: bool = False,
+    ) -> HumanProxyReevalResult:
+        """Re-run Human Proxy for current evaluations using the modern pipeline.
+
+        Creates new versioned rows with ``is_current=true`` and marks prior rows
+        historical via the repository ``create`` flow. Does not mutate legacy rows.
+        """
+        if founder_profile_id is not None:
+            profiles = [await self._resolve_profile(founder_profile_id)]
+        else:
+            profiles = await self._repos.founder_profiles.list_active()
+            if not profiles:
+                raise NotFoundError("founder_profile", "active")
+
+        result = HumanProxyReevalResult(dry_run=dry_run, profiles_processed=len(profiles))
+        scale_filter = SCALE_VERSION_LEGACY if legacy_only else None
+
+        for profile in profiles:
+            current_evaluations = await self._repos.human_proxy_evaluations.list_current_evaluations(
+                founder_profile_id=profile.id,
+                scale_version=scale_filter,
+            )
+            if legacy_only:
+                century_evaluations = (
+                    await self._repos.human_proxy_evaluations.list_current_evaluations(
+                        founder_profile_id=profile.id,
+                        scale_version=SCALE_VERSION_CENTURY_V1,
+                    )
+                )
+                if opportunity_ids is not None:
+                    allowed = set(opportunity_ids)
+                    century_evaluations = [
+                        item
+                        for item in century_evaluations
+                        if item.opportunity_id in allowed
+                    ]
+                result.skipped_century_v1 += len(century_evaluations)
+
+            targets = [
+                existing
+                for existing in current_evaluations
+                if opportunity_ids is None or existing.opportunity_id in opportunity_ids
+            ]
+            result.targets_identified += len(targets)
+            result.opportunities_found += len(targets)
+
+            for existing in targets:
+                if dry_run:
+                    result.add(
+                        HumanProxyResult(
+                            opportunity_id=existing.opportunity_id,
+                            founder_profile_id=profile.id,
+                            human_proxy_evaluation_id=existing.id,
+                            status="skipped",
+                            skip_reason="dry_run",
+                        )
+                    )
+                    continue
+
+                item = await self.evaluate_opportunity(
+                    existing.opportunity_id,
+                    founder_profile_id=profile.id,
+                    force=True,
+                    proxy_metadata_extra={
+                        "reeval": "hp_reeval_1",
+                        "supersedes_evaluation_id": str(existing.id),
+                        "supersedes_scale_version": existing.scale_version,
+                        "supersedes_version": existing.version,
+                    },
+                )
+                result.add(item)
+
+        logger.info(
+            "Human proxy re-evaluation complete",
+            extra={
+                "profiles_processed": result.profiles_processed,
+                "targets_identified": result.targets_identified,
+                "completed": result.completed,
+                "skipped": result.skipped,
+                "failed": result.failed,
+                "skipped_century_v1": result.skipped_century_v1,
+                "dry_run": dry_run,
+                "legacy_only": legacy_only,
+            },
+        )
+        return result
+
     async def evaluate_opportunity(
         self,
         opportunity_id: UUID,
         *,
         founder_profile_id: UUID | None = None,
         force: bool = False,
+        proxy_metadata_extra: dict[str, object] | None = None,
     ) -> HumanProxyResult:
         profile = await self._resolve_profile(founder_profile_id)
 
@@ -144,6 +240,14 @@ class HumanProxyService:
 
         model = self._last_model(agent_result) or self._settings.human_proxy_model
         draft = agent_result.draft
+        proxy_metadata = {
+            "graph_name": GRAPH_NAME,
+            "attempts": agent_result.attempts,
+            "agent_status": agent_result.status,
+            "founder_profile_name": profile.name,
+        }
+        if proxy_metadata_extra:
+            proxy_metadata.update(proxy_metadata_extra)
         evaluation = await self._repos.human_proxy_evaluations.create(
             HumanProxyEvaluationCreate(
                 opportunity_id=opportunity_id,
@@ -160,12 +264,7 @@ class HumanProxyService:
                 executive_summary=draft.executive_summary,
                 evaluation_metrics=draft.evaluation_metrics,
                 llm_model=model,
-                proxy_metadata={
-                    "graph_name": GRAPH_NAME,
-                    "attempts": agent_result.attempts,
-                    "agent_status": agent_result.status,
-                    "founder_profile_name": profile.name,
-                },
+                proxy_metadata=proxy_metadata,
                 scale_version=SCALE_VERSION_CENTURY_V1,
                 scale_metadata=draft.scale_metadata,
                 evidence=self._build_evidence_records(draft, context),
