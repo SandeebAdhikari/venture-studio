@@ -70,6 +70,25 @@ class VentureReportResult(BaseModel):
     content: VentureReportContent
 
 
+class VentureReportRegenResult(BaseModel):
+    """Outcome for VENTURE-REPORT-REGEN-1 post-ranking venture report refresh."""
+
+    dry_run: bool = False
+    founder_profile_id: UUID | None = None
+    top_n: int = 0
+    opportunities_found: int = 0
+    current_reports_found: int = 0
+    stale_reports_found: int = 0
+    current_ranking_run_id: UUID | None = None
+    current_ranking_version: int | None = None
+    century_v1_hp_count: int = 0
+    superseded_report_id: UUID | None = None
+    report_id: UUID | None = None
+    title: str | None = None
+    summary: str | None = None
+    opportunity_count: int = 0
+
+
 class VentureReportMarkdownRead(BaseModel):
     report_id: UUID
     title: str

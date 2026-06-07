@@ -19,8 +19,10 @@ from app.reports.venture.generator import REPORT_ENGINE, VentureReportGenerator
 from app.reports.venture.schemas import (
     VentureReportContent,
     VentureReportMarkdownRead,
+    VentureReportRegenResult,
     VentureReportResult,
 )
+from app.schemas.human_proxy_evaluation import SCALE_VERSION_CENTURY_V1
 from app.repositories import RepositoryContainer
 from app.schemas.report import ReportCreate, ReportRead
 
@@ -62,6 +64,7 @@ class VentureReportService:
         discovery_validation_mode: bool = False,
         pipeline_run_id: UUID | None = None,
         publish: bool = True,
+        report_metadata_extra: dict[str, object] | None = None,
     ) -> VentureReportResult:
         top_limit = top_n or self._settings.executive_venture_report_top_n
 
@@ -157,6 +160,8 @@ class VentureReportService:
                 },
                 pipeline_run_id=resolved_pipeline_run_id,
             )
+            if report_metadata_extra:
+                report_metadata.update(report_metadata_extra)
             if self._approval is not None and self._approval.enabled:
                 publish = False
 
@@ -236,6 +241,7 @@ class VentureReportService:
                             if discovery_validation_mode
                             else {}
                         ),
+                        **(report_metadata_extra or {}),
                     },
                     pipeline_run_id=resolved_pipeline_run_id,
                 ),
@@ -261,6 +267,125 @@ class VentureReportService:
             markdown=content.markdown,
             content=content,
         )
+
+    async def regenerate_current_reports(
+        self,
+        *,
+        top_n: int | None = None,
+        founder_profile_id: UUID | None = None,
+        dry_run: bool = False,
+        publish: bool = True,
+    ) -> VentureReportRegenResult:
+        """Regenerate the venture recommendation report from current ranking and agents.
+
+        Inserts a new report row; prior reports remain queryable. The newest published
+        report becomes the effective current report for dashboard and /latest.
+        """
+        top_limit = top_n or self._settings.executive_venture_report_top_n
+
+        ranking = await self._ranking_service.get_current_ranking()
+        profile_id = founder_profile_id or ranking.founder_profile_id
+        opportunities_found = self._count_ranked_opportunities(ranking, top_limit=top_limit)
+
+        venture_reports = await self._repos.reports.list_by_type(
+            ReportType.VENTURE_RECOMMENDATION,
+            limit=1000,
+        )
+        stale_reports_found = self._count_stale_reports(venture_reports, ranking.id)
+
+        century_v1_hp_count = 0
+        if profile_id is not None:
+            century_evaluations = (
+                await self._repos.human_proxy_evaluations.list_current_evaluations(
+                    founder_profile_id=profile_id,
+                    scale_version=SCALE_VERSION_CENTURY_V1,
+                )
+            )
+            century_v1_hp_count = len(century_evaluations)
+
+        latest_report_id: UUID | None = None
+        try:
+            latest_report_id = (await self.get_latest_report()).id
+        except NotFoundError:
+            pass
+
+        result = VentureReportRegenResult(
+            dry_run=dry_run,
+            founder_profile_id=profile_id,
+            top_n=top_limit,
+            opportunities_found=opportunities_found,
+            current_reports_found=len(venture_reports),
+            stale_reports_found=stale_reports_found,
+            current_ranking_run_id=ranking.id,
+            current_ranking_version=ranking.version,
+            century_v1_hp_count=century_v1_hp_count,
+            superseded_report_id=latest_report_id,
+        )
+
+        if dry_run:
+            logger.info(
+                "Venture report regeneration dry run",
+                extra={
+                    "founder_profile_id": str(profile_id) if profile_id else None,
+                    "opportunities_found": opportunities_found,
+                    "current_reports_found": len(venture_reports),
+                    "stale_reports_found": stale_reports_found,
+                    "current_ranking_run_id": str(ranking.id),
+                    "century_v1_hp_count": century_v1_hp_count,
+                },
+            )
+            return result
+
+        metadata_extra: dict[str, object] = {"regen": "report_regen_1"}
+        if latest_report_id is not None:
+            metadata_extra["supersedes_report_id"] = str(latest_report_id)
+
+        report_result = await self.generate_venture_report(
+            top_n=top_limit,
+            founder_profile_id=profile_id,
+            ranking_run_id=ranking.id,
+            generate_ranking_if_missing=False,
+            publish=publish,
+            report_metadata_extra=metadata_extra,
+        )
+
+        result.report_id = report_result.report_id
+        result.title = report_result.title
+        result.summary = report_result.summary
+        result.opportunity_count = report_result.content.generated_count
+
+        logger.info(
+            "Venture report regeneration complete",
+            extra={
+                "report_id": str(result.report_id),
+                "opportunity_count": result.opportunity_count,
+                "current_ranking_run_id": str(ranking.id),
+                "superseded_report_id": (
+                    str(result.superseded_report_id) if result.superseded_report_id else None
+                ),
+            },
+        )
+        return result
+
+    @staticmethod
+    def _count_ranked_opportunities(ranking, *, top_limit: int) -> int:
+        top_entries = sorted(
+            [entry for entry in ranking.entries if entry.is_top_opportunity],
+            key=lambda item: item.rank,
+        )[:top_limit]
+        if not top_entries:
+            top_entries = sorted(ranking.entries, key=lambda item: item.rank)[:top_limit]
+        return len(top_entries)
+
+    @staticmethod
+    def _count_stale_reports(reports, current_ranking_run_id: UUID) -> int:
+        stale = 0
+        for report in reports:
+            metadata = report.report_metadata or {}
+            pinned = metadata.get("executive_ranking_run_id")
+            if pinned is None or str(pinned) != str(current_ranking_run_id):
+                stale += 1
+        return stale
 
     async def get_latest_report(self) -> ReportRead:
         items = await self._repos.reports.list_by_type(

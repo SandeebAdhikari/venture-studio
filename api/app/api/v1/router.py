@@ -27,6 +27,7 @@ from app.api.v1 import (
     rss_feeds,
     scheduler,
     sources,
+    venture_reports,
 )
 from app.api.v1 import alerting as alerting_routes
 
@@ -53,6 +54,7 @@ protected_router.include_router(growth_strategy.router)
 protected_router.include_router(human_proxy.router)
 protected_router.include_router(executive_ranking.router)
 protected_router.include_router(executive_reports.router)
+protected_router.include_router(venture_reports.router)
 protected_router.include_router(pipeline.router)
 protected_router.include_router(approvals.router)
 protected_router.include_router(budget.router)
