@@ -18,8 +18,8 @@ from app.agents.opportunity.founder_signal_clustering import (
     detect_founder_signal_patterns,
     MIN_FOUNDER_CLUSTER_SIZE,
 )
+from app.agents.classification.signal_overlays import enrich_complaint_evidence_with_overlay
 from app.agents.opportunity.mechanism_fingerprints import (
-    enrich_complaint_evidence,
     evaluate_singleton_exception,
     extract_mechanism_fingerprint,
 )
@@ -43,7 +43,7 @@ def _load_json(path: Path) -> dict:
 
 def _to_evidence(complaint: Complaint, signal_overrides: dict) -> ComplaintEvidence:
     override = signal_overrides.get(str(complaint.id), {})
-    return enrich_complaint_evidence(
+    return enrich_complaint_evidence_with_overlay(
         ComplaintEvidence(
             id=complaint.id,
             summary=complaint.summary,
@@ -62,7 +62,7 @@ def _to_evidence(complaint: Complaint, signal_overrides: dict) -> ComplaintEvide
 
 
 def _cluster_inventory(evidence: list[ComplaintEvidence]) -> list[dict]:
-    enriched = [enrich_complaint_evidence(member) for member in evidence]
+    enriched = [enrich_complaint_evidence_with_overlay(member) for member in evidence]
     keyed: dict[str, list[ComplaintEvidence]] = defaultdict(list)
 
     for member in enriched:
@@ -126,7 +126,7 @@ def _pattern_report(pattern) -> dict:
 
 def _fingerprint_inventory(evidence: list[ComplaintEvidence]) -> list[dict]:
     rows: list[dict] = []
-    for member in (enrich_complaint_evidence(item) for item in evidence):
+    for member in (enrich_complaint_evidence_with_overlay(item) for item in evidence):
         fingerprint = member.mechanism_fingerprint or extract_mechanism_fingerprint(
             verbatim_quote=member.verbatim_quote,
             summary=member.summary,

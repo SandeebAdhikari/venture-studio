@@ -11,9 +11,13 @@ from pydantic import ValidationError
 
 from app.agents.classification.schemas import ClassificationLLMOutput, LLMInvocationResult
 from app.agents.openai_schema import openai_strict_json_schema
+from app.agents.classification.founder_signals import founder_signals_prompt_block
+from app.agents.classification.neighborhood import (
+    FounderSignalNeighborhood,
+    resolve_neighborhood,
+)
 from app.agents.classification.problem_category_alignment import alignment_prompt_block
 from app.agents.classification.taxonomy import taxonomy_prompt_block
-from app.agents.classification.founder_signals import founder_signals_prompt_block
 from app.config import Settings
 
 
@@ -24,6 +28,7 @@ class ClassificationLLMClient(Protocol):
         title: str | None,
         body: str,
         attempt: int,
+        neighborhood: FounderSignalNeighborhood | str | None = None,
     ) -> LLMInvocationResult: ...
 
 
@@ -51,15 +56,20 @@ class OpenAIClassificationClient:
         title: str | None,
         body: str,
         attempt: int,
+        neighborhood: FounderSignalNeighborhood | str | None = None,
     ) -> LLMInvocationResult:
         started = time.perf_counter()
         user_content = self._format_user_content(title=title, body=body)
+        resolved_neighborhood = resolve_neighborhood(
+            explicit=neighborhood,
+            settings=self._settings,
+        )
         system_prompt = (
             "You classify raw user text into structured complaint metadata. "
             "If the text is not a complaint, set is_complaint to false "
             "and still return valid enum codes. "
             "Use 'other' codes when uncertain.\n\n"
-            f"{alignment_prompt_block()}\n\n"
+            f"{alignment_prompt_block(resolved_neighborhood)}\n\n"
             f"{taxonomy_prompt_block()}\n\n"
             f"{founder_signals_prompt_block()}"
         )

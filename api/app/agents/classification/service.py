@@ -12,7 +12,9 @@ from app.agents.classification.schemas import (
     ClassificationBatchResult,
     RawComplaintText,
 )
+from app.agents.classification.neighborhood import resolve_neighborhood
 from app.config import Settings, get_settings
+from app.schemas.pipeline import PipelineRunOptions
 from app.db.enums import SignalProcessingStatus
 from app.exceptions import NotFoundError, ValidationError
 from app.logging import get_logger
@@ -51,7 +53,12 @@ class ComplaintClassificationService:
             )
         return self._agent
 
-    async def classify_signal(self, signal_id: UUID) -> ClassificationAgentResult:
+    async def classify_signal(
+        self,
+        signal_id: UUID,
+        *,
+        pipeline_options: PipelineRunOptions | None = None,
+    ) -> ClassificationAgentResult:
         signal = await self._repos.signals.get_by_id(signal_id)
         if signal is None:
             raise NotFoundError("signal", signal_id)
@@ -70,26 +77,39 @@ class ComplaintClassificationService:
 
         await self._repos.signals.set_processing_status(signal, SignalProcessingStatus.PROCESSING)
 
+        neighborhood = resolve_neighborhood(
+            pipeline_options=pipeline_options,
+            settings=self._settings,
+        )
         agent_result = await self._get_agent().run(
             RawComplaintText(
                 body=signal.body,
                 title=signal.title,
                 url=signal.url,
                 signal_id=signal.id,
+                neighborhood=neighborhood.value,
             )
         )
 
         await self._persist_eval_logs(signal_id, agent_result)
         return await self._finalize_signal(signal, agent_result)
 
-    async def classify_pending(self, *, limit: int | None = None) -> ClassificationBatchResult:
+    async def classify_pending(
+        self,
+        *,
+        limit: int | None = None,
+        pipeline_options: PipelineRunOptions | None = None,
+    ) -> ClassificationBatchResult:
         batch_size = limit or self._settings.classify_batch_size
         pending = await self._repos.signals.list_pending(limit=batch_size)
         batch_result = ClassificationBatchResult()
 
         for signal in pending:
             try:
-                item = await self.classify_signal(signal.id)
+                item = await self.classify_signal(
+                    signal.id,
+                    pipeline_options=pipeline_options,
+                )
             except (NotFoundError, ValidationError) as exc:
                 item = ClassificationAgentResult(
                     signal_id=signal.id,

@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     classification_model: str = "gpt-4o-mini"
     classification_max_retries: int = 2
     classification_temperature: float = 0.0
+    founder_signal_neighborhood: str | None = Field(
+        default=None,
+        description="Default founder signal neighborhood for classification prompt routing",
+    )
 
     # LLM / opportunity generation
     generation_model: str = "gpt-4o-mini"

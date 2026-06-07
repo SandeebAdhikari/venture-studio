@@ -23,9 +23,9 @@ SECURITY_BENCHMARK_CORPUS: list[dict] = [
             "Instead I was told that I risked termination and I should tell someone first."
         ),
         "severity": 3,
-        "business_function_code": "fraud_prevention",
-        "jtbd_code": "prevent_fraud",
-        "consequence_code": "operational_risk",
+        "business_function_code": "vulnerability_management",
+        "jtbd_code": "remediate_vulnerabilities",
+        "consequence_code": "trust_erosion",
     },
     {
         "title": "Ask HN: Security vulnerability in deployment – what to do?",
@@ -40,8 +40,8 @@ SECURITY_BENCHMARK_CORPUS: list[dict] = [
             "file containing a password with which one can login and modify content."
         ),
         "severity": 5,
-        "business_function_code": "deployment",
-        "jtbd_code": "prevent_fraud",
+        "business_function_code": "vulnerability_management",
+        "jtbd_code": "remediate_vulnerabilities",
         "consequence_code": "operational_risk",
     },
     {
@@ -53,9 +53,9 @@ SECURITY_BENCHMARK_CORPUS: list[dict] = [
         ),
         "verbatim_quote": "Is this on the level?",
         "severity": 4,
-        "business_function_code": "fraud_prevention",
-        "jtbd_code": "prevent_fraud",
-        "consequence_code": "customer_loss",
+        "business_function_code": "incident_response",
+        "jtbd_code": "respond_to_incidents",
+        "consequence_code": "trust_erosion",
     },
     {
         "title": "Ask HN: Security negligence by former employer, a health insurance co.?",
@@ -68,9 +68,9 @@ SECURITY_BENCHMARK_CORPUS: list[dict] = [
             "This situation seems to reflect severe negligence, if not intentional disregard."
         ),
         "severity": 5,
-        "business_function_code": "fraud_prevention",
-        "jtbd_code": "prevent_fraud",
-        "consequence_code": "customer_loss",
+        "business_function_code": "incident_response",
+        "jtbd_code": "respond_to_incidents",
+        "consequence_code": "trust_erosion",
     },
     {
         "title": "Ask HN: Security vulnerability discovered during interview",
@@ -83,8 +83,8 @@ SECURITY_BENCHMARK_CORPUS: list[dict] = [
             "I kid you not - the session ID is the user's email."
         ),
         "severity": 4,
-        "business_function_code": "fraud_prevention",
-        "jtbd_code": "prevent_fraud",
+        "business_function_code": "application_security",
+        "jtbd_code": "secure_applications",
         "consequence_code": "operational_risk",
     },
 ]

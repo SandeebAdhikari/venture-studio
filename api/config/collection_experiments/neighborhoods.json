@@ -1,0 +1,10 @@
+{
+  "stripe_billing": "stripe_billing",
+  "stripe": "stripe_billing",
+  "security": "security",
+  "security-corpus-validation": "security",
+  "devtools": "devtools",
+  "devtools_v1": "devtools",
+  "ai_infrastructure": "ai_infrastructure",
+  "ai_infrastructure_v1": "ai_infrastructure"
+}

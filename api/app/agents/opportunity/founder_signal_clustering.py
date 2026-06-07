@@ -11,6 +11,8 @@ from app.agents.classification.founder_signals import (
     format_founder_cluster_key,
     validate_founder_signal_codes,
 )
+from app.agents.classification.signal_coherence import signal_mechanism_coherent
+from app.agents.opportunity.mechanism_topics import format_mechanism_primary_topic, format_signal_label
 from app.agents.opportunity.patterns import MIN_DOMINANT_TAXONOMY_SHARE, derive_pattern_topic
 from app.agents.opportunity.schemas import ComplaintEvidence, ComplaintPattern
 from app.logging import get_logger
@@ -22,7 +24,7 @@ MIN_FOUNDER_CLUSTER_SIZE = 3
 
 
 def _format_signal_label(code: str) -> str:
-    return " ".join(part.capitalize() for part in code.split("_"))
+    return format_signal_label(code)
 
 
 def _derive_founder_topic(
@@ -32,7 +34,40 @@ def _derive_founder_topic(
     jtbd_code: str | None,
     consequence_code: str | None,
     members: list[ComplaintEvidence],
+    mechanism_fingerprint: str | None = None,
 ) -> str:
+    return derive_coherent_topic(
+        cluster_key=cluster_key,
+        business_function_code=business_function_code,
+        jtbd_code=jtbd_code,
+        consequence_code=consequence_code,
+        members=members,
+        mechanism_fingerprint=mechanism_fingerprint,
+    )
+
+
+def derive_coherent_topic(
+    *,
+    cluster_key: str,
+    business_function_code: str,
+    jtbd_code: str | None,
+    consequence_code: str | None,
+    members: list[ComplaintEvidence],
+    mechanism_fingerprint: str | None = None,
+) -> str:
+    """Prefer mechanism-primary topic when signals and mechanism disagree."""
+    if mechanism_fingerprint and not signal_mechanism_coherent(
+        business_function_code,
+        mechanism_fingerprint,
+    ):
+        member = members[0]
+        return format_mechanism_primary_topic(
+            mechanism_fingerprint,
+            consequence_code,
+            verbatim_quote=member.verbatim_quote,
+            summary=member.summary,
+        )
+
     parts = [_format_signal_label(business_function_code)]
     if jtbd_code is not None:
         parts.append(_format_signal_label(jtbd_code))

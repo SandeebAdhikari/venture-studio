@@ -1,10 +1,14 @@
 """Validation for LLM classification output."""
 
+from app.agents.classification.founder_signal_pairs import validate_bf_jtbd_pair
 from app.agents.classification.founder_signals import validate_founder_signal_codes
 from app.agents.classification.problem_category_alignment import normalize_problem_category
 from app.agents.classification.schemas import ClassificationLLMOutput
 from app.agents.classification.source_text import verbatim_quote_in_source
 from app.agents.classification.taxonomy import CUSTOMER_TYPES, INDUSTRIES, PROBLEM_CATEGORIES
+from app.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class ClassificationValidationError(Exception):
@@ -49,16 +53,28 @@ class ClassificationValidator:
             if len(output.summary.strip()) < 10:
                 errors.append("summary is too short")
 
-            if validate_founder_signal_codes(
+            validated_signals = validate_founder_signal_codes(
                 business_function_code=output.business_function_code,
                 jtbd_code=output.jtbd_code,
                 consequence_code=output.consequence_code,
-            ) is None:
+            )
+            if validated_signals is None:
                 errors.append(
                     "invalid founder signal codes: "
                     f"business_function_code={output.business_function_code}, "
                     f"jtbd_code={output.jtbd_code}, "
                     f"consequence_code={output.consequence_code}"
+                )
+            elif not validate_bf_jtbd_pair(
+                validated_signals[0],
+                validated_signals[1],
+            ):
+                logger.warning(
+                    "incoherent_bf_jtbd_pair",
+                    extra={
+                        "business_function_code": validated_signals[0],
+                        "jtbd_code": validated_signals[1],
+                    },
                 )
 
         if errors:

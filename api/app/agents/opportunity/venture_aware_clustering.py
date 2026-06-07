@@ -14,10 +14,8 @@ from app.agents.opportunity.founder_signal_clustering import (
     _derive_founder_topic,
     _passes_founder_coherence_gate,
 )
-from app.agents.opportunity.mechanism_fingerprints import (
-    enrich_complaint_evidence,
-    evaluate_singleton_exception,
-)
+from app.agents.classification.signal_overlays import enrich_complaint_evidence_with_overlay
+from app.agents.opportunity.mechanism_fingerprints import evaluate_singleton_exception
 from app.agents.opportunity.schemas import ComplaintEvidence, ComplaintPattern
 from app.logging import get_logger
 
@@ -72,6 +70,7 @@ def _build_venture_pattern(
             jtbd_code=jtbd,
             consequence_code=consequence,
             members=members,
+            mechanism_fingerprint=mechanism,
         ),
         anchor_phrase=cluster_key,
         complaint_ids=[member.id for member in members],
@@ -127,7 +126,7 @@ def detect_venture_aware_patterns(
     if not evidence:
         return []
 
-    enriched = [enrich_complaint_evidence(member) for member in evidence]
+    enriched = [enrich_complaint_evidence_with_overlay(member) for member in evidence]
     keyed_members: dict[str, list[ComplaintEvidence]] = defaultdict(list)
 
     for member in enriched:

@@ -69,7 +69,10 @@ class PipelineStageExecutor:
                 if pending == 0:
                     break
                 total_in += pending
-                batch = await services.classification.classify_pending(limit=batch_size)
+                batch = await services.classification.classify_pending(
+                    limit=batch_size,
+                    pipeline_options=options,
+                )
                 total_out += batch.classified
                 total_failed += batch.failed
                 total_skipped += batch.skipped

@@ -6,6 +6,7 @@ import html
 import re
 from typing import Final
 
+from app.agents.classification.signal_coherence import FINTECH_MECHANISMS
 from app.agents.opportunity.schemas import ComplaintEvidence
 
 MECHANISM_FINGERPRINTS: Final[frozenset[str]] = frozenset(

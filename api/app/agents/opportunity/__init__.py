@@ -6,7 +6,6 @@ from app.agents.opportunity.schemas import (
     GenerationBatchResult,
     OpportunityGenerationResult,
 )
-from app.agents.opportunity.service import OpportunityGeneratorService
 
 __all__ = [
     "GRAPH_NAME",
@@ -16,3 +15,11 @@ __all__ = [
     "OpportunityGeneratorAgent",
     "OpportunityGeneratorService",
 ]
+
+
+def __getattr__(name: str):
+    if name == "OpportunityGeneratorService":
+        from app.agents.opportunity.service import OpportunityGeneratorService
+
+        return OpportunityGeneratorService
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

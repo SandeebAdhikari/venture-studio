@@ -44,6 +44,10 @@ class PipelineRunOptions(BaseModel):
     classify_max_batches: int | None = Field(default=None, ge=1)
     score_limit: int | None = Field(default=None, ge=1)
     discovery_validation_mode: bool = False
+    founder_signal_neighborhood: str | None = Field(
+        default=None,
+        description="Neighborhood for classification prompt routing (stripe_billing, security, …)",
+    )
     pipeline_run_id: UUID | None = Field(
         default=None,
         description="Set by orchestrator; stored in ranking_metadata and report_metadata",

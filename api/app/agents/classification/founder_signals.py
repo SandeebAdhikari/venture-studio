@@ -6,27 +6,67 @@ from typing import Literal
 
 BUSINESS_FUNCTION_CODES: frozenset[str] = frozenset(
     {
+        # Fintech / Stripe (V1)
         "payment_processor",
         "fraud_prevention",
         "billing_operations",
         "subscription_management",
         "checkout_optimization",
         "invoice_collection",
+        # Engineering (V1 legacy)
         "ci_cd",
         "deployment",
         "observability",
+        # AI Infrastructure (V2)
+        "agent_tooling",
+        "model_operations",
+        "inference_governance",
+        "llm_evaluation",
+        "gpu_compute",
+        # Security (V2)
+        "vulnerability_management",
+        "incident_response",
+        "application_security",
+        "identity_access",
+        # Engineering Platforms (V2)
+        "developer_experience",
+        "api_platform",
+        "internal_platform",
+        # Cloud Operations (V2)
+        "infrastructure_provisioning",
+        "capacity_management",
     }
 )
 
 JTBD_CODES: frozenset[str] = frozenset(
     {
+        # Fintech / Stripe (V1)
         "accept_payments",
         "prevent_fraud",
         "automate_billing",
         "manage_subscriptions",
+        "collect_invoices",
+        # Engineering (V1 legacy)
         "deploy_software",
         "monitor_systems",
-        "collect_invoices",
+        # AI Infrastructure (V2)
+        "configure_agent_tools",
+        "operate_llm_systems",
+        "govern_inference_spend",
+        "evaluate_model_quality",
+        "provision_compute",
+        # Security (V2)
+        "remediate_vulnerabilities",
+        "respond_to_incidents",
+        "secure_applications",
+        "manage_identity_access",
+        # Engineering Platforms (V2)
+        "improve_developer_workflow",
+        "publish_consume_apis",
+        "operate_internal_platforms",
+        # Cloud Operations (V2)
+        "provision_infrastructure",
+        "manage_capacity_quotas",
     }
 )
 
@@ -39,6 +79,9 @@ CONSEQUENCE_CODES: frozenset[str] = frozenset(
         "customer_loss",
         "engineering_friction",
         "operational_risk",
+        # V2
+        "trust_erosion",
+        "innovation_blocked",
     }
 )
 
@@ -53,6 +96,17 @@ BLOCKED_FOUNDER_SIGNAL_CODES: frozenset[str] = frozenset()
 def founder_signals_prompt_block() -> str:
     return (
         "Founder signal namespace (separate from problem_category — never mix these fields):\n"
+        "Fintech: "
+        f"{', '.join(sorted({'payment_processor', 'fraud_prevention', 'billing_operations', 'subscription_management', 'checkout_optimization', 'invoice_collection'}))}\n"
+        "Engineering (legacy): ci_cd, deployment, observability\n"
+        "AI Infrastructure: "
+        f"{', '.join(sorted({'agent_tooling', 'model_operations', 'inference_governance', 'llm_evaluation', 'gpu_compute'}))}\n"
+        "Security: "
+        f"{', '.join(sorted({'vulnerability_management', 'incident_response', 'application_security', 'identity_access'}))}\n"
+        "Engineering Platforms: "
+        f"{', '.join(sorted({'developer_experience', 'api_platform', 'internal_platform'}))}\n"
+        "Cloud Operations: "
+        f"{', '.join(sorted({'infrastructure_provisioning', 'capacity_management'}))}\n"
         f"business_function_code must be one of: {', '.join(sorted(BUSINESS_FUNCTION_CODES))}\n"
         f"jtbd_code must be one of: {', '.join(sorted(JTBD_CODES))}\n"
         f"consequence_code must be one of: {', '.join(sorted(CONSEQUENCE_CODES))}\n"

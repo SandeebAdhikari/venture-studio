@@ -9,6 +9,7 @@ from langgraph.graph import END, StateGraph
 
 from app.agents.budget_guard import serialize_llm_invocation
 from app.agents.classification.llm_client import ClassificationLLMClient
+from app.agents.classification.neighborhood import FounderSignalNeighborhood, resolve_neighborhood
 from app.agents.classification.schemas import (
     ClassificationAgentResult,
     ClassificationLLMOutput,
@@ -37,6 +38,7 @@ class ClassificationState(TypedDict):
     title: str | None
     body: str
     url: str | None
+    neighborhood: FounderSignalNeighborhood | None
     attempt: int
     max_attempts: int
     llm_output: ClassificationLLMOutput | None
@@ -66,11 +68,16 @@ class ComplaintClassificationAgent:
         self._graph = self._build_graph()
 
     async def run(self, raw: RawComplaintText) -> ClassificationAgentResult:
+        neighborhood = resolve_neighborhood(
+            explicit=raw.neighborhood,
+            settings=self._settings,
+        )
         initial_state: ClassificationState = {
             "signal_id": raw.signal_id,
             "title": raw.title,
             "body": raw.body,
             "url": raw.url,
+            "neighborhood": neighborhood,
             "attempt": 1,
             "max_attempts": self._settings.classification_max_retries,
             "llm_output": None,
@@ -136,6 +143,7 @@ class ComplaintClassificationAgent:
             title=state["title"],
             body=state["body"],
             attempt=state["attempt"],
+            neighborhood=state.get("neighborhood"),
         )
         invocations = list(state["invocations"])
         invocations.append(

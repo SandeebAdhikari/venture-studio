@@ -7,7 +7,6 @@ from uuid import UUID
 
 from app.agents.opportunity.graph import GRAPH_NAME, OpportunityGeneratorAgent
 from app.agents.opportunity.llm_client import OpenAIOpportunityClient, OpportunityLLMClient
-from app.agents.opportunity.mechanism_fingerprints import enrich_complaint_evidence
 from app.agents.opportunity.patterns import TopicPatternDetector
 from app.agents.opportunity.taxonomy_fallback import resolve_generation_patterns
 from app.agents.opportunity.schemas import (
@@ -202,7 +201,9 @@ class OpportunityGeneratorService:
 
     @staticmethod
     def _to_evidence(complaint) -> ComplaintEvidence:
-        return enrich_complaint_evidence(
+        from app.agents.classification.signal_overlays import enrich_complaint_evidence_with_overlay
+
+        return enrich_complaint_evidence_with_overlay(
             ComplaintEvidence(
                 id=complaint.id,
                 summary=complaint.summary,

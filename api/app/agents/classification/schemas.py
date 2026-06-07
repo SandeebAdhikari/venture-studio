@@ -13,6 +13,10 @@ class RawComplaintText(BaseModel):
     title: str | None = None
     url: str | None = None
     signal_id: UUID | None = None
+    neighborhood: str | None = Field(
+        default=None,
+        description="Founder signal neighborhood for prompt routing (e.g. stripe_billing, security).",
+    )
 
 
 class ClassificationLLMOutput(BaseModel):

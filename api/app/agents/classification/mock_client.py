@@ -26,6 +26,7 @@ class MockClassificationLLMClient:
         title: str | None,
         body: str,
         attempt: int,
+        neighborhood=None,
     ) -> LLMInvocationResult:
         self.call_count += 1
         if self._index >= len(self._responses):

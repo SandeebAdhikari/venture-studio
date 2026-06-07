@@ -21,6 +21,7 @@ class ComplaintEvidence(BaseModel):
     jtbd_code: str | None = None
     consequence_code: str | None = None
     mechanism_fingerprint: str | None = None
+    signal_overlay_applied: bool = False
 
 
 class ComplaintPattern(BaseModel):

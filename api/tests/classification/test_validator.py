@@ -64,6 +64,38 @@ def test_validator_accepts_quote_after_html_normalization() -> None:
     assert validated.verbatim_quote.startswith("I can't")
 
 
+def test_validator_accepts_v2_founder_signal_codes() -> None:
+    output = _output(
+        business_function_code="agent_tooling",
+        jtbd_code="configure_agent_tools",
+        consequence_code="operational_overhead",
+        verbatim_quote="MCP discovery is time-consuming",
+    )
+    validated = ClassificationValidator().validate(
+        output,
+        source_text="MCP discovery is time-consuming and not agentic.",
+    )
+    assert validated.business_function_code == "agent_tooling"
+    assert validated.jtbd_code == "configure_agent_tools"
+
+
+def test_validator_logs_incoherent_pair_without_rejecting(caplog) -> None:
+    import logging
+
+    caplog.set_level(logging.WARNING)
+    output = _output(
+        business_function_code="payment_processor",
+        jtbd_code="configure_agent_tools",
+        consequence_code="revenue_interruption",
+    )
+    validated = ClassificationValidator().validate(
+        output,
+        source_text="pricing is too expensive",
+    )
+    assert validated.business_function_code == "payment_processor"
+    assert any("incoherent_bf_jtbd_pair" in record.message for record in caplog.records)
+
+
 def test_validator_rejects_invalid_customer_type_employee() -> None:
     output = _output(customer_type="employee")
     with pytest.raises(ClassificationValidationError) as exc:
