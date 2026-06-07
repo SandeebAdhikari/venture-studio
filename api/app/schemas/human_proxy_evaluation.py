@@ -9,6 +9,9 @@ from app.db.enums import FounderRecommendation, HumanProxyEvaluationStatus
 from app.db.models.human_proxy_evaluation import HumanProxyEvaluation
 from app.db.models.human_proxy_evaluation_evidence import HumanProxyEvaluationEvidence
 
+SCALE_VERSION_LEGACY = "legacy"
+SCALE_VERSION_CENTURY_V1 = "century_v1"
+
 
 class HumanProxyEvaluationEvidenceCreate(BaseModel):
     evidence_type: str
@@ -37,6 +40,8 @@ class HumanProxyEvaluationCreate(BaseModel):
     evaluation_metrics: dict[str, Any] = Field(default_factory=dict)
     llm_model: str
     proxy_metadata: dict[str, Any] = Field(default_factory=dict)
+    scale_version: str = Field(default=SCALE_VERSION_LEGACY, max_length=32)
+    scale_metadata: dict[str, Any] = Field(default_factory=dict)
     evidence: list[HumanProxyEvaluationEvidenceCreate] = Field(default_factory=list)
 
 
@@ -91,6 +96,8 @@ class HumanProxyEvaluationRead(BaseModel):
     evaluation_metrics: dict[str, Any]
     llm_model: str
     proxy_metadata: dict[str, Any]
+    scale_version: str
+    scale_metadata: dict[str, Any]
 
     @classmethod
     def from_entity(cls, entity: HumanProxyEvaluation) -> "HumanProxyEvaluationRead":
@@ -113,6 +120,8 @@ class HumanProxyEvaluationRead(BaseModel):
             evaluation_metrics=entity.evaluation_metrics,
             llm_model=entity.llm_model,
             proxy_metadata=entity.proxy_metadata,
+            scale_version=entity.scale_version,
+            scale_metadata=entity.scale_metadata,
         )
 
 

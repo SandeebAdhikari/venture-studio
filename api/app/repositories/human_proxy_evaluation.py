@@ -177,6 +177,8 @@ class HumanProxyEvaluationRepository(BaseRepository[HumanProxyEvaluation]):
             evaluation_metrics=data.evaluation_metrics,
             llm_model=data.llm_model,
             proxy_metadata=data.proxy_metadata,
+            scale_version=data.scale_version,
+            scale_metadata=data.scale_metadata,
         )
         entity = await self.add(entity)
 

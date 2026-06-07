@@ -23,6 +23,7 @@ from app.repositories import RepositoryContainer
 from app.schemas.filters import HumanProxyEvaluationListFilter
 from app.schemas.founder_profile import FounderProfileCreate, FounderProfileRead
 from app.schemas.human_proxy_evaluation import (
+    SCALE_VERSION_CENTURY_V1,
     HumanProxyEvaluationCreate,
     HumanProxyEvaluationDetail,
     HumanProxyEvaluationEvidenceCreate,
@@ -164,8 +165,9 @@ class HumanProxyService:
                     "attempts": agent_result.attempts,
                     "agent_status": agent_result.status,
                     "founder_profile_name": profile.name,
-                    "scale_metadata": draft.scale_metadata,
                 },
+                scale_version=SCALE_VERSION_CENTURY_V1,
+                scale_metadata=draft.scale_metadata,
                 evidence=self._build_evidence_records(draft, context),
             )
         )

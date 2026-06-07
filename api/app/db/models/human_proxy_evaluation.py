@@ -82,6 +82,16 @@ class HumanProxyEvaluation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         server_default=text("'{}'::jsonb"),
     )
+    scale_version: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        server_default="legacy",
+    )
+    scale_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        server_default=text("'{}'::jsonb"),
+    )
 
     opportunity: Mapped[Opportunity] = relationship(back_populates="human_proxy_evaluations")
     founder_profile: Mapped[FounderProfile] = relationship(back_populates="evaluations")
