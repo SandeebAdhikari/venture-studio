@@ -164,6 +164,7 @@ class HumanProxyService:
                     "attempts": agent_result.attempts,
                     "agent_status": agent_result.status,
                     "founder_profile_name": profile.name,
+                    "scale_metadata": draft.scale_metadata,
                 },
                 evidence=self._build_evidence_records(draft, context),
             )

@@ -119,6 +119,7 @@ class HumanProxyDraft(BaseModel):
     supporting_evidence: list[ProxyEvidenceOutput]
     executive_summary: str
     evaluation_metrics: dict[str, Any]
+    scale_metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class HumanProxyResult(BaseModel):

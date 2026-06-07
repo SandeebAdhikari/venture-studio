@@ -9,6 +9,7 @@ from langgraph.graph import END, StateGraph
 from app.agents.budget_guard import serialize_llm_invocation
 from app.agents.human_proxy.llm_client import HumanProxyLLMClient
 from app.agents.human_proxy.metrics import compute_evaluation_metrics
+from app.agents.human_proxy.scaling import MixedScaleScoreError, normalize_proxy_scores
 from app.agents.human_proxy.schemas import (
     HumanProxyDraft,
     HumanProxyLLMOutput,
@@ -165,7 +166,33 @@ class HumanProxyAgent:
             return {}
 
         try:
-            validated = self._validator.validate(llm_output, context=state["context"])
+            normalized, scale_metadata = normalize_proxy_scores(llm_output)
+        except MixedScaleScoreError as exc:
+            scale_errors = [str(exc)]
+            errors = list(state.get("validation_errors", []))
+            errors.extend(scale_errors)
+            invocations = list(state["invocations"])
+            if invocations:
+                last = dict(invocations[-1])
+                last["validation_errors"] = list(scale_errors)
+                last["error"] = str(exc)
+                invocations[-1] = last
+            if state["attempt"] >= state["max_attempts"]:
+                return {
+                    "invocations": invocations,
+                    "validation_errors": errors,
+                    "error": str(exc),
+                    "status": "failed",
+                }
+            return {
+                "invocations": invocations,
+                "validation_errors": errors,
+                "attempt": state["attempt"] + 1,
+                "llm_output": None,
+            }
+
+        try:
+            validated = self._validator.validate(normalized, context=state["context"])
         except HumanProxyValidationError as exc:
             errors = list(state.get("validation_errors", []))
             errors.extend(exc.errors)
@@ -202,6 +229,7 @@ class HumanProxyAgent:
             supporting_evidence=validated.supporting_evidence,
             executive_summary=validated.executive_summary,
             evaluation_metrics=metrics,
+            scale_metadata=scale_metadata,
         )
         return {"draft": draft, "status": "completed"}
 
