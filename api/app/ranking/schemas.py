@@ -91,3 +91,21 @@ class ExecutiveRankingResult(BaseModel):
     top_n: int
     ranked_opportunity_count: int
     top_opportunities: list[ExecutiveRankingEntryRead]
+
+
+class ExecutiveRankingRegenResult(BaseModel):
+    """Outcome for EXEC-RANK-REGEN-1 post-HP re-evaluation ranking refresh."""
+
+    dry_run: bool = False
+    founder_profile_id: UUID | None = None
+    top_n: int = 0
+    opportunity_count: int = 0
+    rankable_opportunity_count: int = 0
+    century_v1_hp_count: int = 0
+    stale_entry_count: int = 0
+    superseded_run_id: UUID | None = None
+    superseded_version: int | None = None
+    ranking_run_id: UUID | None = None
+    version: int | None = None
+    ranked_opportunity_count: int = 0
+    top_opportunities: list[ExecutiveRankingEntryRead] = Field(default_factory=list)

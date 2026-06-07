@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, status
 
 from app.api.deps import Services
 from app.api.pagination import Pagination
-from app.ranking.schemas import ExecutiveRankingResult
+from app.ranking.schemas import ExecutiveRankingRegenResult, ExecutiveRankingResult
 from app.schemas.executive_ranking import ExecutiveRankingRunDetail, ExecutiveRankingRunRead
 from app.schemas.pagination import PaginatedResponse
 
@@ -37,6 +37,37 @@ async def generate_executive_ranking(
     return await services.executive_ranking.generate_ranking(
         top_n=top_n,
         founder_profile_id=founder_profile_id,
+    )
+
+
+@router.post(
+    "/regenerate-current",
+    response_model=ExecutiveRankingRegenResult,
+    status_code=status.HTTP_201_CREATED,
+    summary="Regenerate current executive ranking after human proxy re-evaluation",
+    description=(
+        "Create a new versioned ranking run using current agent outputs, "
+        "including century_v1 human proxy founder-fit semantics."
+    ),
+)
+async def regenerate_current_executive_ranking(
+    services: Services,
+    top_n: Annotated[
+        int, Query(ge=1, le=50, description="Number of top opportunities to highlight")
+    ] = 5,
+    founder_profile_id: Annotated[
+        UUID | None,
+        Query(description="Founder profile for human proxy scores; defaults to system profile"),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        Query(description="Preview regeneration without creating a new ranking run"),
+    ] = False,
+) -> ExecutiveRankingRegenResult:
+    return await services.executive_ranking.regenerate_current_rankings(
+        top_n=top_n,
+        founder_profile_id=founder_profile_id,
+        dry_run=dry_run,
     )
 
 
