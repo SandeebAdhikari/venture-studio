@@ -46,3 +46,11 @@ class MechanismRequirementSpec(BaseModel):
 class MechanismRequirementMatrix(BaseModel):
     matrix_version: str
     specs: list[MechanismRequirementSpec] = Field(min_length=1)
+
+
+class CapabilityMatchResult(BaseModel):
+    capability_match_score: int = Field(ge=0, le=100)
+    family_coverage: dict[str, float]
+    critical_gaps: list[str]
+    dominant_fingerprint: str
+    capability_match_version: str
