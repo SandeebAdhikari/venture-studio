@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from app.ranking.engine import (
     ExecutiveRankingEngine,
+    build_founder_fit_ranking_details,
     compute_competition_score,
     compute_founder_fit_score,
     compute_growth_score,
@@ -59,14 +60,80 @@ def test_compute_growth_score_blends_growth_and_gtm() -> None:
     assert 65 <= score <= 75
 
 
-def test_compute_founder_fit_score_uses_ranking_score() -> None:
+def test_compute_founder_fit_score_uses_fit_and_feasibility() -> None:
+    assert (
+        compute_founder_fit_score(
+            founder_fit_score=80,
+            feasibility_score=70,
+            planning_readiness_score=None,
+            ranking_score=99,
+        )
+        == 77
+    )
+    assert (
+        compute_founder_fit_score(
+            founder_fit_score=90,
+            feasibility_score=50,
+            planning_readiness_score=None,
+            ranking_score=99,
+        )
+        == 78
+    )
+
+
+def test_compute_founder_fit_score_falls_back_when_founder_fit_missing() -> None:
+    score = compute_founder_fit_score(
+        founder_fit_score=None,
+        feasibility_score=70,
+        planning_readiness_score=55,
+        ranking_score=82,
+    )
+    assert score == 82
+
+
+def test_compute_founder_fit_score_falls_back_when_feasibility_missing() -> None:
+    score = compute_founder_fit_score(
+        founder_fit_score=70,
+        feasibility_score=None,
+        planning_readiness_score=55,
+        ranking_score=82,
+    )
+    assert score == 82
+
+
+def test_compute_founder_fit_score_ignores_ranking_score_when_fit_inputs_present() -> None:
     score = compute_founder_fit_score(
         founder_fit_score=70,
         feasibility_score=60,
         planning_readiness_score=55,
         ranking_score=82,
     )
-    assert score == 82
+    assert score == 67
+
+
+def test_build_founder_fit_ranking_details_for_human_proxy_v1() -> None:
+    details = build_founder_fit_ranking_details(
+        founder_fit_score=82,
+        feasibility_score=76,
+        executive_founder_fit=80,
+    )
+    assert details == {
+        "founder_fit_source": "human_proxy_v1",
+        "founder_fit_score": 82,
+        "feasibility_score": 76,
+        "executive_founder_fit": 80,
+    }
+
+
+def test_build_founder_fit_ranking_details_empty_for_legacy_inputs() -> None:
+    assert (
+        build_founder_fit_ranking_details(
+            founder_fit_score=None,
+            feasibility_score=76,
+            executive_founder_fit=82,
+        )
+        == {}
+    )
 
 
 def test_engine_scores_weighted_final_from_all_dimensions() -> None:

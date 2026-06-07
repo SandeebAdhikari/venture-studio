@@ -11,6 +11,7 @@ from app.db.models.market_brief import MarketBrief
 from app.db.models.product_strategy import ProductStrategy
 from app.db.models.revenue_validation import RevenueValidation
 from app.ranking.engine import (
+    build_founder_fit_ranking_details,
     compute_competition_score,
     compute_founder_fit_score,
     compute_growth_score,
@@ -75,7 +76,10 @@ class AgentEvaluationCollector:
         revenue_score = self._revenue_score(revenue_validation)
         competition_score = self._competition_score(competitor_analysis)
         growth_score = self._growth_score(growth_evaluation, gtm_plan)
-        founder_fit_score = self._founder_fit_score(human_proxy, product_strategy)
+        founder_fit_score, founder_fit_details = self._founder_fit_score(
+            human_proxy,
+            product_strategy,
+        )
 
         component_scores = [
             pain_score,
@@ -102,6 +106,7 @@ class AgentEvaluationCollector:
             agent_coverage_count=agent_coverage_count,
             ranking_details={
                 "available_dimensions": sum(1 for score in component_scores if score is not None),
+                **founder_fit_details,
             },
         )
 
@@ -166,12 +171,20 @@ class AgentEvaluationCollector:
     def _founder_fit_score(
         human_proxy: HumanProxyEvaluation | None,
         product_strategy: ProductStrategy | None,
-    ) -> int | None:
+    ) -> tuple[int | None, dict[str, object]]:
         proxy_metrics = human_proxy.evaluation_metrics if human_proxy else {}
         planning_metrics = product_strategy.planning_metrics if product_strategy else {}
-        return compute_founder_fit_score(
-            founder_fit_score=human_proxy.founder_fit_score if human_proxy else None,
-            feasibility_score=human_proxy.feasibility_score if human_proxy else None,
+        founder_fit_score = human_proxy.founder_fit_score if human_proxy else None
+        feasibility_score = human_proxy.feasibility_score if human_proxy else None
+        executive_founder_fit = compute_founder_fit_score(
+            founder_fit_score=founder_fit_score,
+            feasibility_score=feasibility_score,
             planning_readiness_score=(planning_metrics or {}).get("planning_readiness_score"),
             ranking_score=(proxy_metrics or {}).get("ranking_score"),
         )
+        founder_fit_details = build_founder_fit_ranking_details(
+            founder_fit_score=founder_fit_score,
+            feasibility_score=feasibility_score,
+            executive_founder_fit=executive_founder_fit,
+        )
+        return executive_founder_fit, founder_fit_details

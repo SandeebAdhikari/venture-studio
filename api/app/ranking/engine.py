@@ -183,7 +183,11 @@ def compute_founder_fit_score(
     planning_readiness_score: int | None,
     ranking_score: int | None,
 ) -> int | None:
-    if ranking_score is not None:
+    has_fit_inputs = founder_fit_score is not None and feasibility_score is not None
+
+    if has_fit_inputs:
+        base = int(round(founder_fit_score * 0.70 + feasibility_score * 0.30))
+    elif ranking_score is not None:
         base = ranking_score
     elif founder_fit_score is not None:
         fit = founder_fit_score
@@ -197,3 +201,24 @@ def compute_founder_fit_score(
     if planning_readiness_score is not None and ranking_score is None:
         return int(round(base * 0.85 + planning_readiness_score * 0.15))
     return base
+
+
+def build_founder_fit_ranking_details(
+    *,
+    founder_fit_score: int | None,
+    feasibility_score: int | None,
+    executive_founder_fit: int | None,
+) -> dict[str, object]:
+    if (
+        executive_founder_fit is None
+        or founder_fit_score is None
+        or feasibility_score is None
+    ):
+        return {}
+
+    return {
+        "founder_fit_source": "human_proxy_v1",
+        "founder_fit_score": founder_fit_score,
+        "feasibility_score": feasibility_score,
+        "executive_founder_fit": executive_founder_fit,
+    }
