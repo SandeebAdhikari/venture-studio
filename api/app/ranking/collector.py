@@ -10,6 +10,8 @@ from app.db.models.human_proxy_evaluation import HumanProxyEvaluation
 from app.db.models.market_brief import MarketBrief
 from app.db.models.product_strategy import ProductStrategy
 from app.db.models.revenue_validation import RevenueValidation
+from app.founder_fit.fingerprint_resolution import resolve_dominant_mechanism_fingerprint
+from app.founder_fit.shadow import build_capability_match_shadow_details
 from app.ranking.engine import (
     build_founder_fit_ranking_details,
     compute_competition_score,
@@ -80,6 +82,7 @@ class AgentEvaluationCollector:
             human_proxy,
             product_strategy,
         )
+        shadow_details = await self._capability_match_shadow_details(opportunity_id)
 
         component_scores = [
             pain_score,
@@ -107,8 +110,15 @@ class AgentEvaluationCollector:
             ranking_details={
                 "available_dimensions": sum(1 for score in component_scores if score is not None),
                 **founder_fit_details,
+                **shadow_details,
             },
         )
+
+    async def _capability_match_shadow_details(self, opportunity_id: UUID) -> dict[str, object]:
+        opportunity = await self._repos.opportunities.get_by_id_with_relations(opportunity_id)
+        complaints = opportunity.complaints if opportunity is not None else []
+        dominant_fingerprint = resolve_dominant_mechanism_fingerprint(complaints)
+        return build_capability_match_shadow_details(dominant_fingerprint)
 
     @staticmethod
     def _pain_score(customer_research: CustomerResearch | None) -> int | None:
